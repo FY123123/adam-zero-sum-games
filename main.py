@@ -31,6 +31,7 @@ import warnings
 warnings.filterwarnings("ignore", category=UserWarning)
 
 import source.models.wgangp as models
+import source.models.transgan as transgan_models
 import source.losses as losses
 from source.utils import generate_imgs, infiniteloop, set_seed
 
@@ -91,14 +92,20 @@ def create_res_generator(z_dim):
         output_size = 32  # CIFAR-10 uses 32x32
     return models.ResGenerator32(z_dim, output_size)
 
+def create_trans_generator(z_dim):
+    """Create TransGAN generator (64x64 output)"""
+    return transgan_models.TransGenerator64(z_dim)
+
 net_G_models = {
     'res32': create_res_generator,
     'cnn32': create_cnn_generator,
+    'trans64': create_trans_generator,
 }
 
 net_D_models = {
     'res32': models.ResDiscriminator32,
     'cnn32': models.Discriminator32,
+    'trans64': transgan_models.TransDiscriminator64,
 }
 
 loss_fns = {
@@ -109,7 +116,7 @@ loss_fns = {
 }
 
 FLAGS = flags.FLAGS
-flags.DEFINE_enum('dataset', 'cifar10', ['cifar10', 'stl10'], "dataset")
+flags.DEFINE_enum('dataset', 'cifar10', ['cifar10', 'stl10', 'celeba'], "dataset")
 flags.DEFINE_enum('arch', 'res32', net_G_models.keys(), "architecture")
 flags.DEFINE_integer('total_steps',30000, "total number of training steps")
 flags.DEFINE_integer('final_total_steps', 100000, "total number of training steps")
@@ -138,7 +145,7 @@ flags.DEFINE_string('logdir', './logs/WGANGP_CIFAR10_RES2', 'logging folder (wil
 flags.DEFINE_list('train_modes', ['standard'], "training mode: standard(standard), negative_momentum(negative momentum), betas_variants(beta variants)")
 flags.DEFINE_bool('enable_all_modes', False, "enable all training modes")
 flags.DEFINE_bool('record', True, "record inception score")
-flags.DEFINE_bool('enable_fid', False, "enable FID (Fréchet Inception Distance) evaluation alongside IS")
+flags.DEFINE_bool('enable_fid', True, "enable FID (Fréchet Inception Distance) evaluation alongside IS")
 flags.DEFINE_string('fid_stats', None, 'path to precomputed FID real image stats (.npz). If None, auto-computed from training data and cached in ./fid_stats/.')
 
 # generate
@@ -146,6 +153,7 @@ flags.DEFINE_bool('generate', False, 'generate images')
 flags.DEFINE_string('pretrain', None, 'path to test model')
 flags.DEFINE_string('output', './outputs', 'path to output dir')
 flags.DEFINE_integer('num_images', 20000, 'the number of generated images')
+flags.DEFINE_bool('amp', True, "enable mixed precision training (BF16) for faster speed")
 
 # Device information already defined and printed at file top
 
@@ -322,7 +330,8 @@ def auto_plot_training_results(beta1, beta2, optimizer_type, arch=None):
 
 def prepare_fid_stats(dataloader):
     """Compute and cache FID real image statistics (runs once, result is saved to disk)."""
-    from pytorch_image_generation_metrics import calc_and_save_stats
+    from pytorch_image_generation_metrics.core import get_inception_feature
+    import numpy as np
 
     stats_dir = os.path.join(os.getcwd(), 'fid_stats')
     os.makedirs(stats_dir, exist_ok=True)
@@ -348,7 +357,7 @@ def prepare_fid_stats(dataloader):
     total = 0
     for imgs, _ in dataloader:
         imgs = (imgs + 1) / 2  # [-1, 1] -> [0, 1]
-        if FLAGS.dataset == 'stl10':
+        if FLAGS.dataset in ('stl10', 'celeba'):
             imgs = torch.nn.functional.interpolate(
                 imgs, size=(299, 299), mode='bicubic', align_corners=False
             ).clamp(0.0, 1.0)
@@ -358,7 +367,12 @@ def prepare_fid_stats(dataloader):
             break
 
     real_imgs = torch.cat(real_imgs_list)[:num_samples].clamp(0.0, 1.0).float()
-    calc_and_save_stats(real_imgs, stats_path)
+
+    acts, = get_inception_feature(real_imgs, dims=[2048], use_torch=False)
+    mu = np.mean(acts, axis=0)
+    sigma = np.cov(acts, rowvar=False)
+    np.savez(stats_path, mu=mu, sigma=sigma)
+
     print(f"\r✅ FID: Real image stats saved to {stats_filename}                     ", end='', flush=True)
     return stats_path
 
@@ -381,10 +395,13 @@ def train(beta1=None, beta2=None, optimizer_type=None):
     if optimizer_type is None:
         optimizer_type = FLAGS.optimizer  # If not specified, use FLAGS.optimizer
 
-    # STL-10 specific: automatically adjust log directory
+    # Dataset-specific: automatically adjust log directory
     if FLAGS.dataset == 'stl10':
         FLAGS.logdir = './logs/STL10_WGANGP_RES2'
         print(f"\r📂 STL-10: Using log directory: {FLAGS.logdir}", end='', flush=True)
+    elif FLAGS.dataset == 'celeba':
+        FLAGS.logdir = f'./logs/CelebA_WGANGP_{FLAGS.arch.upper()}'
+        print(f"\r📂 CelebA: Using log directory: {FLAGS.logdir}", end='', flush=True)
 
     print(f"\r🎯 Training configuration: optimizer={optimizer_type}, beta1={beta1}, beta2={beta2}                           ", end='', flush=True)
 
@@ -392,14 +409,15 @@ def train(beta1=None, beta2=None, optimizer_type=None):
     checkpoint_name = f'lr{FLAGS.lr_G}_beta{beta1}_{beta2}_{optimizer_type}_{FLAGS.arch}_{FLAGS.dataset}.pt'
 
     # Set checkpoint save path based on architecture type
+    dataset_dirname = {'cifar10': 'CIFAR-10', 'stl10': 'STL-10', 'celeba': 'CelebA'}[FLAGS.dataset]
     if FLAGS.arch == 'cnn32':
-        # CNN models use dedicated checkpoint directory structure
         if FLAGS.dataset == 'stl10':
             checkpoint_dir = os.path.join(os.getcwd(), 'Checkpoint', 'cnn_checkpoint', 'STL-10')
-        else:  # cifar10
-            checkpoint_dir = os.path.join(os.getcwd(), 'Checkpoint', 'cnn_checkpoint', 'CIFAR-10')
+        else:
+            checkpoint_dir = os.path.join(os.getcwd(), 'Checkpoint', 'cnn_checkpoint', dataset_dirname)
+    elif FLAGS.arch == 'trans64':
+        checkpoint_dir = os.path.join(os.getcwd(), 'Checkpoint', 'trans64_checkpoint', dataset_dirname)
     else:
-        # Other architectures use original logic
         if FLAGS.dataset == 'stl10':
             checkpoint_dir = os.path.join(os.getcwd(), 'Checkpoint', 'STL10_adam_nm')
         else:
@@ -414,13 +432,13 @@ def train(beta1=None, beta2=None, optimizer_type=None):
 
     # Set npz save path based on architecture type
     if FLAGS.arch == 'cnn32':
-        # CNN models use dedicated npz directory structure
         if FLAGS.dataset == 'stl10':
             npz_dir = os.path.join(os.getcwd(), 'npz', 'cnn_npz', 'STL-10')
-        else:  # cifar10
-            npz_dir = os.path.join(os.getcwd(), 'npz', 'cnn_npz', 'CIFAR-10')
+        else:
+            npz_dir = os.path.join(os.getcwd(), 'npz', 'cnn_npz', dataset_dirname)
+    elif FLAGS.arch == 'trans64':
+        npz_dir = os.path.join(os.getcwd(), 'npz', 'trans64_npz', dataset_dirname)
     else:
-        # Other architectures use original logic
         if FLAGS.dataset == 'stl10':
             npz_dir = os.path.join(os.getcwd(), 'npz', 'STL10_adam_nm_npz')
         else:
@@ -587,17 +605,25 @@ def train(beta1=None, beta2=None, optimizer_type=None):
         print(f"📸 STL-10: Using {FLAGS.arch} architecture with optimized preprocessing")
         print(f"   - Training image size: 64x64 (all architectures now support full resolution)")
         print(f"   - IS evaluation will use 299x299 resized images with 10 splits")
+    if FLAGS.dataset == 'celeba':
+        from source.celeba_dataset import HFCelebA
+        celeba_transform = transforms.Compose([
+            transforms.Resize(64, interpolation=transforms.InterpolationMode.BICUBIC),
+            transforms.CenterCrop(64),
+            transforms.RandomHorizontalFlip(),
+            transforms.ToTensor(),
+            transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+        ])
+        dataset = HFCelebA(transform=celeba_transform)
 
     dataloader = torch.utils.data.DataLoader(
         dataset, batch_size=FLAGS.batch_size, shuffle=True, num_workers=4,
         drop_last=True)
 
 
-    # Create sample directory (STL-10 uses dedicated folder)
-    if FLAGS.dataset == 'stl10':
-        sample_dir = 'STL10_sample'
-    else:
-        sample_dir = 'sample'
+    # Create sample directory (dataset-specific folders)
+    sample_dir_map = {'stl10': 'STL10_sample', 'celeba': 'CelebA_sample'}
+    sample_dir = sample_dir_map.get(FLAGS.dataset, 'sample')
     os.makedirs(os.path.join(FLAGS.logdir, sample_dir), exist_ok = True)
     writer = SummaryWriter(os.path.join(FLAGS.logdir))
     sample_z = torch.randn(FLAGS.sample_size, FLAGS.z_dim).to(device)
@@ -622,6 +648,11 @@ def train(beta1=None, beta2=None, optimizer_type=None):
             print(f"\r⚠️  FID: Setup failed ({e}). FID evaluation disabled.          ", end='', flush=True)
             fid_enabled = False
 
+    amp_enabled = FLAGS.amp and device.type == 'cuda'
+    amp_dtype = torch.bfloat16 if amp_enabled else None
+    if amp_enabled:
+        print(f"\r⚡ Mixed precision (BF16) enabled", flush=True)
+
     print(f"\r🚀 Starting training from step {start_step} to {FLAGS.total_steps} ...")
 
     for step in range(start_step, FLAGS.total_steps + 1):
@@ -637,14 +668,17 @@ def train(beta1=None, beta2=None, optimizer_type=None):
         for _ in range(FLAGS.n_dis):
             with torch.no_grad():
                 z = torch.randn(FLAGS.batch_size, FLAGS.z_dim).to(device)
-                fake = net_G(z).detach()
+                with torch.autocast(device_type='cuda', dtype=amp_dtype, enabled=amp_enabled):
+                    fake = net_G(z).detach()
             real = next(looper).to(device)
             
             # Train discriminator
-            net_D_real = net_D(real)
-            net_D_fake = net_D(fake)
-            loss = loss_fn(net_D_real, net_D_fake)
-            loss_gp = cacl_gradient_penalty(net_D, real, fake)
+            with torch.autocast(device_type='cuda', dtype=amp_dtype, enabled=amp_enabled):
+                net_D_real = net_D(real)
+                net_D_fake = net_D(fake)
+                loss = loss_fn(net_D_real, net_D_fake)
+            # GP must stay in FP32 for numerical stability
+            loss_gp = cacl_gradient_penalty(net_D, real.float(), fake.float())
             loss_all = loss + FLAGS.alpha * loss_gp
 
             optim_D.zero_grad()
@@ -665,7 +699,8 @@ def train(beta1=None, beta2=None, optimizer_type=None):
             z = torch.randn(FLAGS.batch_size * 2, FLAGS.z_dim).to(device)
             
             # Train generator
-            loss = loss_fn(net_D(net_G(z)))
+            with torch.autocast(device_type='cuda', dtype=amp_dtype, enabled=amp_enabled):
+                loss = loss_fn(net_D(net_G(z)))
             optim_G.zero_grad()
             loss.backward()
             optim_G.step()
@@ -738,13 +773,10 @@ def train(beta1=None, beta2=None, optimizer_type=None):
                 if FLAGS.record:
                     try:
                         print(f"\r🔍 Evaluating Inception Score at step {step}...", end='', flush=True)
-                        # STL-10 specific: adjust evaluation sample size to adapt to dataset characteristics
                         if FLAGS.dataset == 'stl10':
-                            # STL-10 has fewer training samples, use fewer evaluation samples for more stable IS estimation
-                            eval_size = min(3000, FLAGS.num_images)  # Reduced to 3000 to match STL-10 data volume characteristics
+                            eval_size = min(3000, FLAGS.num_images)
                             print(f"\r🎯 STL-10: Using {eval_size} samples for IS evaluation", end='', flush=True)
                         else:
-                            # CIFAR-10 uses original evaluation sample size
                             eval_size = min(5000, FLAGS.num_images)
                         
                         imgs = generate_imgs(
@@ -760,7 +792,7 @@ def train(beta1=None, beta2=None, optimizer_type=None):
                         
 
                         
-                        if FLAGS.dataset == 'stl10':
+                        if FLAGS.dataset in ('stl10', 'celeba'):
                             resize_transform = transforms.Compose([
                                 transforms.Resize((299, 299), interpolation=transforms.InterpolationMode.BICUBIC),
                                 transforms.CenterCrop(299)
@@ -775,16 +807,15 @@ def train(beta1=None, beta2=None, optimizer_type=None):
                             imgs_resized = torch.stack(imgs_pil, dim=0)
                             imgs_for_is = imgs_resized.clamp(0.0, 1.0).float()
 
-                            print(f"\r🔄 STL-10: Resized images from {imgs.shape[2]}x{imgs.shape[3]} to 299x299 for IS evaluation", end='', flush=True)
+                            print(f"\r🔄 Resized images from {imgs.shape[2]}x{imgs.shape[3]} to 299x299 for IS evaluation", end='', flush=True)
                         else:
                             imgs_for_is = imgs.clamp(0.0, 1.0).float()
                         
                         if imgs_for_is.std() < 0.01:
                             print(f"\r⚠️  ({imgs_for_is.std():.3f})", end='', flush=True)
                         
-                        if FLAGS.dataset == 'stl10':
+                        if FLAGS.dataset in ('stl10', 'celeba'):
                             IS = get_inception_score(imgs_for_is, splits=10, verbose=False)
-                            print(f"\r📊 STL-10: Used 10 splits for more stable IS estimation", end='', flush=True)
                         else:
                             IS = get_inception_score(imgs_for_is, verbose=False)
                         
