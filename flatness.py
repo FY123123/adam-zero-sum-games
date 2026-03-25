@@ -105,7 +105,8 @@ def plot_metrics(data_list, output_dir='./plots'):
     plt.legend(fontsize=14, loc='lower left', bbox_to_anchor=(0.0, 0.0),
                ncol=2, frameon=True, fancybox=True, shadow=True)
     plt.grid(True, alpha=0.3)
-    plt.ylim(0, 8.5)  # Set IS y-axis range from 0 to 8  
+    plt.xlim(left=1000)
+    plt.ylim(0, 8.5)
     plt.tight_layout()
     plt.savefig(os.path.join(output_dir, 'IS_curve.png'), dpi=300, bbox_inches='tight')
     plt.close()
@@ -131,8 +132,7 @@ def plot_metrics(data_list, output_dir='./plots'):
     plt.legend(fontsize=14, loc='lower left', bbox_to_anchor=(0.0, 0.0),
                ncol=2, frameon=True, fancybox=True, shadow=True)
     plt.grid(True, alpha=0.3)
-    plt.xlim(0, 15000)  
-    plt.ylim(10, 1300)
+    plt.xlim(left=1000)
     plt.yscale('log') 
     plt.tight_layout()
     plt.savefig(os.path.join(output_dir, 'Gnorm_curve.png'), dpi=300, bbox_inches='tight')
@@ -148,7 +148,6 @@ def plot_metrics(data_list, output_dir='./plots'):
             marker = markers[i % len(markers)]
             label = generate_label_from_filename(data['filename'])
 
-            # Calculate cumulative average
             grad_norms = np.array(data['Total_grad_norms'])
             if len(grad_norms) > 0:
                 cum_avg = np.cumsum(grad_norms) / np.arange(1, len(grad_norms) + 1)
@@ -163,9 +162,8 @@ def plot_metrics(data_list, output_dir='./plots'):
     plt.legend(fontsize=14, loc='lower left', bbox_to_anchor=(0.0, 0.0),
                ncol=2, frameon=True, fancybox=True, shadow=True)
     plt.grid(True, alpha=0.3)
-    plt.xlim(100, 15000)  # Display to 16000, leave 15000-16000 as blank  
+    plt.xlim(left=1000)
     plt.yscale('log')  
-    plt.ylim(20, 300)  # Set y-axis range from 20 to 180  
     plt.tight_layout()
     plt.savefig(os.path.join(output_dir, 'Avg_Gnorm_curve.png'), dpi=300, bbox_inches='tight')
     plt.close()
@@ -203,6 +201,7 @@ def plot_metrics(data_list, output_dir='./plots'):
         plt.legend(fontsize=14, loc='upper right', bbox_to_anchor=(1.0, 1.0),
                    ncol=2, frameon=True, fancybox=True, shadow=True)
         plt.grid(True, alpha=0.3)
+        plt.xlim(left=30)
         plt.tight_layout()
         plt.savefig(os.path.join(output_dir, 'FID_curve.png'), dpi=300, bbox_inches='tight')
         plt.close()
@@ -235,7 +234,7 @@ def main():
                         algorithm_npz_folders.append(item_path)
                 
                 if algorithm_npz_folders:
-                    args.files = [os.path.join(folder, '*.npz') for folder in algorithm_npz_folders]
+                    args.files = [os.path.join(folder, '**', '*.npz') for folder in algorithm_npz_folders]
                     print(f" No files specified, using all .npz files in {len(algorithm_npz_folders)} algorithm npz directories")
                 else:
                     print(f" No algorithm-specific npz directories found in: {npz_main_dir}")
@@ -255,7 +254,7 @@ def main():
     for file_pattern in args.files:
         if '*' in file_pattern or '?' in file_pattern:
             # This is a glob pattern
-            matched_files = glob.glob(file_pattern)
+            matched_files = glob.glob(file_pattern, recursive=True)
             all_files.extend(matched_files)
         else:
             # This is a direct file path
