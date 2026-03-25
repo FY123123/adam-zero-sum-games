@@ -32,8 +32,11 @@ warnings.filterwarnings("ignore", category=UserWarning)
 
 import source.models.wgangp as models
 import source.models.transgan as transgan_models
+import source.models.sagan as sagan_models
 import source.losses as losses
 from source.utils import generate_imgs, infiniteloop, set_seed
+from source.diff_aug import DiffAugment
+from copy import deepcopy
 
 class Adam_NM(optim.Optimizer):
     def __init__(self, params, lr=0.001, beta1=-0.9, beta2=0.999, eps=1e-8):
@@ -96,16 +99,22 @@ def create_trans_generator(z_dim):
     """Create TransGAN generator (64x64 output)"""
     return transgan_models.TransGenerator64(z_dim)
 
+def create_sagan_generator(z_dim):
+    """Create SAGAN generator (64x64 output)"""
+    return sagan_models.SAResGenerator64(z_dim)
+
 net_G_models = {
     'res32': create_res_generator,
     'cnn32': create_cnn_generator,
     'trans64': create_trans_generator,
+    'sagan64': create_sagan_generator,
 }
 
 net_D_models = {
     'res32': models.ResDiscriminator32,
     'cnn32': models.Discriminator32,
     'trans64': transgan_models.TransDiscriminator64,
+    'sagan64': sagan_models.SAResDiscriminator64,
 }
 
 loss_fns = {
@@ -121,7 +130,7 @@ flags.DEFINE_enum('arch', 'res32', net_G_models.keys(), "architecture")
 flags.DEFINE_integer('total_steps',30000, "total number of training steps")
 flags.DEFINE_integer('final_total_steps', 100000, "total number of training steps")
 
-flags.DEFINE_integer('batch_size', 64, "batch size")
+flags.DEFINE_integer('batch_size', 128, "batch size")
 
 flags.DEFINE_float('lr_G', 2e-4, "Generator learning rate")
 flags.DEFINE_float('lr_D', 2e-4, "Discriminator learning rate")
@@ -154,6 +163,8 @@ flags.DEFINE_string('pretrain', None, 'path to test model')
 flags.DEFINE_string('output', './outputs', 'path to output dir')
 flags.DEFINE_integer('num_images', 20000, 'the number of generated images')
 flags.DEFINE_bool('amp', True, "enable mixed precision training (BF16) for faster speed")
+flags.DEFINE_string('diff_aug', 'color,translation,cutout', "DiffAugment policy applied to D inputs (set '' to disable)")
+flags.DEFINE_float('ema_decay', 0.999, "EMA decay rate for generator (0 to disable)")
 
 # Device information already defined and printed at file top
 
@@ -182,7 +193,11 @@ def generate():
     assert FLAGS.pretrain is not None, "set model weight by --pretrain [model]"
 
     net_G = net_G_models[FLAGS.arch](FLAGS.z_dim).to(device)
-    net_G.load_state_dict(torch.load(FLAGS.pretrain, weights_only=False)['net_G'])
+    ckpt = torch.load(FLAGS.pretrain, weights_only=False)
+    if 'net_G_ema' in ckpt:
+        net_G.load_state_dict(ckpt['net_G_ema'])
+    else:
+        net_G.load_state_dict(ckpt['net_G'])
     net_G.eval()
 
     counter = 0
@@ -417,6 +432,8 @@ def train(beta1=None, beta2=None, optimizer_type=None):
             checkpoint_dir = os.path.join(os.getcwd(), 'Checkpoint', 'cnn_checkpoint', dataset_dirname)
     elif FLAGS.arch == 'trans64':
         checkpoint_dir = os.path.join(os.getcwd(), 'Checkpoint', 'trans64_checkpoint', dataset_dirname)
+    elif FLAGS.arch == 'sagan64':
+        checkpoint_dir = os.path.join(os.getcwd(), 'Checkpoint', 'sagan64_checkpoint', dataset_dirname)
     else:
         if FLAGS.dataset == 'stl10':
             checkpoint_dir = os.path.join(os.getcwd(), 'Checkpoint', 'STL10_adam_nm')
@@ -438,6 +455,8 @@ def train(beta1=None, beta2=None, optimizer_type=None):
             npz_dir = os.path.join(os.getcwd(), 'npz', 'cnn_npz', dataset_dirname)
     elif FLAGS.arch == 'trans64':
         npz_dir = os.path.join(os.getcwd(), 'npz', 'trans64_npz', dataset_dirname)
+    elif FLAGS.arch == 'sagan64':
+        npz_dir = os.path.join(os.getcwd(), 'npz', 'sagan64_npz', dataset_dirname)
     else:
         if FLAGS.dataset == 'stl10':
             npz_dir = os.path.join(os.getcwd(), 'npz', 'STL10_adam_nm_npz')
@@ -450,10 +469,17 @@ def train(beta1=None, beta2=None, optimizer_type=None):
     os.makedirs(npz_dir, exist_ok=True)
     
     # Initialize networks
-
     net_G = net_G_models[FLAGS.arch](FLAGS.z_dim).to(device)
     net_D = net_D_models[FLAGS.arch]().to(device)
     loss_fn = loss_fns[FLAGS.loss]()
+
+    # EMA: keep a shadow copy of generator weights for evaluation
+    ema_enabled = FLAGS.ema_decay > 0
+    if ema_enabled:
+        net_G_ema = deepcopy(net_G)
+        net_G_ema.eval()
+        for p in net_G_ema.parameters():
+            p.requires_grad_(False)
 
     # Create optimizer based on optimizer type
     if optimizer_type == 'adam_nm':
@@ -504,13 +530,14 @@ def train(beta1=None, beta2=None, optimizer_type=None):
             checkpoint.get('beta2') == beta2 and
             checkpoint.get('optimizer_type') == optimizer_type):
             
-            # print(f"✅ Checkpoint configuration matches, loading...")  # Simplified prompt
             net_G.load_state_dict(checkpoint['net_G'])
             net_D.load_state_dict(checkpoint['net_D'])
             optim_G.load_state_dict(checkpoint['optim_G'])
             optim_D.load_state_dict(checkpoint['optim_D'])
             sched_G.load_state_dict(checkpoint['sched_G'])
             sched_D.load_state_dict(checkpoint['sched_D'])
+            if ema_enabled and 'net_G_ema' in checkpoint:
+                net_G_ema.load_state_dict(checkpoint['net_G_ema'])
         
             start_step = checkpoint['current_step'] + 1  # Changed to +1, continue from next step
             
@@ -545,7 +572,6 @@ def train(beta1=None, beta2=None, optimizer_type=None):
                         if D_grad_norms:
                             D_grad_norms.pop()
             else:
-                # print(f"📊 No existing data file found, creating new file: {npz_filename}")  # Simplified prompt
                 IS_table = []
                 IS_std_table = []
                 step_table = []
@@ -553,6 +579,8 @@ def train(beta1=None, beta2=None, optimizer_type=None):
                 G_grad_norms = []
                 D_grad_norms = []
                 Total_grad_norms = []
+                FID_table = []
+                fid_step_table = []
             print(f"🚀 Continuing training from step {start_step}...")
         else:
             # print(f"⚠️  Checkpoint configuration does not match, training from scratch")  # Simplified prompt
@@ -671,11 +699,14 @@ def train(beta1=None, beta2=None, optimizer_type=None):
                 with torch.autocast(device_type='cuda', dtype=amp_dtype, enabled=amp_enabled):
                     fake = net_G(z).detach()
             real = next(looper).to(device)
+
+            real_aug = DiffAugment(real, policy=FLAGS.diff_aug)
+            fake_aug = DiffAugment(fake, policy=FLAGS.diff_aug)
             
             # Train discriminator
             with torch.autocast(device_type='cuda', dtype=amp_dtype, enabled=amp_enabled):
-                net_D_real = net_D(real)
-                net_D_fake = net_D(fake)
+                net_D_real = net_D(real_aug)
+                net_D_fake = net_D(fake_aug)
                 loss = loss_fn(net_D_real, net_D_fake)
             # GP must stay in FP32 for numerical stability
             loss_gp = cacl_gradient_penalty(net_D, real.float(), fake.float())
@@ -687,27 +718,31 @@ def train(beta1=None, beta2=None, optimizer_type=None):
 
             D_grad_norm = torch.norm(torch.cat([p.grad.view(-1) for p in net_D.parameters() if p.grad is not None])).item()
             D_grad_norms.append(D_grad_norm)
-            # writer.add_scalar('Gradient_Norm/Discriminator', D_grad_norm, step)
 
             if FLAGS.loss == 'was':
                 loss = -loss
-            # writer.add_scalar('loss', loss, step)
-            # writer.add_scalar('loss_gp', loss_gp, step)
 
             for p in net_D.parameters():
                 p.requires_grad_(False)
             z = torch.randn(FLAGS.batch_size * 2, FLAGS.z_dim).to(device)
             
-            # Train generator
+            # Train generator (D sees augmented fakes)
             with torch.autocast(device_type='cuda', dtype=amp_dtype, enabled=amp_enabled):
-                loss = loss_fn(net_D(net_G(z)))
+                gen_out = net_G(z)
+                gen_aug = DiffAugment(gen_out, policy=FLAGS.diff_aug)
+                loss = loss_fn(net_D(gen_aug))
             optim_G.zero_grad()
             loss.backward()
             optim_G.step()
 
+            # EMA update
+            if ema_enabled:
+                with torch.no_grad():
+                    for p_ema, p in zip(net_G_ema.parameters(), net_G.parameters()):
+                        p_ema.data.lerp_(p.data, 1 - FLAGS.ema_decay)
+
             G_grad_norm = torch.norm(torch.cat([p.grad.view(-1) for p in net_G.parameters() if p.grad is not None])).item()
             G_grad_norms.append(G_grad_norm)
-            # writer.add_scalar('Gradient_Norm/Generator', G_grad_norm, step)
 
             for p in net_D.parameters():
                 p.requires_grad_(True)
@@ -724,9 +759,9 @@ def train(beta1=None, beta2=None, optimizer_type=None):
             sched_D.step()
 
             if step == 1 or step % FLAGS.sample_step == 0:
-                fake = net_G(sample_z).cpu()
+                eval_G = net_G_ema if ema_enabled else net_G
+                fake = eval_G(sample_z).cpu()
                 grid = (make_grid(fake) + 1) / 2
-                # writer.add_image('sample', grid, step)
                 save_image(grid, os.path.join(
                     FLAGS.logdir, sample_dir, '%d.png' % step))
 
@@ -735,7 +770,6 @@ def train(beta1=None, beta2=None, optimizer_type=None):
                 print(f"\r📊 Training progress: {step}/{FLAGS.total_steps} | Loss: {loss:.4f}", end='', flush=True)
 
             if step == 1 or step % FLAGS.eval_step == 0:
-                # Include configuration information when saving checkpoint
                 checkpoint_data = {
                     'net_G': net_G.state_dict(),
                     'net_D': net_D.state_dict(),
@@ -745,7 +779,6 @@ def train(beta1=None, beta2=None, optimizer_type=None):
                     'sched_D': sched_D.state_dict(),
                     'IS_table': IS_table,
                     'IS_std_table': IS_std_table,
-
                     'step_table': step_table,
                     'G_grad_norms': G_grad_norms,
                     'D_grad_norms': D_grad_norms,
@@ -754,13 +787,14 @@ def train(beta1=None, beta2=None, optimizer_type=None):
                     'FID_table': FID_table,
                     'fid_step_table': fid_step_table,
                     'current_step': step,
-                    # Add configuration information for verification
                     'arch': FLAGS.arch,
                     'total_steps': FLAGS.total_steps,
                     'beta1': beta1,
                     'beta2': beta2,
                     'optimizer_type': optimizer_type,
                 }
+                if ema_enabled:
+                    checkpoint_data['net_G_ema'] = net_G_ema.state_dict()
                 
                 # Use new naming format to save, include dataset information
                 checkpoint_name = f'lr{FLAGS.lr_G}_beta{beta1}_{beta2}_{optimizer_type}_{FLAGS.arch}_{FLAGS.dataset}.pt'
@@ -779,8 +813,9 @@ def train(beta1=None, beta2=None, optimizer_type=None):
                         else:
                             eval_size = min(5000, FLAGS.num_images)
                         
+                        eval_G = net_G_ema if ema_enabled else net_G
                         imgs = generate_imgs(
-                            net_G, device, FLAGS.z_dim,
+                            eval_G, device, FLAGS.z_dim,
                             eval_size, FLAGS.batch_size)
                         
                         # Ensure image format is correct
@@ -850,7 +885,6 @@ def train(beta1=None, beta2=None, optimizer_type=None):
                         step_table.append(step)
     writer.close()
 
-    #  checkpoint
     checkpoint_data = {
         'net_G': net_G.state_dict(),
         'net_D': net_D.state_dict(),
@@ -867,13 +901,15 @@ def train(beta1=None, beta2=None, optimizer_type=None):
         'step_table_GN': step_table_GN,
         'FID_table': FID_table,
         'fid_step_table': fid_step_table,
-        'current_step': FLAGS.total_steps,  
+        'current_step': FLAGS.total_steps,
         'arch': FLAGS.arch,
         'total_steps': FLAGS.total_steps,
         'beta1': beta1,
         'beta2': beta2,
         'optimizer_type': optimizer_type,
     }
+    if ema_enabled:
+        checkpoint_data['net_G_ema'] = net_G_ema.state_dict()
 
     
     checkpoint_name = f'lr{FLAGS.lr_G}_beta{beta1}_{beta2}_{optimizer_type}_{FLAGS.arch}_{FLAGS.dataset}.pt'
