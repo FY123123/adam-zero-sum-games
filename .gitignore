@@ -1,0 +1,37 @@
+# Dataset
+data/
+
+# Training outputs (large files)
+logs/
+Checkpoint/
+npz/
+fid_stats/
+outputs/
+sample/
+STL10_sample/
+Image/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# macOS
+.DS_Store
+
+# Editor
+.vscode/
+.idea/
+
+# Misc
+*.log
+*.tmp
