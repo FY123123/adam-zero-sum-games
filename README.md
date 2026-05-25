@@ -130,19 +130,6 @@ python sample.py Checkpoint/sagan64_checkpoint/CelebA/example.pt \
 
 `sample.py` supports `res32`, `cnn32`, and `sagan64` checkpoints. When a checkpoint contains both `net_G` and `net_G_ema`, it uses `net_G_ema` by default. Pass `--use-raw-generator` to sample from `net_G`.
 
-## Citation
-
-The final ICML/PMLR metadata will be added when available.
-
-```bibtex
-@inproceedings{feng2026understanding,
-  title     = {Understanding Dynamics of Adam in Zero-Sum Games: An ODE Approach},
-  author    = {Feng, Yi and Ou, Weiming and Wang, Xiao},
-  booktitle = {Proceedings of the 43rd International Conference on Machine Learning},
-  year      = {2026}
-}
-```
-
 ## License
 
 This project is released under the MIT License. See `LICENSE` for details.
