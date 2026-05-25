@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
-# 第一组：beta1 ∈ {-0.5..0.5}，beta2=0.99（11 次）
-# 第二组：beta1=0，beta2 ∈ {0.9..0.3}（7 次）
-# 每组：10000 步，每 1000 步评 FID；batch 64；最多 2 个任务并行
+# Group 1: beta1 in {-0.5, ..., 0.5}, beta2=0.99 (11 runs).
+# Group 2: beta1=0, beta2 in {0.9, ..., 0.3} (7 runs).
+# Each run uses 10,000 training steps, FID/IS evaluation every 1,000 steps,
+# batch size 64, and at most two parallel jobs by default.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 PY="${PY:-python}"
