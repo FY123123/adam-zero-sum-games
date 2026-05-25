@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Clean Transformer sweep: no DiffAugment and no EMA.
-# Identical training pipeline to ResNet experiments, only architecture differs.
+# Clean self-attention GAN sweep: no DiffAugment and no EMA.
+# Identical training pipeline to the main sweep, only regularizers differ.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 PY="${PY:-python}"
@@ -14,7 +14,7 @@ wait_slot() {
   done
 }
 
-LOGDIR="./logs/sweep_clean_10k"
+LOGDIR="./logs/sagan64_sweep_clean_10k"
 mkdir -p "$LOGDIR"
 echo "=== Clean sweep start $(date) ===" | tee "$LOGDIR/master.log"
 
@@ -23,7 +23,7 @@ run_one() {
   wait_slot
   echo "[START] $tag  betas=$b" | tee -a "$LOGDIR/master.log"
   "$PY" main.py \
-    --dataset celeba --arch trans64 --optimizer adam_nm \
+    --dataset celeba --arch sagan64 --optimizer adam_nm \
     --lr_G 1e-4 --lr_D 1e-4 \
     --batch_size 64 \
     --total_steps 10000 --final_total_steps 100000 \
