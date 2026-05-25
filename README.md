@@ -26,7 +26,6 @@ Supported architectures:
 
 - `res32`: ResNet-style baseline.
 - `cnn32`: CNN baseline.
-- `trans64`: Transformer GAN at 64x64 resolution.
 - `sagan64`: self-attention ResNet GAN at 64x64 resolution.
 
 ## Installation
@@ -56,12 +55,12 @@ python main.py \
   --final_total_steps 100000
 ```
 
-Run a CelebA Transformer experiment:
+Run a CelebA self-attention GAN experiment:
 
 ```bash
 python main.py \
   --dataset celeba \
-  --arch trans64 \
+  --arch sagan64 \
   --optimizer adam_nm \
   --lr_G 1e-4 \
   --lr_D 1e-4 \
@@ -91,7 +90,7 @@ The provided scripts run the beta-parameter sweeps used for the public experimen
 bash scripts/run_sweep_betas_10k.sh
 ```
 
-This script runs two groups of CelebA `trans64` experiments:
+This script runs two groups of CelebA `sagan64` experiments:
 
 - beta1 sweep: `beta1` from `-0.5` to `0.5`, with `beta2=0.99`.
 - beta2 sweep: `beta1=0`, with `beta2` from `0.9` to `0.3`.
@@ -102,7 +101,7 @@ By default it launches at most two parallel jobs. Override this with:
 MAX_JOBS=1 bash scripts/run_sweep_betas_10k.sh
 ```
 
-For a clean Transformer sweep without DiffAugment or EMA:
+For a clean self-attention GAN sweep without DiffAugment or EMA:
 
 ```bash
 bash scripts/run_sweep_clean.sh
@@ -113,7 +112,7 @@ bash scripts/run_sweep_clean.sh
 After training, plot metric curves from saved `.npz` files:
 
 ```bash
-python flatness.py npz/trans64_npz/CelebA/*.npz --output Image/celeba_trans64
+python flatness.py npz/sagan64_npz/CelebA/*.npz --output Image/celeba_sagan64
 ```
 
 If no files are provided, `flatness.py` searches under algorithm-specific folders in `npz/`.
@@ -123,13 +122,13 @@ If no files are provided, `flatness.py` searches under algorithm-specific folder
 Generate sample image grids from checkpoints:
 
 ```bash
-python sample.py Checkpoint/trans64_checkpoint/CelebA/example.pt \
+python sample.py Checkpoint/sagan64_checkpoint/CelebA/example.pt \
   --output "Sample Images" \
   --num-samples 64 \
   --grid-size 8
 ```
 
-`sample.py` supports `res32`, `cnn32`, `trans64`, and `sagan64` checkpoints. When a checkpoint contains both `net_G` and `net_G_ema`, it uses `net_G_ema` by default. Pass `--use-raw-generator` to sample from `net_G`.
+`sample.py` supports `res32`, `cnn32`, and `sagan64` checkpoints. When a checkpoint contains both `net_G` and `net_G_ema`, it uses `net_G_ema` by default. Pass `--use-raw-generator` to sample from `net_G`.
 
 ## Citation
 

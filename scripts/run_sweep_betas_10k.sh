@@ -19,14 +19,14 @@ wait_slot() {
 }
 
 COMMON=(
-  --dataset celeba --arch trans64 --optimizer adam_nm
+  --dataset celeba --arch sagan64 --optimizer adam_nm
   --lr_G 1e-4 --lr_D 1e-4
   --batch_size 64
   --total_steps 10000 --final_total_steps 100000
   --eval_step 1000
 )
 
-LOGDIR="${LOGDIR:-./logs/sweep_betas_10k}"
+LOGDIR="${LOGDIR:-./logs/sagan64_sweep_betas_10k}"
 mkdir -p "$LOGDIR"
 RUN_ID="$(date +%Y%m%d_%H%M%S)"
 MASTER_LOG="$LOGDIR/run_${RUN_ID}.log"

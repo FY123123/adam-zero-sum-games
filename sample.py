@@ -10,7 +10,6 @@ import torch
 from torchvision.utils import make_grid, save_image
 
 import source.models.sagan as sagan_models
-import source.models.transgan as transgan_models
 import source.models.wgangp as wgangp_models
 
 
@@ -22,7 +21,7 @@ DEVICE = torch.device(
     else "cpu"
 )
 
-KNOWN_ARCHES = ("res32", "cnn32", "trans64", "sagan64")
+KNOWN_ARCHES = ("res32", "cnn32", "sagan64")
 KNOWN_DATASETS = ("cifar10", "stl10", "celeba")
 
 
@@ -39,8 +38,6 @@ def create_generator(arch, dataset, z_dim):
         return wgangp_models.Generator32(
             z_dim, output_size=_default_output_size(dataset)
         )
-    if arch == "trans64":
-        return transgan_models.TransGenerator64(z_dim)
     if arch == "sagan64":
         return sagan_models.SAResGenerator64(z_dim)
     raise ValueError(f"Unknown architecture: {arch}")
