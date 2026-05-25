@@ -1,4 +1,5 @@
 import os
+import sys
 import numpy as np
 import torch
 import torch.optim as optim
@@ -958,4 +959,10 @@ def main(argv):
         train()
 
 if __name__ == '__main__':
-    app.run(main)
+    try:
+        app.run(main)
+    except SystemExit as exc:
+        help_flags = {'--help', '-h', '--helpshort', '--helpfull'}
+        if exc.code == 1 and help_flags.intersection(sys.argv[1:]):
+            raise SystemExit(0) from None
+        raise

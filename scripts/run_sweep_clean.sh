@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Clean Transformer sweep: NO DiffAugment, NO EMA
+# Clean Transformer sweep: no DiffAugment and no EMA.
 # Identical training pipeline to ResNet experiments, only architecture differs.
 set -euo pipefail
 cd "$(dirname "$0")/.."
