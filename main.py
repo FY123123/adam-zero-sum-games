@@ -1,4 +1,5 @@
 import os
+import sys
 import numpy as np
 import torch
 import torch.optim as optim
@@ -31,7 +32,6 @@ import warnings
 warnings.filterwarnings("ignore", category=UserWarning)
 
 import source.models.wgangp as models
-import source.models.transgan as transgan_models
 import source.models.sagan as sagan_models
 import source.losses as losses
 from source.utils import generate_imgs, infiniteloop, set_seed
@@ -95,10 +95,6 @@ def create_res_generator(z_dim):
         output_size = 32  # CIFAR-10 uses 32x32
     return models.ResGenerator32(z_dim, output_size)
 
-def create_trans_generator(z_dim):
-    """Create TransGAN generator (64x64 output)"""
-    return transgan_models.TransGenerator64(z_dim)
-
 def create_sagan_generator(z_dim):
     """Create SAGAN generator (64x64 output)"""
     return sagan_models.SAResGenerator64(z_dim)
@@ -106,14 +102,12 @@ def create_sagan_generator(z_dim):
 net_G_models = {
     'res32': create_res_generator,
     'cnn32': create_cnn_generator,
-    'trans64': create_trans_generator,
     'sagan64': create_sagan_generator,
 }
 
 net_D_models = {
     'res32': models.ResDiscriminator32,
     'cnn32': models.Discriminator32,
-    'trans64': transgan_models.TransDiscriminator64,
     'sagan64': sagan_models.SAResDiscriminator64,
 }
 
@@ -430,8 +424,6 @@ def train(beta1=None, beta2=None, optimizer_type=None):
             checkpoint_dir = os.path.join(os.getcwd(), 'Checkpoint', 'cnn_checkpoint', 'STL-10')
         else:
             checkpoint_dir = os.path.join(os.getcwd(), 'Checkpoint', 'cnn_checkpoint', dataset_dirname)
-    elif FLAGS.arch == 'trans64':
-        checkpoint_dir = os.path.join(os.getcwd(), 'Checkpoint', 'trans64_checkpoint', dataset_dirname)
     elif FLAGS.arch == 'sagan64':
         checkpoint_dir = os.path.join(os.getcwd(), 'Checkpoint', 'sagan64_checkpoint', dataset_dirname)
     else:
@@ -453,8 +445,6 @@ def train(beta1=None, beta2=None, optimizer_type=None):
             npz_dir = os.path.join(os.getcwd(), 'npz', 'cnn_npz', 'STL-10')
         else:
             npz_dir = os.path.join(os.getcwd(), 'npz', 'cnn_npz', dataset_dirname)
-    elif FLAGS.arch == 'trans64':
-        npz_dir = os.path.join(os.getcwd(), 'npz', 'trans64_npz', dataset_dirname)
     elif FLAGS.arch == 'sagan64':
         npz_dir = os.path.join(os.getcwd(), 'npz', 'sagan64_npz', dataset_dirname)
     else:
@@ -958,4 +948,10 @@ def main(argv):
         train()
 
 if __name__ == '__main__':
-    app.run(main)
+    try:
+        app.run(main)
+    except SystemExit as exc:
+        help_flags = {'--help', '-h', '--helpshort', '--helpfull'}
+        if exc.code == 1 and help_flags.intersection(sys.argv[1:]):
+            raise SystemExit(0) from None
+        raise

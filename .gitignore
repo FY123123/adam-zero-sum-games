@@ -1,36 +1,52 @@
-# Dataset
+# Datasets
 data/
 
-# Training outputs (large files)
-logs/
+# Training outputs and generated artifacts
 Checkpoint/
-npz/
+checkpoints/
 fid_stats/
+logs/
+npz/
 outputs/
+runs/
 sample/
 STL10_sample/
+CelebA_sample/
 Image/
+Sample Images/
+wandb/
+*.ckpt
+*.npz
+*.pt
+*.pth
 
 # Python
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
-.Python
+*.py[cod]
+*$py.class
 *.egg-info/
-dist/
-build/
 .eggs/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+build/
+dist/
 
 # Jupyter
 .ipynb_checkpoints/
 
+# Environment and local config
+.env
+.env.*
+.venv/
+venv/
+
 # macOS
 .DS_Store
 
-# Editor
-.vscode/
+# Editors
 .idea/
+.vscode/
 
 # Misc
 *.log
