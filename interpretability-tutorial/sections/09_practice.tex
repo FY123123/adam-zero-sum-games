@@ -1,0 +1,89 @@
+\section{Where to go from here}
+\label{sec:practice}
+
+\subsection{Software and a first experiment}
+
+Everything in this tutorial can be reproduced on a laptop. The standard open-source tools are the following.
+
+\begin{itemize}
+\item \textbf{TransformerLens} \citep{nanda2022transformerlens} loads open models and gives access to every
+intermediate activation through named \emph{hooks}. It is the usual choice for small models.
+\item \textbf{nnsight} \citep{fiottokaufman2025nnsight} offers the same kind of access for arbitrary PyTorch
+models, including large ones that run on a remote server.
+\item \textbf{SAELens} \citep{bloom2024saelens} trains sparse autoencoders and loads published ones, such as
+Gemma Scope \citep{lieberum2024gemma}.
+\item \textbf{Neuronpedia} \citep{lin2023neuronpedia} is a website on which the latents of published
+dictionaries can be browsed, tested on one's own text and used for steering. It also hosts attribution graphs.
+\end{itemize}
+
+The listing below is the complete code for the patching experiment of \cref{fig:residpatch} on a single pair of
+prompts. It prints a logit difference of $3.36$ for the clean prompt and $-2.48$ for the corrupted one, and
+then the effect at S2 and at the last position for each layer. The script \texttt{code/gpt2\_examples.py}
+extends it to all figures of this tutorial.
+
+\lstinputlisting[style=tutpython]{code/minimal_patching.py}
+
+\begin{caution}
+The listing was tested with TransformerLens 4.4. Older tutorials use the class \texttt{HookedTransformer},
+which was removed in version 4.0 in September 2026. They run unchanged with an older version of the
+library (\texttt{pip install "transformer-lens<4"}). The names of the hooks are the same in both.
+\end{caution}
+
+\subsection{Five first projects}
+
+Reading about interpretability teaches less than doing it. The following projects are ordered by difficulty,
+and each takes between an afternoon and a week.
+
+\begin{enumerate}
+\item \textbf{Break the running example.} Run the accompanying script. Then change the template: other verbs,
+three names, the order of the clauses. Find out which of the figures of this tutorial change and which stay.
+This is failure mode 8 of \cref{sec:pitfalls} in practice.
+\item \textbf{Find the induction heads.} Feed GPT-2 small a sequence of random tokens followed by the same
+sequence again. For every head, average the attention weight from each token of the second half to the token
+after its first occurrence. A few heads will stand out. Compare them with \cref{tab:heads}.
+\item \textbf{Solve the toy model.} Train the model \eqref{eq:toy} with $N=2$, $d=1$ for several values of
+$\delta$ and compare the solution and its loss with \cref{prop:toy}. Then take $N=5$, $d=2$ and look for the
+pentagon of \cref{fig:superposition}.
+\item \textbf{Test a latent.} Pick a latent of a published dictionary on Neuronpedia. Write down a prediction
+of where it fires and what it does when it is amplified. Then test both, including on text where it should
+\emph{not} fire.
+\item \textbf{Steer with controls.} Compute a difference of means \eqref{eq:diffmeans} for a simple contrast,
+for example positive against negative reviews. Add it to the stream and measure the effect. Repeat with a random
+direction of the same norm and with the direction found at another layer.
+\end{enumerate}
+
+\subsection{Open problems}
+
+The field is young, and its foundations are still moving. Four questions are widely seen as open. The surveys
+of \citet{sharkey2025open} and \citet{barez2026understanding} treat them at length.
+
+\begin{itemize}
+\item \textbf{What are the right units?} SAE latents are not canonical (\cref{sec:sae}). One alternative
+decomposes the \emph{weights} of a network into simple parts instead of its activations
+\citep{braun2025interpretability,bushnaq2025stochastic}. Another trains networks whose weights are sparse from
+the start, which makes their circuits small and readable at some cost in capability \citep{gao2025weight}.
+\item \textbf{How can an explanation be validated?} The tests of \cref{sec:circuits} work on narrow tasks. There
+is no agreed standard for explanations of open-ended behaviour.
+\item \textbf{What is the theory?} Why linear representations emerge, how much computation fits into
+superposition, and when sparse dictionaries recover the true features are mathematical questions with partial
+answers at best \citep{park2024linear,hanni2024mathematical,adler2024complexity}.
+\item \textbf{What is it good for?} There is an active debate between two aims: the complete reverse engineering
+of a network, and methods that are judged by their measurable use in tasks such as monitoring and auditing
+\citep{nanda2025pragmatic,marks2025auditing}.
+\end{itemize}
+
+\subsection{What to read next}
+
+\begin{itemize}
+\item \citet{elhage2021mathematical} is the source of the residual-stream view of \cref{sec:transformer} and of
+\cref{sec:pathexp}. Read it first.
+\item \citet{elhage2022toy} develops superposition (\cref{sec:features}) with many experiments.
+\item \citet{wang2023interpretability} is the model of a circuit analysis, and \citet{nanda2023progress} of a
+complete one.
+\item \citet{heimersheim2024use} is a practical guide to activation patching and its interpretation.
+\item \citet{bricken2023monosemanticity} and \citet{templeton2024scaling} introduce sparse autoencoders, and
+\citet{ameisen2025circuit} and \citet{lindsey2025biology} the attribution graphs built on them.
+\item \citet{ferrando2024primer} and \citet{bereska2024mechanistic} are broad surveys. The glossary of
+\citet{nanda2022glossary} explains the jargon of the field, and the ARENA course \citep{mcdougall2023arena}
+teaches the methods through programming exercises.
+\end{itemize}

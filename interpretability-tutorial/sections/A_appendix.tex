@@ -1,0 +1,138 @@
+\section{Glossary}
+\label{app:glossary}
+
+{\footnotesize \setlength{\columnsep}{20pt}
+\begin{multicols}{2}
+\begin{description}[style=sameline, leftmargin=0pt, itemsep=1.5pt, font=\normalfont\bfseries]
+\item[Ablation.] Replacing the value of a node by zero, by its mean or by its value on another prompt, and
+measuring the change of the output (\cref{sec:interventions}).
+\item[Activation.] Any intermediate value that the model computes on a given input.
+\item[Activation patching.] Running the model on one prompt while overwriting one node with its value from a
+second, minimally different prompt (\cref{sec:patching}).
+\item[Attention head.] The component that moves information between positions. It is described by the matrices
+$W_{QK}$ (from where to read) and $W_{OV}$ (what to write), see \eqref{eq:qkov}.
+\item[Attention pattern.] The weights $A^{\ell,h}_{ij}$ with which head $h$ of layer $\ell$ at destination $i$
+reads from the sources $j\le i$.
+\item[Attribution graph.] A graph of transcoder latents and their direct effects on one another for a single
+prompt (\cref{sec:featurecircuits}).
+\item[Attribution patching.] The first-order estimate \eqref{eq:attrpatch} of the effect of activation patching.
+\item[Circuit.] A subgraph of the model's components together with a description of what each one computes on
+a task (\cref{def:circuit}).
+\item[Clean and corrupted prompt.] The two prompts of a patching experiment. They differ only in the aspect
+under study.
+\item[Composition.] The use of the output of an earlier head in the query, key or value of a later head.
+\item[Dictionary direction.] A column $\Wdec[j]$ of the decoder of a sparse autoencoder.
+\item[Direct logit attribution.] The term that one component contributes to a logit through its own addition
+to the residual stream (\cref{prop:dla}).
+\item[Faithful.] Said of an explanation that correctly describes what the model computes. Opposed to merely
+plausible.
+\item[Feature.] A property of the input or of the intermediate computation that the model represents.
+\item[Hook.] A place in the code of a model at which an activation can be read or overwritten.
+\item[Latent.] One unit of a sparse autoencoder or transcoder. A candidate for a feature.
+\item[Linear probe.] A logistic regression that predicts a label from an activation (\cref{sec:probing}).
+\item[Logit.] The score of a token before the softmax \eqref{eq:softmax}.
+\item[Logit difference.] The logit of the correct token minus that of a chosen alternative. Our metric
+\eqref{eq:ld}.
+\item[Logit lens.] Applying the final read-out to an intermediate residual stream \eqref{eq:lens}.
+\item[Neuron.] One coordinate of the hidden layer of an MLP.
+\item[Polysemantic.] Said of a neuron that responds to several unrelated features.
+\item[Privileged basis.] A coordinate system that the architecture singles out, as the neurons of an MLP. The
+residual stream has none.
+\item[Residual stream.] The vector $x_i^{(\ell)}$ that is kept for each position and to which all components
+add their output.
+\item[Sparse autoencoder.] A wide one-layer autoencoder trained to reconstruct activations with few active
+latents (\cref{sec:sae}).
+\item[Steering.] Adding a direction to the residual stream, or removing it, to change a behaviour
+(\cref{sec:steering}).
+\item[Superposition.] The storage of more features than dimensions along almost orthogonal directions
+(\cref{sec:superposition}).
+\item[Token.] A word or word fragment. The unit in which the model reads and writes text.
+\item[Transcoder.] A sparse, wide replacement of an MLP that predicts its output from its input.
+\item[Unembedding.] The matrix $W_U$ that turns the final residual stream into logits.
+\end{description}
+\end{multicols}
+}
+
+\section{Solutions to the exercises}
+\label{app:solutions}
+
+{\small
+\paragraph{\Cref{ex:params}.} A head has $4\cdot d\cdot d_{\mathrm{head}}=4\cdot768\cdot64=196{,}608$ weights. $W_E$ has
+$50257\cdot768=38{,}597{,}376$ entries, which is $31\%$ of the model.
+
+\paragraph{\Cref{ex:ones}.} Since $\mean(x+s\,\one)=\mean(x)+s$, we get
+$x+s\,\one-\mean(x+s\,\one)\,\one=x-\mean(x)\,\one$. The numerator and the scale in \eqref{eq:ln} are therefore
+unchanged. Every component reads the stream through $\LN$, so all component outputs stay the same. By
+\eqref{eq:update}, all later streams at this position differ from the original ones by the same $s\,\one$, which
+the final $\LN$ in \eqref{eq:unembed} removes.
+
+\paragraph{\Cref{ex:rank}.} $W_{OV}=W_OW_V$ factors through $\R^{d_{\mathrm{head}}}$, so its rank is at most
+$d_{\mathrm{head}}=64$. Whatever a head writes lies in the column space of $W_O$, a fixed subspace of dimension at
+most $64$ of $\R^{768}$.
+
+\paragraph{\Cref{ex:linearig}.} The gradient $\nabla_{z_i}F=w_i$ is constant, so
+$\mathrm{IG}_i(z)=z_i^\top\int_0^1w_i\,du=w_i^\top z_i$, which is gradient times input. For $F(z)=z^2$ we have
+$F'(z)=2z$. Gradient times input is $2z^2$, and $\mathrm{IG}(z)=z\int_0^12uz\,du=z^2=F(z)-F(0)$.
+
+\paragraph{\Cref{ex:lenslast}.} At $\ell=L$, \eqref{eq:lens} is \eqref{eq:unembed}. The components up to layer 8
+add up to $x_n^{(9)}$ by the proof of \cref{prop:sum}. Their DLA terms therefore add up to
+$(W_U[\mathrm{IO}]-W_U[\mathrm{S}])^\top(x_n^{(9)}-\mean(x_n^{(9)})\,\one)/\scale(x_n^{(L)})$. The lens divides the same
+numerator by $\scale(x_n^{(9)})$. The two numbers differ by the factor $\scale(x_n^{(9)})/\scale(x_n^{(L)})$.
+
+\paragraph{\Cref{ex:probecontrol}.} Being a first name is a function of the current token, and the token is
+encoded in $x_i^{(0)}$ by \eqref{eq:embed}. Train the same probe on layer $0$, and on a control task that gives
+each token type a random label. The probe on layer $0$ will succeed as well, so the result shows nothing
+specific about layer 6.
+
+\paragraph{\Cref{ex:triangle}.} $v_i^\top v_j=\cos120^\circ=-1/2$. If only feature $i$ is active, $x=f_iv_i$. Then
+$\relu(v_i^\top x)=f_i$ and, for $j\ne i$, $\relu(v_j^\top x)=\relu(-f_i/2)=0$. If no feature is active, $x=0$.
+
+\paragraph{\Cref{ex:bound}.} $N\le e^{10.24}\approx2.8\times10^4$ for $\varepsilon=0.1$ and
+$N\le e^{40.96}\approx6\times10^{17}$ for $\varepsilon=0.2$. The condition $k\varepsilon<1/2$ allows $k\le4$ and
+$k\le2$.
+
+\paragraph{\Cref{ex:nobias}.} Now $\hat f_2=0$ and the loss is $\E f_2^2=\delta/3$, which exceeds $\delta^2/3$ for
+every $\delta<1$. The bias lets the model output the mean of the feature it ignores. This lowers the error from
+the second moment $\delta/3$ to the variance $\delta/3-\delta^2/4$.
+
+\paragraph{\Cref{ex:normconstraint}.} Since $\relu(y/2)=\relu(y)/2$, the new activation is $f_j(x)/2$. Its product
+with the doubled column is unchanged, and its penalty is halved. Without the constraint, training would let the
+columns grow and the activations shrink towards zero, and the penalty would lose its meaning.
+
+\paragraph{\Cref{ex:fvu}.} The optimal value is $f=\max(0,f^\star-0.2)$. The error is $f^\star$ for $f^\star<0.2$
+and $0.2$ otherwise. Hence $\E\,(f^\star-f)^2=\int_0^{0.2}u^2\,du+0.8\cdot0.04=0.0027+0.032\approx0.035$.
+
+\paragraph{\Cref{ex:ggb}.} Observations: weak and medium activations are also about the bridge, and the latent
+fires on most mentions of the bridge in a new corpus. Intervention: amplifying the latent makes the model talk
+about the bridge, and a random latent of equal strength does not.
+
+\paragraph{\Cref{ex:andor}.} (a) Denoising gives $\max(1,0)=1$, effect $1$. Noising gives $\max(0,1)=1$, effect
+$0$. Each node is sufficient and none is necessary. (b) Denoising gives $\min(1,0)=0$, effect $0$. Noising
+gives $\min(0,1)=0$, effect $1$. Each node is necessary and none is sufficient.
+
+\paragraph{\Cref{ex:affine}.} An affine function has the same gradient everywhere, and its increment between two
+points equals this gradient times their difference. Example: the node $\LN(x_n^{(L)})$ with the logit difference
+as metric, by \eqref{eq:ld}.
+
+\paragraph{\Cref{ex:projection}.} The map is $x\mapsto(I-vv^\top)x$, which is linear.
+$(I-vv^\top)^2=I-2vv^\top+v(v^\top v)v^\top=I-vv^\top$. And $w^\top(I-vv^\top)x=w^\top x-(w^\top v)(v^\top x)=w^\top x$
+when $w^\top v=0$.
+
+\paragraph{\Cref{ex:skiptrigram}.} Both \tok{in} and \tok{at} attend to \tok{keep}. What the head then writes
+depends only on the source \tok{keep}, and it promotes both \tok{mind} and \tok{bay}. So \tok{bay} is also
+promoted after \tok{in}. To avoid this, the table $W_U[t]^\top W_{OV}^{0,h}W_E[t_j]$ would have to depend on the
+destination token.
+
+\paragraph{\Cref{ex:induction}.} The induction head has to attend to the position $j$ whose \emph{previous} token
+equals the current token. In one layer, the score of the pair $(i,j)$ depends on $t_i$, $t_j$ and the positions,
+and not on $t_{j-1}$. An earlier layer must first write $t_{j-1}$ into position $j$.
+
+\paragraph{\Cref{ex:cosprime}.} $\cos(2\pi\cdot14q/113)=1$ holds exactly when $113$ divides $14q$, which means
+that $113$ divides $q$, since $113$ is prime. For $P=112$ the number $14q/112=q/8$ is an integer for $q=8$, so a
+wrong answer would score as high as the correct one at this frequency.
+
+\paragraph{\Cref{ex:critique}.} A control task or shuffled labels, and a check that lying and honest prompts do
+not differ in topic or length (modes 1 and 2). An intervention along the probe direction that changes whether
+the model lies, compared with a random direction (modes 1 and 6). A test on lies of a different kind than those
+in the training set (mode 8).
+}

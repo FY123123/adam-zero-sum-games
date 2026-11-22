@@ -1,0 +1,220 @@
+\section{Sparse autoencoders}
+\label{sec:sae}
+
+\Cref{sec:features} ended with a problem: given many activation vectors, find a large set of directions such
+that every vector is a combination of a few of them. The \emph{sparse autoencoder} (SAE) is the tool that the
+field currently uses for this. It was introduced to interpretability by \citet{bricken2023monosemanticity} and
+\citet{cunningham2024sparse} and has since been scaled to production models
+\citep{templeton2024scaling,gao2025scaling}.
+
+\subsection{Definition}
+
+We fix a place in the model, for instance the residual stream after layer 6, and collect its activation
+$x\in\R^d$ at every token of a large text corpus. An SAE with $m$ \emph{latents}, where $m$ is much larger than
+$d$, consists of an encoder and a decoder,
+\begin{equation}\label{eq:sae}
+f(x) \;=\; \relu\big(\Wenc\,(x-\bdec)+\benc\big)\in\R^m,\qquad
+\hat x(x) \;=\; \Wdec\,f(x)+\bdec\in\R^d ,
+\end{equation}
+with $\Wenc\in\R^{m\times d}$, $\Wdec\in\R^{d\times m}$, $\benc\in\R^m$ and $\bdec\in\R^d$. We write $\Wdec[j]\in\R^d$
+for column $j$ of the decoder and call it the \emph{dictionary direction} of latent $j$. The columns are kept at
+unit norm. The parameters are trained to minimise
+\begin{equation}\label{eq:saeloss}
+\text{loss} \;=\; \E\Big[\big\|x-\hat x(x)\big\|^2+\lambda\sum_{j=1}^{m}f_j(x)\Big],\qquad\lambda>0,
+\end{equation}
+where the expectation is over the collected activations. The first term asks for a faithful reconstruction.
+The second term is the sum of the absolute values of the entries of $f(x)$, since $f_j(x)\ge0$. It is known as
+an L1 penalty, and it pushes most latents to zero.
+\Cref{fig:sae} (left) shows the architecture.
+
+Comparing $\hat x(x)=\bdec+\sum_jf_j(x)\,\Wdec[j]$ with \eqref{eq:lrh}, we see what is hoped for: the dictionary
+directions $\Wdec[j]$ should be the feature directions $v_j$, and the latent activations should be the feature
+activations. We keep the two notions apart by name. A \emph{latent} is a unit of an SAE, which we can compute.
+A \emph{feature} is a property that the model represents, which we want to know. Whether a given latent
+corresponds to a feature is an empirical question in every single case.
+
+The method descends from sparse coding in neuroscience \citep{olshausen1997sparse}. Classical sparse coding
+solves a separate optimisation problem for the coefficients of each data point. An SAE replaces this by a single
+learned encoder, which makes it cheap enough for billions of activations. Dictionary sizes in published work
+range from a few thousand latents to $2^{25}\approx34$ million for a production model
+\citep{templeton2024scaling}.
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}[>=Latex, font=\small]
+\foreach \y/\c in {0/60,1/25,2/80,3/40,4/15} {\draw[tutgrey, fill=tutblue!\c] (0,0.34*\y) rectangle +(0.34,0.34);}
+\node[below, align=center] at (0.17,-0.05) {$x\in\R^d$};
+\foreach \y in {0,...,12} {\draw[tutgrey, fill=white] (3.1,0.34*\y-1.36) rectangle +(0.34,0.34);}
+\draw[tutgrey, fill=tutred!80] (3.1,0.34*3-1.36) rectangle +(0.34,0.34);
+\draw[tutgrey, fill=tutred!35] (3.1,0.34*9-1.36) rectangle +(0.34,0.34);
+\node[below, align=center] at (3.27,-1.41) {$f(x)\in\R^m$\\ few nonzero};
+\foreach \y/\c in {0/55,1/30,2/75,3/40,4/20} {\draw[tutgrey, fill=tutblue!\c] (6.2,0.34*\y) rectangle +(0.34,0.34);}
+\node[below, align=center] at (6.37,-0.05) {$\hat x(x)\in\R^d$};
+\draw[->, tutgrey] (0.5,0.85) -- node[above] {encoder} (2.95,0.85);
+\draw[->, tutgrey] (3.6,0.85) -- node[above] {decoder} (6.05,0.85);
+\end{tikzpicture}
+\hfill
+\begin{tikzpicture}
+\begin{axis}[width=6.0cm, height=4.7cm, xmin=0, xmax=1, ymin=0, ymax=1, axis lines=left,
+  xlabel={true activation $f^\star$}, ylabel={optimal latent activation}, label style={font=\small},
+  tick label style={font=\footnotesize}, xtick={0,0.5,1}, ytick={0,0.5,1}, clip=false]
+\addplot[dashed, tutgrey, domain=0:1, samples=2] {x};
+\addplot[tutred, very thick, domain=0:1, samples=201] {max(0,x-0.2)};
+\node[font=\footnotesize, tutgrey, anchor=south east] at (axis cs:0.74,0.76) {no shrinkage};
+\node[font=\footnotesize, tutred!80!black, anchor=north west] at (axis cs:0.62,0.40) {$\max(0,f^\star-\lambda/2)$};
+\end{axis}
+\end{tikzpicture}
+\caption{Left: a sparse autoencoder maps an activation to a much longer vector with few nonzero entries and
+back. Right: the latent activation that minimises reconstruction error plus L1 penalty
+(\cref{prop:shrink}, drawn for $\lambda=0.4$) lies below the true activation by $\lambda/2$.}
+\label{fig:sae}
+\end{figure}
+
+\subsection{What the sparsity penalty does to the activations}
+
+The penalty in \eqref{eq:saeloss} is a compromise. What we want to keep small is the \emph{number} of active
+latents. That number is not differentiable, and the sum of the activations is used in its place. The price of
+the substitute can be computed exactly in the simplest situation.
+
+\begin{proposition}[Shrinkage]\label{prop:shrink}
+Let $v\in\R^d$ be a unit vector and let $x=f^\star v$ with $f^\star\ge0$. Among all $f\ge0$, the value that
+minimises $\|x-fv\|^2+\lambda f$ is
+\[
+f \;=\; \max\big(0,\ f^\star-\lambda/2\big).
+\]
+\end{proposition}
+\begin{proof}
+Since $\|v\|=1$, we have $\|x-fv\|^2=\|(f^\star-f)\,v\|^2=(f^\star-f)^2$. We therefore minimise
+$(f^\star-f)^2+\lambda f$ over $f\ge0$. This function of $f$ is convex, and its derivative is
+\begin{equation}\label{eq:shrinkderiv}
+\frac{d}{df}\Big((f^\star-f)^2+\lambda f\Big) \;=\; -2\,(f^\star-f)+\lambda .
+\end{equation}
+If $f^\star\ge\lambda/2$, the derivative \eqref{eq:shrinkderiv} vanishes at $f=f^\star-\lambda/2\ge0$, which is
+then the minimiser. If $f^\star<\lambda/2$, the derivative \eqref{eq:shrinkderiv} is at least
+$\lambda-2f^\star>0$ for all $f\ge0$, so the function is increasing on $[0,\infty)$ and the minimiser is $f=0$.
+\end{proof}
+
+So a latent that fires for the right reason is still reported too small, by $\lambda/2$, and weak features are
+silenced completely (\cref{fig:sae}, right). The reconstruction $\hat x$ is systematically too short. This effect
+is called shrinkage or feature suppression \citep{wright2024addressing}. Current architectures avoid it by
+separating the decision \emph{whether} a latent is active from the estimate of \emph{how strongly}.
+
+\begin{itemize}
+\item \textbf{TopK} \citep{gao2025scaling}. The $\relu$ in \eqref{eq:sae} is replaced by an operation that keeps
+the $k$ largest entries and sets the others to zero. The number of active latents is then exactly $k$, and the
+penalty is dropped.
+\item \textbf{JumpReLU} \citep{rajamanoharan2024jumping}. Each latent has a learned threshold $\theta_j>0$.
+An entry passes unchanged if it exceeds $\theta_j$ and is set to zero otherwise. The loss penalises the number
+of active latents directly, and the missing gradient is replaced by an estimate.
+\item \textbf{Gated} \citep{rajamanoharan2024improving}. One part of the encoder decides which latents are
+active, and another part estimates their magnitudes.
+\end{itemize}
+
+\subsection{How to judge a dictionary}
+\label{sec:saeeval}
+
+An SAE has no ground truth to be compared with, since the true features are unknown. It is judged by several
+numbers at once.
+
+\begin{enumerate}
+\item \textbf{Reconstruction.} The fraction of variance unexplained,
+$\E\|x-\hat x(x)\|^2\,/\,\E\|x-\E x\|^2$, should be small.
+\item \textbf{Sparsity.} The average number of nonzero latents per activation, usually called the L0 of the SAE, should be
+small compared with $d$. Published dictionaries have values from about ten to a few hundred.
+\item \textbf{Effect on the model.} One runs the model with $x$ replaced by $\hat x(x)$ and measures how much the
+next-token loss increases. This matters because the model does not care equally about all directions of $x$. A
+small reconstruction error can sit in exactly the direction that a later layer reads.
+\item \textbf{Health.} \emph{Dead} latents never fire, and \emph{dense} latents fire on a large share of all
+tokens. Both are wasted capacity.
+\item \textbf{Interpretability.} For a sample of latents, a human or a language model writes a short
+description of the texts on which the latent fires. The description is scored by how well it predicts the
+activations on new texts \citep{bills2023language}.
+\end{enumerate}
+
+Items 1 and 2 trade off against each other, so two SAEs can only be compared along a whole curve.
+\citet{karvonen2025saebench} collect these and further tests in a benchmark.
+
+\subsection{Reading a single latent}
+\label{sec:latent}
+
+Suppose a latent has passed these tests. Three views are combined to understand it.
+
+\begin{itemize}
+\item \textbf{Where it fires.} One reads text on which the latent is active. The examples should be sampled over
+the whole range of activations. The strongest ones alone give too clean a picture.
+\item \textbf{What it writes.} By \cref{prop:dla}, adding a multiple of $\Wdec[j]$ to the final stream changes
+the logit of token $t$ in proportion to $W_U[t]^\top(\Wdec[j]-\mean(\Wdec[j])\,\one)$. Sorting the vocabulary by
+this number shows which tokens the latent promotes directly.
+\item \textbf{What happens when it is changed.} One runs the model while holding $f_j$ at zero or at a large
+value and adds the corresponding change of $\hat x$ to the stream. This is an intervention, and it is the only
+one of the three views that tests whether the model uses the direction.
+\end{itemize}
+
+The best-known example is from \citet{templeton2024scaling}, who trained SAEs with up to $2^{25}$ latents on a
+middle layer of the production model Claude 3 Sonnet. One latent fired on mentions and pictures of the Golden
+Gate Bridge. When the authors clamped it to ten times its maximal observed value, the model began to describe
+itself as the Golden Gate Bridge. Open dictionaries exist for open models, for example Gemma Scope for all layers
+of Gemma 2 \citep{lieberum2024gemma}, and can be browsed on Neuronpedia \citep{lin2023neuronpedia}.
+
+\subsection{What a sparse autoencoder does not give}
+
+The appeal of SAEs is that they produce units with readable descriptions without any labels. The following
+limits are established by now and have to be kept in mind when using them.
+
+\begin{caution}
+\textbf{The reconstruction is imperfect.} An analysis in terms of latents describes $\hat x$, and the remainder
+$x-\hat x$ often matters for the output (item 3 of \cref{sec:saeeval}).
+
+\textbf{The dictionary is not canonical.} The latents depend on the dictionary size. A latent of a small SAE
+tends to split into several more specific latents in a larger one \citep{bricken2023monosemanticity}, and no
+size is the correct one \citep{leask2025sparse}. They also depend on the random seed
+\citep{paulo2025sparse}. A general latent can fail to fire on cases that a more specific latent has taken over,
+which is called absorption \citep{chanin2024absorption}.
+
+\textbf{Readable latents do not prove learned structure.} \citet{heap2025sparse} trained SAEs on transformers
+with random weights and obtained latents with similar automatic interpretability scores. Part of the
+sparse structure comes from the input text and not from anything the network has learned.
+
+\textbf{Usefulness has to be shown per task.} On supervised tasks with labels, simple baselines are hard to
+beat. \citet{kantamneni2025sparse} found no consistent advantage of probes on SAE latents over probes on raw
+activations, and \citet{wu2025axbench} found that steering with SAE latents was weaker than simple alternatives.
+\end{caution}
+
+None of this makes SAEs useless. They remain the main tool for discovering concepts that one did not think of in
+advance. It does mean that a latent is a hypothesis about the model, to be tested with the interventions of
+\cref{sec:interventions}.
+
+\subsection{Relatives: transcoders and crosscoders}
+\label{sec:transcoders}
+
+An SAE reconstructs an activation from itself. Two variants change what is reconstructed from what.
+A \emph{transcoder} \citep{dunefsky2024transcoders} has the same form as \eqref{eq:sae}, and it is trained to
+predict the \emph{output} of an MLP layer from the \emph{input} of that layer. It is a sparse, wide replacement
+of the MLP. Its use is in circuit analysis. Between an SAE latent in one layer and an SAE latent in a later
+layer lies a nonlinear MLP, and their interaction is hard to describe. With transcoders, the path from one
+latent to the next passes only through linear maps once the attention patterns and the scales in $\LN$ are
+held fixed, and it can be read from the weights. \Cref{sec:featurecircuits} builds on this. A \emph{crosscoder} \citep{lindsey2024crosscoders}
+uses one set of latents to reconstruct several activations at once, either several layers of one model or the
+same layer of two models. The second use allows one to ask what changed between a model and its fine-tuned
+version.
+
+\begin{takeaways}
+A sparse autoencoder rewrites an activation as a sparse, non-negative combination of many learned directions.
+The L1 penalty biases activations downward, which TopK and JumpReLU variants avoid. A dictionary is judged
+by reconstruction, sparsity, effect on the model and interpretability together. Its latents are candidate
+features. They depend on training choices, they leave an unexplained remainder, and they need causal tests.
+\end{takeaways}
+
+\begin{exercise}\label{ex:normconstraint}
+Consider the loss \eqref{eq:saeloss} without the constraint that the columns of $\Wdec$ have unit norm. Show
+that multiplying column $j$ of $\Wdec$ by $2$ and dividing row $j$ of $\Wenc$ and entry $j$ of $\benc$ by $2$
+leaves the reconstruction unchanged and reduces the penalty. What would training do without the constraint?
+\end{exercise}
+\begin{exercise}\label{ex:fvu}
+In the setting of \cref{prop:shrink}, let $f^\star$ be uniform on $[0,1]$ and $\lambda=0.4$. Compute the mean
+squared reconstruction error $\E\,(f^\star-f)^2$ of the optimal $f$.
+\end{exercise}
+\begin{exercise}\label{ex:ggb}
+The ten strongest activations of a latent are all on text about the Golden Gate Bridge. Name two further
+observations and one intervention that you would require before calling it a ``Golden Gate Bridge feature''.
+\end{exercise}

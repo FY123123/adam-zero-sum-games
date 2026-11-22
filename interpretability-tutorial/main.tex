@@ -1,0 +1,132 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=2.3cm]{geometry}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{microtype}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{caption}
+\usepackage{multicol}
+\usepackage[most]{tcolorbox}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,calc,fit,backgrounds,decorations.pathreplacing}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepackage{listings}
+\usepackage[round,authoryear]{natbib}
+\usepackage[colorlinks=true,linkcolor=tutblue!70!black,citecolor=tutblue!70!black,urlcolor=tutblue!70!black]{hyperref}
+\usepackage[capitalise,noabbrev]{cleveref}
+
+% ---------- colours (the same blue, red and grey as in the data figures) ----------
+\definecolor{tutblue}{HTML}{2A78D6}
+\definecolor{tutred}{HTML}{D9483B}
+\definecolor{tutgrey}{HTML}{52514E}
+\definecolor{tutpaper}{HTML}{F0EFEC}
+
+% ---------- theorem-like environments ----------
+\theoremstyle{plain}
+\newtheorem{proposition}{Proposition}[section]
+\newtheorem{lemma}[proposition]{Lemma}
+\theoremstyle{definition}
+\newtheorem{definition}[proposition]{Definition}
+\newtheorem{example}[proposition]{Example}
+\newtheorem{exercise}{Exercise}[section]
+\theoremstyle{remark}
+\newtheorem{remark}[proposition]{Remark}
+
+% ---------- boxes ----------
+\newtcolorbox{intuition}{enhanced, breakable, colback=tutblue!5, colframe=tutblue, boxrule=0pt, leftrule=2.5pt,
+  arc=0pt, left=8pt, right=8pt, top=5pt, bottom=5pt, before skip=9pt, after skip=9pt,
+  fontupper=\small, before upper={\textbf{\textcolor{tutblue!70!black}{Intuition.}}\ }}
+\newtcolorbox{caution}{enhanced, breakable, colback=tutred!5, colframe=tutred, boxrule=0pt, leftrule=2.5pt,
+  arc=0pt, left=8pt, right=8pt, top=5pt, bottom=5pt, before skip=9pt, after skip=9pt,
+  fontupper=\small, before upper={\textbf{\textcolor{tutred!80!black}{Caution.}}\ }}
+\newtcolorbox{takeaways}{enhanced, colback=tutpaper!60, colframe=tutgrey, boxrule=0pt, leftrule=2.5pt,
+  arc=0pt, left=8pt, right=8pt, top=5pt, bottom=5pt, before skip=10pt, after skip=6pt,
+  fontupper=\small, before upper={\textbf{Takeaways.}\ }}
+
+% ---------- macros ----------
+\newcommand{\by}[1]{\textcolor{black!55}{\text{#1}}}   % justification of a line, set on the right
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\LN}{\mathrm{LN}}
+\newcommand{\head}{\mathrm{head}}
+\newcommand{\mlp}{\mathrm{mlp}}
+\newcommand{\logit}{\mathrm{logit}}
+\newcommand{\relu}{\mathrm{ReLU}}
+\newcommand{\clean}{\mathrm{clean}}
+\newcommand{\corr}{\mathrm{corr}}
+\newcommand{\one}{\mathbf{1}}
+\newcommand{\Wenc}{W_{\mathrm{enc}}}
+\newcommand{\Wdec}{W_{\mathrm{dec}}}
+\newcommand{\benc}{b_{\mathrm{enc}}}
+\newcommand{\bdec}{b_{\mathrm{dec}}}
+\newcommand{\tok}[1]{\texttt{#1}}
+\DeclareMathOperator{\mean}{mean}
+\DeclareMathOperator{\scale}{scale}
+\DeclareMathOperator{\softmax}{softmax}
+
+% ---------- listings ----------
+\lstdefinestyle{tutpython}{language=Python, basicstyle=\ttfamily\footnotesize, keywordstyle=\color{tutblue!80!black},
+  commentstyle=\color{tutgrey}, stringstyle=\color{tutred!80!black}, showstringspaces=false, columns=fullflexible, basewidth=0.525em,
+  keepspaces=true, frame=single, rulecolor=\color{black!25}, framesep=5pt, xleftmargin=6pt, xrightmargin=6pt,
+  aboveskip=8pt, belowskip=4pt}
+
+\captionsetup{font=small, labelfont=bf}
+\setlist{itemsep=2pt, topsep=4pt}
+\setlength{\parskip}{3pt plus 1pt}
+
+\title{\textbf{Opening the Black Box}\\[4pt]
+\Large A First Course in the Interpretability of Large Language Models}
+\author{}
+\date{November 2026}
+
+\begin{document}
+\maketitle
+\vspace{-3.2em}
+
+\begin{abstract}
+\noindent
+A large language model is a function with billions of learned parameters. We can read every one of them,
+and still we do not know what algorithm they implement. Interpretability is the research field that tries to close
+this gap. This tutorial is a first course for readers who know linear algebra, basic probability and what a neural
+network is, and who have never looked inside a language model. It covers the main ideas of the field in the order
+in which a practitioner meets them: the transformer written as a sum of components, methods that read activations
+(attention patterns, attribution, the logit lens, probes), the linear representation and superposition hypotheses,
+sparse autoencoders, causal interventions (ablation, activation patching, steering), and circuits. Every claim that
+can be proved is proved in full, with each line justified. Every method is applied to one running example, the
+indirect object identification task in GPT-2 small, with numbers and figures produced by a short script that
+accompanies the text. Equal space is given to the limits of each method, because the main skill in this field is
+knowing what a result does not show.
+\end{abstract}
+
+\vspace{-0.5em}
+{\small \setlength{\parskip}{0pt} \setlength{\columnsep}{22pt}
+\begin{multicols}{2}
+\makeatletter\@starttoc{toc}\makeatother
+\end{multicols}}
+
+\input{sections/01_intro}
+\input{sections/02_transformer}
+\input{sections/03_observation}
+\input{sections/04_features}
+\input{sections/05_sae}
+\input{sections/06_interventions}
+\input{sections/07_circuits}
+\input{sections/08_pitfalls}
+\input{sections/09_practice}
+
+\appendix
+\input{sections/A_appendix}
+
+{\footnotesize \setlength{\bibsep}{2.5pt plus 1pt}
+\bibliographystyle{plainnat}
+\bibliography{references}
+}
+
+\end{document}

@@ -1,0 +1,375 @@
+\section{Circuits: from components to algorithms}
+\label{sec:circuits}
+
+The tools of the last sections answer the first two questions of \cref{sec:intro}: what is represented, and
+which components matter. A \emph{circuit} is an answer to the third: how the components work together.
+
+\subsection{What counts as a circuit}
+
+By \cref{prop:sum}, the input of every component is a sum of the outputs of earlier components. We can
+therefore draw the model as a graph. The nodes are the embeddings, the attention heads and the MLPs. There is
+an edge from every component to every later component and to the output, which stands for the term that the
+earlier one contributes to the input of the later one. This graph has the same structure for every model of
+the same architecture. What differs is which edges carry something that matters.
+
+\begin{definition}[Circuit]\label{def:circuit}
+A \emph{circuit} for a task is a subgraph of this graph together with a description of what each of its nodes
+computes on the task.
+\end{definition}
+
+A drawing of nodes and arrows is easy to produce, so the definition is only useful together with tests.
+\citet{wang2023interpretability} proposed three. In all of them, components outside the set under study are
+replaced by their mean over a reference distribution of prompts (mean ablation, \cref{sec:interventions}).
+\begin{itemize}
+\item \textbf{Faithfulness.} The circuit alone, with everything else ablated, performs about as well as the
+full model.
+\item \textbf{Completeness.} The circuit contains all components that take part in the behaviour. The test
+removes the same subset of nodes from the circuit and from the full model and asks that the two still perform
+alike, for every subset. It detects components outside the circuit that could step in.
+\item \textbf{Minimality.} Every node of the circuit is needed: for each node there is a situation in which
+removing it changes the performance noticeably.
+\end{itemize}
+
+\subsection{Reading an algorithm from the weights}
+\label{sec:pathexp}
+
+In sufficiently small models a circuit can be read from the weights, without running the model at all. The
+cleanest case is a transformer with one layer and no MLP, studied by \citet{elhage2021mathematical}. To keep the
+formulas short we also drop $\LN$ and the positional embedding. The model is then
+\begin{equation}\label{eq:onelayer}
+x_i^{(0)}=W_E[t_i],\qquad
+x_i^{(1)}=x_i^{(0)}+\sum_{h=0}^{H-1}\sum_{j\le i}A^{0,h}_{ij}\,W_{OV}^{0,h}\,x_j^{(0)},\qquad
+\logit_i(t)=W_U[t]^\top x_i^{(1)},
+\end{equation}
+where $W_{OV}^{0,h}$ is the matrix $W_{OV}$ of head $h$ in the single layer $0$.
+
+\begin{proposition}[Path expansion of a one-layer attention-only transformer]\label{prop:path}
+In the model \eqref{eq:onelayer},
+\begin{equation}\label{eq:path}
+\logit_i(t) \;=\; \underbrace{W_U[t]^\top W_E[t_i]}_{\text{direct path}}
+\;+\;\sum_{h=0}^{H-1}\sum_{j\le i}A^{0,h}_{ij}\;\underbrace{W_U[t]^\top W_{OV}^{0,h}\,W_E[t_j]}_{\text{path through head }h} .
+\end{equation}
+\end{proposition}
+\begin{proof}
+We insert the stream $x_i^{(1)}$ of \eqref{eq:onelayer} into the read-out.
+\begin{align*}
+\logit_i(t) &= W_U[t]^\top x_i^{(0)}+\sum_{h=0}^{H-1}\sum_{j\le i}A^{0,h}_{ij}\,W_U[t]^\top W_{OV}^{0,h}\,x_j^{(0)}
+&& \by{by \eqref{eq:onelayer}, linearity}\\
+&= W_U[t]^\top W_E[t_i]+\sum_{h=0}^{H-1}\sum_{j\le i}A^{0,h}_{ij}\,W_U[t]^\top W_{OV}^{0,h}\,W_E[t_j].
+&& \by{since $x_j^{(0)}=W_E[t_j]$}\qedhere
+\end{align*}
+\end{proof}
+
+Every term of \eqref{eq:path} is an entry of a table with one row and one column per token, and each table has
+a plain meaning.
+\begin{itemize}
+\item $W_U[t]^\top W_E[t_i]$ says how much the current token $t_i$ promotes the next token $t$ by itself. This
+table approximates the statistics of pairs of adjacent tokens.
+\item $W_U[t]^\top W_{OV}^{0,h}W_E[t_j]$ says how much token $t$ is promoted \emph{if} head $h$ attends to an
+earlier token $t_j$.
+\item Whether it attends there is decided by a third table. Without $\LN$, the score in \eqref{eq:pattern} is
+proportional to $W_E[t_i]^\top W_{QK}^{0,h}W_E[t_j]$.
+\end{itemize}
+A one-layer attention-only transformer is therefore a sum of look-up tables of the form ``when the current
+token is $t_i$ and an earlier token is $t_j$, raise or lower the probability of $t$''. The three tables can be
+computed from the weights and inspected. The explanation then covers all inputs, and not only the ones that
+were tried.
+
+With two layers, the input of a head in the second layer contains the outputs of the heads in the first, and
+\eqref{eq:path} acquires terms in which the tables of two heads are multiplied. This is called
+\emph{composition}. It comes in three kinds, according to whether the earlier head influences the later head's
+query (where it looks from), its key (what it looks for) or its value (what it moves). Composition is where
+real algorithms begin.
+
+\subsection{Induction heads}
+\label{sec:induction}
+
+The first algorithm found in this way is also the most important one known. Text is full of repetitions. If the
+sequence \tok{[A][B]} has occurred and the token \tok{[A]} occurs again, then \tok{[B]} is a good guess for the
+next token. Two-layer attention-only transformers implement this rule with two heads
+\citep{elhage2021mathematical}, as shown in \cref{fig:induction}.
+
+\begin{enumerate}
+\item A \emph{previous-token head} in the first layer attends from every position to the position before it.
+At the position of \tok{[B]} it writes into the stream the information ``the token before me was \tok{[A]}''.
+\item An \emph{induction head} in the second layer sits at the second occurrence of \tok{[A]}. Its query asks
+for positions whose stream says ``the token before me was \tok{[A]}''. The keys it compares with contain the
+output of the previous-token head, which is a case of key composition. The head therefore attends to \tok{[B]}.
+\item The matrix $W_{OV}$ of the induction head copies: it raises the logit of the token it attends to. The
+model predicts \tok{[B]}.
+\end{enumerate}
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}[>=Latex, font=\small, tokn/.style={draw=tutgrey, fill=tutpaper, minimum height=6mm, minimum width=9mm}]
+\node (l) at (0,0) {$\cdots$};
+\node[tokn] (a1) at (1.3,0) {\tok{[A]}};
+\node[tokn] (b1) at (2.7,0) {\tok{[B]}};
+\node (m) at (4.6,0) {$\cdots$};
+\node[tokn] (a2) at (6.5,0) {\tok{[A]}};
+\node[tokn, dashed, fill=white] (b2) at (7.9,0) {\tok{[B]}};
+\draw[->, line width=1pt, tutblue] (a1.south) to[out=-60,in=-120] node[below, text=black, align=center]
+  {(1) previous-token head, layer 0:\\ ``the token before me was \tok{[A]}''} (b1.south);
+\draw[->, line width=1pt, tutred] (b1.north) to[out=50,in=130] node[above, text=black, align=center]
+  {(2) induction head, layer 1: attends to the token that follows an earlier \tok{[A]}} (a2.north);
+\draw[->, line width=1pt, tutred] (a2.east) -- node[below=3mm, text=black, align=center, xshift=14mm] {(3) copies \tok{[B]}\\ to the prediction} (b2.west);
+\end{tikzpicture}
+\caption{The induction circuit. Arrows show the flow of information from a source position to a destination
+position. The dashed box is the predicted next token.}
+\label{fig:induction}
+\end{figure}
+
+Induction heads are not a curiosity of toy models. \citet{olsson2022context} found them in models of many
+sizes and showed that they form during a short window early in training, at the same time as the model's
+ability to use its context improves sharply. They are a mechanism of \emph{in-context learning}: the model picks
+up a pattern from the prompt and continues it. Heads 5.5 and 6.9 of GPT-2 small are induction heads, and we have
+already met them in \cref{tab:heads}.
+
+\subsection{The IOI circuit}
+\label{sec:ioi}
+
+We can now assemble the evidence on the running example into the circuit of \citet{wang2023interpretability},
+shown in \cref{fig:ioi}. As in their paper, we work backwards from the output.
+
+\paragraph{Who writes the answer?} The name mover heads 9.9, 9.6 and 10.0. At the last position they attend to
+the indirect object (\cref{sec:attention}) and write in the direction that raises its logit (\cref{fig:dla}).
+Their $W_{OV}$ copies the name they attend to.
+
+\paragraph{Why do they attend to the right name?} Both names are candidates. The name movers avoid the subject
+because of the S-inhibition heads 7.3, 7.9, 8.6 and 8.10. These heads sit at the last position and attend to
+S2. They write a signal into the last position that changes the queries of the name movers, so that positions
+holding the subject receive less attention. This is the transfer from S2 to the last position in layers 7 and 8
+that we saw in \cref{fig:residpatch}, and it explains why these heads have a large patching effect and a small
+direct effect in \cref{tab:heads}.
+
+\paragraph{How do the S-inhibition heads know which name is repeated?} Two groups of heads at S2 detect the
+repetition. The duplicate token heads 0.1 and 3.0 attend from S2 to the earlier occurrence S1 of the same
+token. The induction heads 5.5 and 6.9 attend from S2 to the token \emph{after} S1, using the output of the
+previous-token heads 2.2 and 4.11 exactly as in \cref{sec:induction}. Both groups write to the stream at S2 that
+this token has occurred before, and the S-inhibition heads read it.
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}[>=Latex, font=\footnotesize,
+  tokn/.style={draw=tutgrey, fill=tutpaper, minimum height=5.5mm, inner sep=3pt},
+  cls/.style={draw=tutgrey, rounded corners=2pt, align=center, inner sep=3.5pt, fill=#1}, cls/.default=tutblue!10]
+\node[tokn] (t1) at (0,0) {\tok{When}};
+\node[tokn] (io) at (1.4,0) {\tok{Mary}};
+\node[tokn] (t3) at (2.6,0) {\tok{and}};
+\node[tokn] (s1) at (3.8,0) {\tok{John}};
+\node[tokn] (s1p) at (5.1,0) {\tok{went}};
+\node (d1) at (6.3,0) {$\cdots$};
+\node[tokn] (s2) at (7.7,0) {\tok{John}};
+\node (d2) at (9.4,0) {$\cdots$};
+\node[tokn] (end) at (11.2,0) {\tok{to}};
+\node[below=1pt of io, tutgrey] {IO};
+\node[below=1pt of s1, tutgrey] {S1};
+\node[below=1pt of s2, tutgrey] {S2};
+\node[below=1pt of end, tutgrey] {last position};
+\node[cls] (prev) at (5.1,2.2) {previous token\\ 2.2, 4.11};
+\node[cls] (dup) at (7.7,1.05) {duplicate token\\ 0.1, 3.0};
+\node[cls] (ind) at (7.7,2.2) {induction\\ 5.5, 6.9};
+\node[cls] (sinh) at (11.2,3.3) {S-inhibition\\ 7.3, 7.9, 8.6, 8.10};
+\node[cls=tutred!12] (nm) at (9.3,5.3) {name movers\\ 9.9, 9.6, 10.0};
+\node[cls=tutblue!22] (neg) at (13.0,5.3) {negative name movers\\ 10.7, 11.10};
+\node (out) at (11.2,6.9) {logit difference in favour of \tok{Mary}};
+\node at (4.7,5.6) {copy the attended name};
+\draw[->, tutgrey] (s1.north) -- (prev.south west);
+\draw[->, tutgrey] (s1.north east) -- (dup.west);
+\draw[->, tutgrey] (prev.east) -- (ind.west);
+\draw[->, tutgrey] (dup.east) to[out=0,in=200] (sinh.south west);
+\draw[->, tutgrey] (ind.east) to[out=0,in=180] (sinh.west);
+\draw[->, tutgrey] (sinh.north) to[out=120,in=-50] node[right=2pt, pos=0.5, text=black] {avoid S} (nm.south east);
+\draw[->, tutred, line width=0.9pt] (io.north) to[out=80,in=180] (nm.west);
+\draw[->, tutred, line width=0.9pt] (nm.north) -- node[left=2pt, text=black] {$+$} (out.south west);
+\draw[->, tutblue, line width=0.9pt] (neg.north) -- node[right=2pt, text=black] {$-$} (out.south east);
+\end{tikzpicture}
+\caption{The circuit for indirect object identification in GPT-2 small, simplified from
+\citet{wang2023interpretability}. Each box is a class of attention heads, drawn above the position at which the
+heads write. Arrows show the flow of information. The backup name movers are omitted.}
+\label{fig:ioi}
+\end{figure}
+
+\paragraph{The algorithm.} In words, the model does three things. It finds the name that occurs twice. It
+tells the last position to ignore that name. It copies the name that is left. Two further classes complicate
+the picture. The negative name movers 10.7 and 11.10 attend to the same name as the name movers and write
+\emph{against} it, and the backup name movers become active when the name movers are removed. We saw the trace
+of both in \cref{fig:lens,tab:heads}.
+
+\paragraph{How good is the explanation?} The circuit of \citet{wang2023interpretability} has 26 heads in seven
+classes (the count in the arXiv version of the paper and in the released code). On their distribution of
+prompts the full model has an average logit difference of $3.56$. With every head outside the circuit
+mean-ablated, the difference between circuit and full model is $13\%$ of that value, so the circuit retains
+$87\%$. This is a strong result, and it also marks the limits of the best-understood circuit in a real language
+model. It concerns one narrow task on templated prompts. A part of the behaviour remains unexplained. Several
+classes of heads (negative and backup name movers) are described without a clear account of why training
+produced them. And the role of the MLPs is left open.
+
+\begin{caution}
+Our own figures on 12 prompts reproduce the observational and single-node signatures of this circuit. They are
+not a validation of it. We did not run path patching, and we did not test faithfulness, completeness or
+minimality.
+\end{caution}
+
+\subsection{A network that was understood completely}
+\label{sec:modadd}
+
+For one family of small networks the reverse engineering has been carried to the end.
+\citet{nanda2023progress} trained a one-layer transformer to add two numbers modulo $P=113$. The input is the
+sequence $a$, $b$, \tok{=} with $a,b\in\{0,\dots,P-1\}$, and the correct output is the number
+$c\in\{0,\dots,P-1\}$ with $c\equiv a+b \pmod P$. The network was trained on $30\%$ of all pairs. It first
+memorises these and much later, quite suddenly, becomes correct on the rest. This delayed generalisation is
+called \emph{grokking} \citep{power2022grokking}.
+
+One would expect the network to learn something like a look-up table. It does something else. It uses a small
+set of integer frequencies $r$ (five in the main model of the paper) and proceeds as follows.
+\begin{enumerate}
+\item The embedding maps the input $a$ to the numbers $\cos(2\pi ra/P)$ and $\sin(2\pi ra/P)$ for each of these
+frequencies, and likewise for $b$.
+\item Attention and MLP multiply these numbers and combine the products, by the addition theorems, into the
+cosine and sine of the sum. For the cosine,
+\[
+\cos\!\Big(\frac{2\pi r(a+b)}{P}\Big)=\cos\!\Big(\frac{2\pi ra}{P}\Big)\cos\!\Big(\frac{2\pi rb}{P}\Big)
+-\sin\!\Big(\frac{2\pi ra}{P}\Big)\sin\!\Big(\frac{2\pi rb}{P}\Big).
+\]
+\item The unembedding multiplies these with $\cos(2\pi rc/P)$ and $\sin(2\pi rc/P)$ for every candidate $c$.
+By the addition theorem once more,
+\[
+\cos\!\Big(\frac{2\pi r(a+b)}{P}\Big)\cos\!\Big(\frac{2\pi rc}{P}\Big)
++\sin\!\Big(\frac{2\pi r(a+b)}{P}\Big)\sin\!\Big(\frac{2\pi rc}{P}\Big)
+=\cos\!\Big(\frac{2\pi r(a+b-c)}{P}\Big).
+\]
+The logit of $c$ is approximately proportional to the sum of these terms over the frequencies,
+\begin{equation}\label{eq:modadd}
+\sum_{r}\cos\!\Big(\frac{2\pi r\,(a+b-c)}{P}\Big).
+\end{equation}
+\end{enumerate}
+
+Why does \eqref{eq:modadd} single out the correct answer? If $c\equiv a+b$, every cosine equals $1$. For any
+other $c$ the cosines of different frequencies point in different directions and largely cancel. With all
+frequencies the cancellation is exact.
+
+\begin{proposition}[Cosines over all frequencies form an indicator]\label{prop:cos}
+Let $P\ge2$ be an integer and let $q$ be an integer. Then
+\[
+\sum_{r=0}^{P-1}\cos\!\Big(\frac{2\pi rq}{P}\Big)=\begin{cases}P&\text{if $q$ is divisible by $P$,}\\ 0&\text{otherwise.}\end{cases}
+\]
+\end{proposition}
+\begin{proof}
+If $q$ is divisible by $P$, every angle $2\pi rq/P$ is a multiple of $2\pi$, every term is $1$ and the sum is
+$P$. Now let $q$ not be divisible by $P$. Then $\pi q/P$ is not a multiple of $\pi$, so $\sin(\pi q/P)\ne0$.
+We multiply the sum by $2\sin(\pi q/P)$ and use the identity $2\sin\phi\cos\psi=\sin(\psi+\phi)-\sin(\psi-\phi)$
+with $\phi=\pi q/P$ and $\psi=2\pi rq/P$.
+\begin{align*}
+2\sin\!\Big(\frac{\pi q}{P}\Big)\sum_{r=0}^{P-1}\cos\!\Big(\frac{2\pi rq}{P}\Big)
+&= \sum_{r=0}^{P-1}\Big[\sin\!\Big(\frac{(2r+1)\pi q}{P}\Big)-\sin\!\Big(\frac{(2r-1)\pi q}{P}\Big)\Big] && \by{by the identity}\\
+&= \sin\!\Big(\frac{(2P-1)\pi q}{P}\Big)-\sin\!\Big(\frac{-\pi q}{P}\Big) && \by{telescoping sum}\\
+&= \sin\!\Big(2\pi q-\frac{\pi q}{P}\Big)+\sin\!\Big(\frac{\pi q}{P}\Big) && \by{since $\sin$ is odd}\\
+&= -\sin\!\Big(\frac{\pi q}{P}\Big)+\sin\!\Big(\frac{\pi q}{P}\Big) \;=\; 0. && \by{period $2\pi$, $q$ an integer}
+\end{align*}
+Dividing by $2\sin(\pi q/P)\ne0$ gives the claim.
+\end{proof}
+
+With $q=a+b-c$, the proposition says that the sum \eqref{eq:modadd} over \emph{all} frequencies is $P$ for the
+correct $c$ and $0$ for every other $c$. The trained network uses only five frequencies, and this is enough.
+Since $P$ is prime, $\cos(2\pi rq/P)=1$ with $0<r<P$ forces $q$ to be divisible by $P$. So the sum of five
+cosines equals $5$ at the correct answer and is strictly smaller everywhere else. \Cref{fig:modadd} shows how
+large the margin is.
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}
+\begin{axis}[width=0.86\textwidth, height=4.6cm, xmin=-58, xmax=58, ymin=-4.3, ymax=5.6, axis lines=left,
+  xlabel={$a+b-c$}, ylabel={sum of five cosines}, label style={font=\small}, tick label style={font=\footnotesize},
+  xtick={-56,-28,0,28,56}, ytick={-4,-2,0,2,4}, ymajorgrids, grid style={black!10}]
+\addplot[ycomb, tutblue, line width=0.7pt, mark=*, mark size=0.9pt, samples at={-56,...,56}]
+  {cos(360*14*x/113)+cos(360*35*x/113)+cos(360*41*x/113)+cos(360*42*x/113)+cos(360*52*x/113)};
+\end{axis}
+\end{tikzpicture}
+\caption{The sum \eqref{eq:modadd} for $P=113$ and the five frequencies $r\in\{14,35,41,42,52\}$ reported by
+\citet{nanda2023progress}, as a function of $a+b-c$. The value is $5$ at the correct answer $a+b-c=0$ and at
+most $2.59$ at every other residue.}
+\label{fig:modadd}
+\end{figure}
+
+The authors did not guess this algorithm. They found periodic structure in the embedding matrix, traced it
+through the network and confirmed each step by interventions. Removing the key frequencies destroys the
+performance, and removing everything else improves it. They report that \eqref{eq:modadd} accounts for $95\%$ of
+the variance of the logits.
+
+Understanding the mechanism paid off in a second way. Knowing which weights belong to the trigonometric
+algorithm, the authors could measure its strength during training. The algorithm does not appear at the moment
+when the test loss falls. It is built up gradually while the network still relies on memorisation, and the
+sudden improvement happens when weight decay finally removes the memorised solution. The three phases are
+called memorisation, circuit formation and cleanup. A curve that looks like a sudden jump from the outside is a
+gradual process on the inside.
+
+\subsection{Scaling up: automatic discovery and feature circuits}
+\label{sec:featurecircuits}
+
+The IOI circuit took months of manual work on one task in a small model. Two lines of research try to scale
+the approach.
+
+\paragraph{Automatic search.} ACDC \citep{conmy2023towards} starts from the full graph and visits its edges
+from the output towards the input. An edge is removed if patching it changes the output distribution by less
+than a threshold. What remains is the circuit. Edge attribution patching \citep{syed2024attribution} replaces
+the exact patching by the linear estimate of \cref{sec:attrpatching}, which makes the search fast. The
+numbers that such methods report depend on the kind of ablation and on other details of the procedure
+\citep{miller2024transformer}, and should be compared only under identical settings.
+
+\paragraph{Better units.} Heads and neurons are the units that the architecture provides. As
+\cref{sec:features} explained, they are mixtures of many features. \emph{Feature circuits} use SAE latents as
+nodes \citep{marks2025sparse}. The most developed form is the \emph{attribution graph} of
+\citet{ameisen2025circuit}. Its construction has four steps.
+\begin{enumerate}
+\item All MLPs are replaced by transcoders (\cref{sec:transcoders}), in a variant that lets a latent write to
+several later layers. \citet{lindsey2025biology} use 30 million latents for the model Claude 3.5 Haiku.
+\item The analysis is done for one prompt. The attention patterns and the scales in $\LN$ are frozen at the
+values they take on this prompt.
+\item At every layer and position an \emph{error node} is added, equal to the difference between the true MLP
+output and the transcoder output. The resulting \emph{local replacement model} then reproduces the activations
+of the real model on this prompt exactly.
+\item In the local replacement model, every latent influences every later latent through linear maps only. The
+direct effect of one latent on another is given by a formula, and the latents and effects that matter for the
+output form the attribution graph.
+\end{enumerate}
+The graph is a hypothesis about the real model. It is tested by interventions in the real model: one suppresses
+or activates a latent and checks that the output changes as the graph predicts.
+
+Two findings of \citet{lindsey2025biology} show what such graphs can reveal. For the prompt asking for the
+capital of the state that contains Dallas, the graph contains latents for Texas between the input and the answer
+\tok{Austin}: the model performs the two steps internally. When writing rhyming verse, the model activates
+candidate rhyme words at the end of a line \emph{before} it writes the next line, and then composes the line
+so that it ends in one of them. The model plans ahead.
+
+\begin{caution}
+An attribution graph describes one prompt. It takes the attention patterns as given, so it does not explain
+why the model attends where it does. The error nodes can carry a substantial share of the effect, and that
+share is unexplained by construction. And the latents inherit every limitation of \cref{sec:sae}. The honest
+summary of a graph is ``this is a mechanism consistent with the model's computation on this prompt, as far as
+the replacement captures it''.
+\end{caution}
+
+\begin{takeaways}
+A circuit is a subgraph of components with a description of what each one computes, and it has to be tested
+for faithfulness, completeness and minimality. In small models circuits can be read from the weights. The
+induction circuit and the IOI circuit show how heads compose into algorithms, and the modular addition network
+shows that a learned algorithm can be understood completely and can differ from anything a programmer would
+write. Attribution graphs extend the approach to large models, one prompt at a time and with an unexplained
+remainder.
+\end{takeaways}
+
+\begin{exercise}\label{ex:skiptrigram}
+In the model \eqref{eq:onelayer} with a single head, suppose the head makes ``\tok{keep} $\dots$ \tok{in}
+$\to$ \tok{mind}'' and ``\tok{keep} $\dots$ \tok{at} $\to$ \tok{bay}'' likely. Using the three tables of
+\cref{sec:pathexp}, argue that it will also raise the probability of ``\tok{keep} $\dots$ \tok{in} $\to$
+\tok{bay}'' to some extent. Which table would have to depend on the destination token to avoid this?
+\end{exercise}
+\begin{exercise}\label{ex:induction}
+Explain why the induction circuit of \cref{sec:induction} cannot be implemented by a transformer with one
+layer. Use the fact that in \eqref{eq:path} the attention score depends only on the tokens $t_i$ and $t_j$ and
+their positions.
+\end{exercise}
+\begin{exercise}\label{ex:cosprime}
+Let $P=113$ and $r=14$. For which integers $q$ is $\cos(2\pi rq/P)=1$? Why does the argument fail for $P=112$?
+\end{exercise}

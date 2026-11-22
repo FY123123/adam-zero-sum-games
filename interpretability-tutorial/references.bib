@@ -1,0 +1,676 @@
+% ---------- Background: transformers and language models ----------
+@inproceedings{vaswani2017attention,
+  author = {Vaswani, Ashish and Shazeer, Noam and Parmar, Niki and Uszkoreit, Jakob and Jones, Llion and Gomez, Aidan N. and Kaiser, {\L}ukasz and Polosukhin, Illia},
+  title = {Attention is All you Need},
+  booktitle = {Advances in Neural Information Processing Systems (NeurIPS)},
+  year = {2017}
+}
+@techreport{radford2019language,
+  author = {Radford, Alec and Wu, Jeffrey and Child, Rewon and Luan, David and Amodei, Dario and Sutskever, Ilya},
+  title = {Language Models are Unsupervised Multitask Learners},
+  institution = {OpenAI},
+  year = {2019}
+}
+
+% ---------- Framing and surveys ----------
+@article{lipton2018mythos,
+  author = {Lipton, Zachary C.},
+  title = {The Mythos of Model Interpretability},
+  journal = {Queue},
+  volume = {16},
+  number = {3},
+  pages = {31--57},
+  year = {2018}
+}
+@article{doshivelez2017towards,
+  author = {Doshi-Velez, Finale and Kim, Been},
+  title = {Towards A Rigorous Science of Interpretable Machine Learning},
+  journal = {arXiv preprint arXiv:1702.08608},
+  year = {2017}
+}
+@inproceedings{jacovi2020towards,
+  author = {Jacovi, Alon and Goldberg, Yoav},
+  title = {Towards Faithfully Interpretable {NLP} Systems: How Should We Define and Evaluate Faithfulness?},
+  booktitle = {Annual Meeting of the Association for Computational Linguistics (ACL)},
+  year = {2020}
+}
+@inproceedings{turpin2023language,
+  author = {Turpin, Miles and Michael, Julian and Perez, Ethan and Bowman, Samuel R.},
+  title = {Language Models Don't Always Say What They Think: Unfaithful Explanations in Chain-of-Thought Prompting},
+  booktitle = {Advances in Neural Information Processing Systems (NeurIPS)},
+  year = {2023}
+}
+@article{bereska2024mechanistic,
+  author = {Bereska, Leonard and Gavves, Efstratios},
+  title = {Mechanistic Interpretability for {AI} Safety -- A Review},
+  journal = {Transactions on Machine Learning Research},
+  year = {2024}
+}
+@article{ferrando2024primer,
+  author = {Ferrando, Javier and Sarti, Gabriele and Bisazza, Arianna and Costa-juss{\`a}, Marta R.},
+  title = {A Primer on the Inner Workings of Transformer-based Language Models},
+  journal = {arXiv preprint arXiv:2405.00208},
+  year = {2024}
+}
+@article{sharkey2025open,
+  author = {Sharkey, Lee and Chughtai, Bilal and Batson, Joshua and Lindsey, Jack and Wu, Jeff and Bushnaq, Lucius and Goldowsky-Dill, Nicholas and Heimersheim, Stefan and Ortega, Alejandro and Bloom, Joseph and others},
+  title = {Open Problems in Mechanistic Interpretability},
+  journal = {Transactions on Machine Learning Research},
+  year = {2025}
+}
+
+% ---------- Attribution and attention ----------
+@inproceedings{simonyan2014deep,
+  author = {Simonyan, Karen and Vedaldi, Andrea and Zisserman, Andrew},
+  title = {Deep Inside Convolutional Networks: Visualising Image Classification Models and Saliency Maps},
+  booktitle = {International Conference on Learning Representations (ICLR), Workshop Track},
+  year = {2014}
+}
+@inproceedings{sundararajan2017axiomatic,
+  author = {Sundararajan, Mukund and Taly, Ankur and Yan, Qiqi},
+  title = {Axiomatic Attribution for Deep Networks},
+  booktitle = {International Conference on Machine Learning (ICML)},
+  year = {2017}
+}
+@inproceedings{ribeiro2016should,
+  author = {Ribeiro, Marco Tulio and Singh, Sameer and Guestrin, Carlos},
+  title = {``{W}hy Should {I} Trust You?'': Explaining the Predictions of Any Classifier},
+  booktitle = {ACM SIGKDD International Conference on Knowledge Discovery and Data Mining (KDD)},
+  year = {2016}
+}
+@inproceedings{lundberg2017unified,
+  author = {Lundberg, Scott M. and Lee, Su-In},
+  title = {A Unified Approach to Interpreting Model Predictions},
+  booktitle = {Advances in Neural Information Processing Systems (NeurIPS)},
+  year = {2017}
+}
+@inproceedings{adebayo2018sanity,
+  author = {Adebayo, Julius and Gilmer, Justin and Muelly, Michael and Goodfellow, Ian and Hardt, Moritz and Kim, Been},
+  title = {Sanity Checks for Saliency Maps},
+  booktitle = {Advances in Neural Information Processing Systems (NeurIPS)},
+  year = {2018}
+}
+@inproceedings{jain2019attention,
+  author = {Jain, Sarthak and Wallace, Byron C.},
+  title = {Attention is not Explanation},
+  booktitle = {Conference of the North American Chapter of the Association for Computational Linguistics (NAACL)},
+  year = {2019}
+}
+@inproceedings{wiegreffe2019attention,
+  author = {Wiegreffe, Sarah and Pinter, Yuval},
+  title = {Attention is not not Explanation},
+  booktitle = {Conference on Empirical Methods in Natural Language Processing (EMNLP)},
+  year = {2019}
+}
+
+% ---------- Lenses and probing ----------
+@misc{nostalgebraist2020logit,
+  author = {{nostalgebraist}},
+  title = {interpreting {GPT}: the logit lens},
+  howpublished = {LessWrong},
+  year = {2020},
+  url = {https://www.lesswrong.com/posts/AcKRB8wDpdaN6v6ru/interpreting-gpt-the-logit-lens}
+}
+@article{belrose2023eliciting,
+  author = {Belrose, Nora and Ostrovsky, Igor and McKinney, Lev and Furman, Zach and Smith, Logan and Halawi, Danny and Biderman, Stella and Steinhardt, Jacob},
+  title = {Eliciting Latent Predictions from Transformers with the Tuned Lens},
+  journal = {arXiv preprint arXiv:2303.08112},
+  year = {2023}
+}
+@inproceedings{geva2022transformer,
+  author = {Geva, Mor and Caciularu, Avi and Wang, Kevin Ro and Goldberg, Yoav},
+  title = {Transformer Feed-Forward Layers Build Predictions by Promoting Concepts in the Vocabulary Space},
+  booktitle = {Conference on Empirical Methods in Natural Language Processing (EMNLP)},
+  year = {2022}
+}
+@inproceedings{alain2017understanding,
+  author = {Alain, Guillaume and Bengio, Yoshua},
+  title = {Understanding intermediate layers using linear classifier probes},
+  booktitle = {International Conference on Learning Representations (ICLR), Workshop Track},
+  year = {2017}
+}
+@inproceedings{hewitt2019structural,
+  author = {Hewitt, John and Manning, Christopher D.},
+  title = {A Structural Probe for Finding Syntax in Word Representations},
+  booktitle = {Conference of the North American Chapter of the Association for Computational Linguistics (NAACL)},
+  year = {2019}
+}
+@inproceedings{hewitt2019designing,
+  author = {Hewitt, John and Liang, Percy},
+  title = {Designing and Interpreting Probes with Control Tasks},
+  booktitle = {Conference on Empirical Methods in Natural Language Processing (EMNLP)},
+  year = {2019}
+}
+@inproceedings{tenney2019bert,
+  author = {Tenney, Ian and Das, Dipanjan and Pavlick, Ellie},
+  title = {{BERT} Rediscovers the Classical {NLP} Pipeline},
+  booktitle = {Annual Meeting of the Association for Computational Linguistics (ACL)},
+  year = {2019}
+}
+@article{belinkov2022probing,
+  author = {Belinkov, Yonatan},
+  title = {Probing Classifiers: Promises, Shortcomings, and Advances},
+  journal = {Computational Linguistics},
+  volume = {48},
+  number = {1},
+  pages = {207--219},
+  year = {2022}
+}
+@article{elazar2021amnesic,
+  author = {Elazar, Yanai and Ravfogel, Shauli and Jacovi, Alon and Goldberg, Yoav},
+  title = {Amnesic Probing: Behavioral Explanation with Amnesic Counterfactuals},
+  journal = {Transactions of the Association for Computational Linguistics},
+  volume = {9},
+  pages = {160--175},
+  year = {2021}
+}
+@inproceedings{gurnee2024language,
+  author = {Gurnee, Wes and Tegmark, Max},
+  title = {Language Models Represent Space and Time},
+  booktitle = {International Conference on Learning Representations (ICLR)},
+  year = {2024}
+}
+@inproceedings{li2023emergent,
+  author = {Li, Kenneth and Hopkins, Aspen K. and Bau, David and Vi{\'e}gas, Fernanda and Pfister, Hanspeter and Wattenberg, Martin},
+  title = {Emergent World Representations: Exploring a Sequence Model Trained on a Synthetic Task},
+  booktitle = {International Conference on Learning Representations (ICLR)},
+  year = {2023}
+}
+@inproceedings{nanda2023emergent,
+  author = {Nanda, Neel and Lee, Andrew and Wattenberg, Martin},
+  title = {Emergent Linear Representations in World Models of Self-Supervised Sequence Models},
+  booktitle = {BlackboxNLP Workshop on Analyzing and Interpreting Neural Networks for NLP},
+  year = {2023}
+}
+
+% ---------- Linear representations, superposition ----------
+@inproceedings{mikolov2013linguistic,
+  author = {Mikolov, Tomas and Yih, Wen-tau and Zweig, Geoffrey},
+  title = {Linguistic Regularities in Continuous Space Word Representations},
+  booktitle = {Conference of the North American Chapter of the Association for Computational Linguistics (NAACL)},
+  year = {2013}
+}
+@inproceedings{kim2018interpretability,
+  author = {Kim, Been and Wattenberg, Martin and Gilmer, Justin and Cai, Carrie and Wexler, James and Viegas, Fernanda and Sayres, Rory},
+  title = {Interpretability Beyond Feature Attribution: Quantitative Testing with Concept Activation Vectors ({TCAV})},
+  booktitle = {International Conference on Machine Learning (ICML)},
+  year = {2018}
+}
+@inproceedings{park2024linear,
+  author = {Park, Kiho and Choe, Yo Joong and Veitch, Victor},
+  title = {The Linear Representation Hypothesis and the Geometry of Large Language Models},
+  booktitle = {International Conference on Machine Learning (ICML)},
+  year = {2024}
+}
+@inproceedings{marks2024geometry,
+  author = {Marks, Samuel and Tegmark, Max},
+  title = {The Geometry of Truth: Emergent Linear Structure in Large Language Model Representations of True/False Datasets},
+  booktitle = {Conference on Language Modeling (COLM)},
+  year = {2024}
+}
+@inproceedings{engels2025not,
+  author = {Engels, Joshua and Michaud, Eric J. and Liao, Isaac and Gurnee, Wes and Tegmark, Max},
+  title = {Not All Language Model Features Are One-Dimensionally Linear},
+  booktitle = {International Conference on Learning Representations (ICLR)},
+  year = {2025}
+}
+@article{arora2018linear,
+  author = {Arora, Sanjeev and Li, Yuanzhi and Liang, Yingyu and Ma, Tengyu and Risteski, Andrej},
+  title = {Linear Algebraic Structure of Word Senses, with Applications to Polysemy},
+  journal = {Transactions of the Association for Computational Linguistics},
+  volume = {6},
+  pages = {483--495},
+  year = {2018}
+}
+@article{elhage2022toy,
+  author = {Elhage, Nelson and Hume, Tristan and Olsson, Catherine and Schiefer, Nicholas and Henighan, Tom and Kravec, Shauna and Hatfield-Dodds, Zac and Lasenby, Robert and Drain, Dawn and Chen, Carol and Grosse, Roger and McCandlish, Sam and Kaplan, Jared and Amodei, Dario and Wattenberg, Martin and Olah, Christopher},
+  title = {Toy Models of Superposition},
+  journal = {Transformer Circuits Thread},
+  year = {2022},
+  url = {https://transformer-circuits.pub/2022/toy_model/index.html}
+}
+@article{gurnee2023finding,
+  author = {Gurnee, Wes and Nanda, Neel and Pauly, Matthew and Harvey, Katherine and Troitskii, Dmitrii and Bertsimas, Dimitris},
+  title = {Finding Neurons in a Haystack: Case Studies with Sparse Probing},
+  journal = {Transactions on Machine Learning Research},
+  year = {2023}
+}
+@article{hoeffding1963probability,
+  author = {Hoeffding, Wassily},
+  title = {Probability Inequalities for Sums of Bounded Random Variables},
+  journal = {Journal of the American Statistical Association},
+  volume = {58},
+  number = {301},
+  pages = {13--30},
+  year = {1963}
+}
+@article{hanni2024mathematical,
+  author = {H{\"a}nni, Kaarel and Mendel, Jake and Vaintrob, Dmitry and Chan, Lawrence},
+  title = {Mathematical Models of Computation in Superposition},
+  journal = {arXiv preprint arXiv:2408.05451},
+  year = {2024}
+}
+@article{adler2024complexity,
+  author = {Adler, Micah and Shavit, Nir},
+  title = {On the Complexity of Neural Computation in Superposition},
+  journal = {arXiv preprint arXiv:2409.15318},
+  year = {2024}
+}
+
+% ---------- Sparse autoencoders and dictionary learning ----------
+@article{olshausen1997sparse,
+  author = {Olshausen, Bruno A. and Field, David J.},
+  title = {Sparse coding with an overcomplete basis set: A strategy employed by {V1}?},
+  journal = {Vision Research},
+  volume = {37},
+  number = {23},
+  pages = {3311--3325},
+  year = {1997}
+}
+@article{bricken2023monosemanticity,
+  author = {Bricken, Trenton and Templeton, Adly and Batson, Joshua and Chen, Brian and Jermyn, Adam and Conerly, Tom and Turner, Nick and Anil, Cem and Denison, Carson and Askell, Amanda and others},
+  title = {Towards Monosemanticity: Decomposing Language Models With Dictionary Learning},
+  journal = {Transformer Circuits Thread},
+  year = {2023},
+  url = {https://transformer-circuits.pub/2023/monosemantic-features/index.html}
+}
+@inproceedings{cunningham2024sparse,
+  author = {Cunningham, Hoagy and Ewart, Aidan and Riggs, Logan and Huben, Robert and Sharkey, Lee},
+  title = {Sparse Autoencoders Find Highly Interpretable Features in Language Models},
+  booktitle = {International Conference on Learning Representations (ICLR)},
+  year = {2024}
+}
+@article{templeton2024scaling,
+  author = {Templeton, Adly and Conerly, Tom and Marcus, Jonathan and Lindsey, Jack and Bricken, Trenton and Chen, Brian and Pearce, Adam and Citro, Craig and Ameisen, Emmanuel and Jones, Andy and others},
+  title = {Scaling Monosemanticity: Extracting Interpretable Features from {Claude 3 Sonnet}},
+  journal = {Transformer Circuits Thread},
+  year = {2024},
+  url = {https://transformer-circuits.pub/2024/scaling-monosemanticity/index.html}
+}
+@inproceedings{gao2025scaling,
+  author = {Gao, Leo and Dupr{\'e} la Tour, Tom and Tillman, Henk and Goh, Gabriel and Troll, Rajan and Radford, Alec and Sutskever, Ilya and Leike, Jan and Wu, Jeffrey},
+  title = {Scaling and evaluating sparse autoencoders},
+  booktitle = {International Conference on Learning Representations (ICLR)},
+  year = {2025}
+}
+@inproceedings{rajamanoharan2024improving,
+  author = {Rajamanoharan, Senthooran and Conmy, Arthur and Smith, Lewis and Lieberum, Tom and Varma, Vikrant and Kram{\'a}r, J{\'a}nos and Shah, Rohin and Nanda, Neel},
+  title = {Improving Sparse Decomposition of Language Model Activations with Gated Sparse Autoencoders},
+  booktitle = {Advances in Neural Information Processing Systems (NeurIPS)},
+  year = {2024}
+}
+@article{rajamanoharan2024jumping,
+  author = {Rajamanoharan, Senthooran and Lieberum, Tom and Sonnerat, Nicolas and Conmy, Arthur and Varma, Vikrant and Kram{\'a}r, J{\'a}nos and Nanda, Neel},
+  title = {Jumping Ahead: Improving Reconstruction Fidelity with {JumpReLU} Sparse Autoencoders},
+  journal = {arXiv preprint arXiv:2407.14435},
+  year = {2024}
+}
+@inproceedings{lieberum2024gemma,
+  author = {Lieberum, Tom and Rajamanoharan, Senthooran and Conmy, Arthur and Smith, Lewis and Sonnerat, Nicolas and Varma, Vikrant and Kram{\'a}r, J{\'a}nos and Dragan, Anca and Shah, Rohin and Nanda, Neel},
+  title = {Gemma Scope: Open Sparse Autoencoders Everywhere All At Once on {Gemma 2}},
+  booktitle = {BlackboxNLP Workshop on Analyzing and Interpreting Neural Networks for NLP},
+  year = {2024}
+}
+@misc{wright2024addressing,
+  author = {Wright, Benjamin and Sharkey, Lee},
+  title = {Addressing Feature Suppression in {SAEs}},
+  howpublished = {AI Alignment Forum},
+  year = {2024},
+  url = {https://www.alignmentforum.org/posts/3JuSjTZyMzaSeTxKk/addressing-feature-suppression-in-saes}
+}
+@misc{bills2023language,
+  author = {Bills, Steven and Cammarata, Nick and Mossing, Dan and Tillman, Henk and Gao, Leo and Goh, Gabriel and Sutskever, Ilya and Leike, Jan and Wu, Jeff and Saunders, William},
+  title = {Language models can explain neurons in language models},
+  howpublished = {OpenAI},
+  year = {2023},
+  url = {https://openaipublic.blob.core.windows.net/neuron-explainer/paper/index.html}
+}
+@inproceedings{chanin2024absorption,
+  author = {Chanin, David and Wilken-Smith, James and Dulka, Tom{\'a}{\v s} and Bhatnagar, Hardik and Golechha, Satvik and Bloom, Joseph},
+  title = {A is for Absorption: Studying Feature Splitting and Absorption in Sparse Autoencoders},
+  booktitle = {Advances in Neural Information Processing Systems (NeurIPS)},
+  year = {2025}
+}
+@inproceedings{leask2025sparse,
+  author = {Leask, Patrick and Bussmann, Bart and Pearce, Michael and Bloom, Joseph and Tigges, Curt and Al Moubayed, Noura and Sharkey, Lee and Nanda, Neel},
+  title = {Sparse Autoencoders Do Not Find Canonical Units of Analysis},
+  booktitle = {International Conference on Learning Representations (ICLR)},
+  year = {2025}
+}
+@inproceedings{paulo2025sparse,
+  author = {Paulo, Gon{\c c}alo and Belrose, Nora},
+  title = {Sparse Autoencoders Trained on the Same Data Learn Different Features},
+  booktitle = {International Conference on Learning Representations (ICLR)},
+  year = {2026}
+}
+@inproceedings{heap2025sparse,
+  author = {Heap, Thomas and Lawson, Tim and Farnik, Lucy and Aitchison, Laurence},
+  title = {Automated Interpretability Metrics Do Not Distinguish Trained and Random Transformers},
+  booktitle = {International Conference on Learning Representations (ICLR)},
+  year = {2026},
+  note = {First circulated in 2025 as ``Sparse Autoencoders Can Interpret Randomly Initialized Transformers'', arXiv:2501.17727}
+}
+@inproceedings{kantamneni2025sparse,
+  author = {Kantamneni, Subhash and Engels, Joshua and Rajamanoharan, Senthooran and Tegmark, Max and Nanda, Neel},
+  title = {Are Sparse Autoencoders Useful? A Case Study in Sparse Probing},
+  booktitle = {International Conference on Machine Learning (ICML)},
+  year = {2025}
+}
+@inproceedings{wu2025axbench,
+  author = {Wu, Zhengxuan and Arora, Aryaman and Geiger, Atticus and Wang, Zheng and Huang, Jing and Jurafsky, Dan and Manning, Christopher D. and Potts, Christopher},
+  title = {{AxBench}: Steering {LLMs}? Even Simple Baselines Outperform Sparse Autoencoders},
+  booktitle = {International Conference on Machine Learning (ICML)},
+  year = {2025}
+}
+@inproceedings{karvonen2025saebench,
+  author = {Karvonen, Adam and Rager, Can and Lin, Johnny and Tigges, Curt and Bloom, Joseph and Chanin, David and Lau, Yeu-Tong and Farrell, Eoin and McDougall, Callum and Ayonrinde, Kola and others},
+  title = {{SAEBench}: A Comprehensive Benchmark for Sparse Autoencoders in Language Model Interpretability},
+  booktitle = {International Conference on Machine Learning (ICML)},
+  year = {2025}
+}
+@inproceedings{dunefsky2024transcoders,
+  author = {Dunefsky, Jacob and Chlenski, Philippe and Nanda, Neel},
+  title = {Transcoders Find Interpretable {LLM} Feature Circuits},
+  booktitle = {Advances in Neural Information Processing Systems (NeurIPS)},
+  year = {2024}
+}
+@article{lindsey2024crosscoders,
+  author = {Lindsey, Jack and Templeton, Adly and Marcus, Jonathan and Conerly, Thomas and Batson, Joshua and Olah, Christopher},
+  title = {Sparse Crosscoders for Cross-Layer Features and Model Diffing},
+  journal = {Transformer Circuits Thread},
+  year = {2024},
+  url = {https://transformer-circuits.pub/2024/crosscoders/index.html}
+}
+
+% ---------- Causal interventions ----------
+@inproceedings{pearl2001direct,
+  author = {Pearl, Judea},
+  title = {Direct and Indirect Effects},
+  booktitle = {Conference on Uncertainty in Artificial Intelligence (UAI)},
+  year = {2001}
+}
+@inproceedings{vig2020investigating,
+  author = {Vig, Jesse and Gehrmann, Sebastian and Belinkov, Yonatan and Qian, Sharon and Nevo, Daniel and Singer, Yaron and Shieber, Stuart},
+  title = {Investigating Gender Bias in Language Models Using Causal Mediation Analysis},
+  booktitle = {Advances in Neural Information Processing Systems (NeurIPS)},
+  year = {2020}
+}
+@inproceedings{geiger2021causal,
+  author = {Geiger, Atticus and Lu, Hanson and Icard, Thomas and Potts, Christopher},
+  title = {Causal Abstractions of Neural Networks},
+  booktitle = {Advances in Neural Information Processing Systems (NeurIPS)},
+  year = {2021}
+}
+@inproceedings{geiger2024finding,
+  author = {Geiger, Atticus and Wu, Zhengxuan and Potts, Christopher and Icard, Thomas and Goodman, Noah D.},
+  title = {Finding Alignments Between Interpretable Causal Variables and Distributed Neural Representations},
+  booktitle = {Conference on Causal Learning and Reasoning (CLeaR)},
+  year = {2024}
+}
+@article{geiger2025causal,
+  author = {Geiger, Atticus and Ibeling, Duligur and Zur, Amir and Chaudhary, Maheep and Chauhan, Sonakshi and Huang, Jing and Arora, Aryaman and Wu, Zhengxuan and Goodman, Noah and Potts, Christopher and Icard, Thomas},
+  title = {Causal Abstraction: A Theoretical Foundation for Mechanistic Interpretability},
+  journal = {Journal of Machine Learning Research},
+  volume = {26},
+  number = {83},
+  pages = {1--64},
+  year = {2025}
+}
+@inproceedings{meng2022locating,
+  author = {Meng, Kevin and Bau, David and Andonian, Alex and Belinkov, Yonatan},
+  title = {Locating and Editing Factual Associations in {GPT}},
+  booktitle = {Advances in Neural Information Processing Systems (NeurIPS)},
+  year = {2022}
+}
+@inproceedings{hase2023does,
+  author = {Hase, Peter and Bansal, Mohit and Kim, Been and Ghandeharioun, Asma},
+  title = {Does Localization Inform Editing? Surprising Differences in Causality-Based Localization vs. Knowledge Editing in Language Models},
+  booktitle = {Advances in Neural Information Processing Systems (NeurIPS)},
+  year = {2023}
+}
+@misc{chan2022causal,
+  author = {Chan, Lawrence and Garriga-Alonso, Adri{\`a} and Goldowsky-Dill, Nicholas and Greenblatt, Ryan and Nitishinskaya, Jenny and Radhakrishnan, Ansh and Shlegeris, Buck and Thomas, Nate},
+  title = {Causal Scrubbing: a method for rigorously testing interpretability hypotheses},
+  howpublished = {AI Alignment Forum},
+  year = {2022},
+  url = {https://www.alignmentforum.org/posts/JvZhhzycHu2Yd57RN/causal-scrubbing-a-method-for-rigorously-testing}
+}
+@article{goldowskydill2023localizing,
+  author = {Goldowsky-Dill, Nicholas and MacLeod, Chris and Sato, Lucas and Arora, Aryaman},
+  title = {Localizing Model Behavior with Path Patching},
+  journal = {arXiv preprint arXiv:2304.05969},
+  year = {2023}
+}
+@inproceedings{zhang2024towards,
+  author = {Zhang, Fred and Nanda, Neel},
+  title = {Towards Best Practices of Activation Patching in Language Models: Metrics and Methods},
+  booktitle = {International Conference on Learning Representations (ICLR)},
+  year = {2024}
+}
+@article{heimersheim2024use,
+  author = {Heimersheim, Stefan and Nanda, Neel},
+  title = {How to use and interpret activation patching},
+  journal = {arXiv preprint arXiv:2404.15255},
+  year = {2024}
+}
+@misc{nanda2023attribution,
+  author = {Nanda, Neel},
+  title = {Attribution Patching: Activation Patching At Industrial Scale},
+  howpublished = {Blog post},
+  year = {2023},
+  url = {https://www.neelnanda.io/mechanistic-interpretability/attribution-patching}
+}
+@inproceedings{syed2024attribution,
+  author = {Syed, Aaquib and Rager, Can and Conmy, Arthur},
+  title = {Attribution Patching Outperforms Automated Circuit Discovery},
+  booktitle = {BlackboxNLP Workshop on Analyzing and Interpreting Neural Networks for NLP},
+  year = {2024}
+}
+@article{kramar2024atp,
+  author = {Kram{\'a}r, J{\'a}nos and Lieberum, Tom and Shah, Rohin and Nanda, Neel},
+  title = {{AtP*}: An efficient and scalable method for localizing {LLM} behaviour to components},
+  journal = {arXiv preprint arXiv:2403.00745},
+  year = {2024}
+}
+@article{mcgrath2023hydra,
+  author = {McGrath, Thomas and Rahtz, Matthew and Kram{\'a}r, J{\'a}nos and Mikulik, Vladimir and Legg, Shane},
+  title = {The Hydra Effect: Emergent Self-repair in Language Model Computations},
+  journal = {arXiv preprint arXiv:2307.15771},
+  year = {2023}
+}
+@inproceedings{makelov2024subspace,
+  author = {Makelov, Aleksandar and Lange, Georg and Geiger, Atticus and Nanda, Neel},
+  title = {Is This the Subspace You Are Looking For? An Interpretability Illusion for Subspace Activation Patching},
+  booktitle = {International Conference on Learning Representations (ICLR)},
+  year = {2024}
+}
+@article{bolukbasi2021interpretability,
+  author = {Bolukbasi, Tolga and Pearce, Adam and Yuan, Ann and Coenen, Andy and Reif, Emily and Vi{\'e}gas, Fernanda and Wattenberg, Martin},
+  title = {An Interpretability Illusion for {BERT}},
+  journal = {arXiv preprint arXiv:2104.07143},
+  year = {2021}
+}
+
+% ---------- Steering ----------
+@article{turner2023steering,
+  author = {Turner, Alexander Matt and Thiergart, Lisa and Leech, Gavin and Udell, David and Vazquez, Juan J. and Mini, Ulisse and MacDiarmid, Monte},
+  title = {Steering Language Models With Activation Engineering},
+  journal = {arXiv preprint arXiv:2308.10248},
+  year = {2023}
+}
+@inproceedings{rimsky2024steering,
+  author = {Rimsky, Nina and Gabrieli, Nick and Schulz, Julian and Tong, Meg and Hubinger, Evan and Turner, Alexander Matt},
+  title = {Steering {Llama 2} via Contrastive Activation Addition},
+  booktitle = {Annual Meeting of the Association for Computational Linguistics (ACL)},
+  year = {2024}
+}
+@article{zou2023representation,
+  author = {Zou, Andy and Phan, Long and Chen, Sarah and Campbell, James and Guo, Phillip and Ren, Richard and Pan, Alexander and Yin, Xuwang and Mazeika, Mantas and Dombrowski, Ann-Kathrin and others},
+  title = {Representation Engineering: A Top-Down Approach to {AI} Transparency},
+  journal = {arXiv preprint arXiv:2310.01405},
+  year = {2023}
+}
+@inproceedings{arditi2024refusal,
+  author = {Arditi, Andy and Obeso, Oscar and Syed, Aaquib and Paleka, Daniel and Panickssery, Nina and Gurnee, Wes and Nanda, Neel},
+  title = {Refusal in Language Models Is Mediated by a Single Direction},
+  booktitle = {Advances in Neural Information Processing Systems (NeurIPS)},
+  year = {2024}
+}
+
+% ---------- Circuits ----------
+@article{olah2020zoom,
+  author = {Olah, Chris and Cammarata, Nick and Schubert, Ludwig and Goh, Gabriel and Petrov, Michael and Carter, Shan},
+  title = {Zoom In: An Introduction to Circuits},
+  journal = {Distill},
+  year = {2020},
+  url = {https://distill.pub/2020/circuits/zoom-in/}
+}
+@article{elhage2021mathematical,
+  author = {Elhage, Nelson and Nanda, Neel and Olsson, Catherine and Henighan, Tom and Joseph, Nicholas and Mann, Ben and Askell, Amanda and Bai, Yuntao and Chen, Anna and Conerly, Tom and others},
+  title = {A Mathematical Framework for Transformer Circuits},
+  journal = {Transformer Circuits Thread},
+  year = {2021},
+  url = {https://transformer-circuits.pub/2021/framework/index.html}
+}
+@article{olsson2022context,
+  author = {Olsson, Catherine and Elhage, Nelson and Nanda, Neel and Joseph, Nicholas and DasSarma, Nova and Henighan, Tom and Mann, Ben and Askell, Amanda and Bai, Yuntao and Chen, Anna and others},
+  title = {In-context Learning and Induction Heads},
+  journal = {Transformer Circuits Thread},
+  year = {2022},
+  url = {https://transformer-circuits.pub/2022/in-context-learning-and-induction-heads/index.html}
+}
+@inproceedings{wang2023interpretability,
+  author = {Wang, Kevin Ro and Variengien, Alexandre and Conmy, Arthur and Shlegeris, Buck and Steinhardt, Jacob},
+  title = {Interpretability in the Wild: a Circuit for Indirect Object Identification in {GPT-2} Small},
+  booktitle = {International Conference on Learning Representations (ICLR)},
+  year = {2023}
+}
+@inproceedings{hanna2023how,
+  author = {Hanna, Michael and Liu, Ollie and Variengien, Alexandre},
+  title = {How does {GPT-2} compute greater-than?: Interpreting mathematical abilities in a pre-trained language model},
+  booktitle = {Advances in Neural Information Processing Systems (NeurIPS)},
+  year = {2023}
+}
+@article{power2022grokking,
+  author = {Power, Alethea and Burda, Yuri and Edwards, Harri and Babuschkin, Igor and Misra, Vedant},
+  title = {Grokking: Generalization Beyond Overfitting on Small Algorithmic Datasets},
+  journal = {arXiv preprint arXiv:2201.02177},
+  year = {2022}
+}
+@inproceedings{nanda2023progress,
+  author = {Nanda, Neel and Chan, Lawrence and Lieberum, Tom and Smith, Jess and Steinhardt, Jacob},
+  title = {Progress measures for grokking via mechanistic interpretability},
+  booktitle = {International Conference on Learning Representations (ICLR)},
+  year = {2023}
+}
+@inproceedings{conmy2023towards,
+  author = {Conmy, Arthur and Mavor-Parker, Augustine N. and Lynch, Aengus and Heimersheim, Stefan and Garriga-Alonso, Adri{\`a}},
+  title = {Towards Automated Circuit Discovery for Mechanistic Interpretability},
+  booktitle = {Advances in Neural Information Processing Systems (NeurIPS)},
+  year = {2023}
+}
+@inproceedings{miller2024transformer,
+  author = {Miller, Joseph and Chughtai, Bilal and Saunders, William},
+  title = {Transformer Circuit Faithfulness Metrics are not Robust},
+  booktitle = {Conference on Language Modeling (COLM)},
+  year = {2024}
+}
+@inproceedings{marks2025sparse,
+  author = {Marks, Samuel and Rager, Can and Michaud, Eric J. and Belinkov, Yonatan and Bau, David and Mueller, Aaron},
+  title = {Sparse Feature Circuits: Discovering and Editing Interpretable Causal Graphs in Language Models},
+  booktitle = {International Conference on Learning Representations (ICLR)},
+  year = {2025}
+}
+@article{ameisen2025circuit,
+  author = {Ameisen, Emmanuel and Lindsey, Jack and Pearce, Adam and Gurnee, Wes and Turner, Nicholas L. and Chen, Brian and Citro, Craig and Abrahams, David and Carter, Shan and Hosmer, Basil and others},
+  title = {Circuit Tracing: Revealing Computational Graphs in Language Models},
+  journal = {Transformer Circuits Thread},
+  year = {2025},
+  url = {https://transformer-circuits.pub/2025/attribution-graphs/methods.html}
+}
+@article{lindsey2025biology,
+  author = {Lindsey, Jack and Gurnee, Wes and Ameisen, Emmanuel and Chen, Brian and Pearce, Adam and Turner, Nicholas L. and Citro, Craig and Abrahams, David and Carter, Shan and Hosmer, Basil and others},
+  title = {On the Biology of a Large Language Model},
+  journal = {Transformer Circuits Thread},
+  year = {2025},
+  url = {https://transformer-circuits.pub/2025/attribution-graphs/biology.html}
+}
+
+% ---------- Frontier and applications ----------
+@article{braun2025interpretability,
+  author = {Braun, Dan and Bushnaq, Lucius and Heimersheim, Stefan and Mendel, Jake and Sharkey, Lee},
+  title = {Interpretability in Parameter Space: Minimizing Mechanistic Description Length with Attribution-based Parameter Decomposition},
+  journal = {arXiv preprint arXiv:2501.14926},
+  year = {2025}
+}
+@article{bushnaq2025stochastic,
+  author = {Bushnaq, Lucius and Braun, Dan and Sharkey, Lee},
+  title = {Stochastic Parameter Decomposition},
+  journal = {arXiv preprint arXiv:2506.20790},
+  year = {2025}
+}
+@article{marks2025auditing,
+  author = {Marks, Samuel and Treutlein, Johannes and Bricken, Trenton and Lindsey, Jack and Marcus, Jonathan and Mishra-Sharma, Siddharth and Ziegler, Daniel and Ameisen, Emmanuel and Batson, Joshua and Belonax, Tim and others},
+  title = {Auditing language models for hidden objectives},
+  journal = {arXiv preprint arXiv:2503.10965},
+  year = {2025}
+}
+
+% ---------- Tools and learning resources ----------
+@misc{nanda2022transformerlens,
+  author = {Nanda, Neel and Bloom, Joseph},
+  title = {{TransformerLens}},
+  howpublished = {\url{https://github.com/TransformerLensOrg/TransformerLens}},
+  year = {2022}
+}
+@inproceedings{fiottokaufman2025nnsight,
+  author = {Fiotto-Kaufman, Jaden and Loftus, Alexander R. and Todd, Eric and Brinkmann, Jannik and Pal, Koyena and Troitskii, Dmitrii and Ripa, Michael and Belfki, Adam and Rager, Can and Juang, Caden and others},
+  title = {{NNsight} and {NDIF}: Democratizing Access to Open-Weight Foundation Model Internals},
+  booktitle = {International Conference on Learning Representations (ICLR)},
+  year = {2025}
+}
+@misc{bloom2024saelens,
+  author = {Bloom, Joseph and Tigges, Curt and Duong, Anthony and Chanin, David},
+  title = {{SAELens}},
+  howpublished = {\url{https://github.com/decoderesearch/SAELens}},
+  year = {2024}
+}
+@misc{lin2023neuronpedia,
+  author = {Lin, Johnny},
+  title = {Neuronpedia: Interactive Reference and Tooling for Analyzing Neural Networks},
+  howpublished = {\url{https://www.neuronpedia.org}},
+  year = {2023}
+}
+@misc{nanda2022glossary,
+  author = {Nanda, Neel},
+  title = {A Comprehensive Mechanistic Interpretability Explainer \& Glossary},
+  howpublished = {\url{https://www.neelnanda.io/mechanistic-interpretability/glossary}},
+  year = {2022}
+}
+@misc{mcdougall2023arena,
+  author = {McDougall, Callum and others},
+  title = {{ARENA}: Alignment Research Engineer Accelerator, Chapter 1: Transformer Interpretability},
+  howpublished = {\url{https://www.arena.education}},
+  year = {2023}
+}
+
+% ---------- Recent overviews and directions ----------
+@article{barez2026understanding,
+  author = {Barez, Fazl and Wu, Tung-Yu and Batra, Hunar and Dominici, Gabriele and Draye, Florent and Elazar, Yanai and Fornasiere, Damiano and Garc{\'i}a, Ant{\'i}a and Harrasse, Abir and Harris, Riley and others},
+  title = {Understanding {AI} from the Inside: The State of Mechanistic Interpretability for {AI} Safety},
+  journal = {arXiv preprint arXiv:2611.08438},
+  year = {2026}
+}
+@article{gao2025weight,
+  author = {Gao, Leo and Rajaram, Achyuta and Coxon, Jacob and Govande, Soham V. and Baker, Bowen and Mossing, Dan},
+  title = {Weight-sparse transformers have interpretable circuits},
+  journal = {arXiv preprint arXiv:2511.13653},
+  year = {2025}
+}
+@misc{nanda2025pragmatic,
+  author = {Nanda, Neel and Engels, Joshua and Conmy, Arthur and Rajamanoharan, Senthooran and Chughtai, Bilal and McDougall, Callum and Kram{\'a}r, J{\'a}nos and Smith, Lewis},
+  title = {A Pragmatic Vision for Interpretability},
+  howpublished = {AI Alignment Forum},
+  year = {2025},
+  url = {https://www.alignmentforum.org/posts/StENzDcD3kpfGJssR/a-pragmatic-vision-for-interpretability}
+}

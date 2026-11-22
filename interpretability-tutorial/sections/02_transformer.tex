@@ -1,0 +1,234 @@
+\section{The object of study: a transformer in equations}
+\label{sec:transformer}
+
+Before we can interpret a model we need a precise description of what it computes. This section defines a
+decoder-only transformer of the GPT-2 type \citep{vaswani2017attention,radford2019language} and extracts the
+structural facts on which the methods of the later sections rest. The presentation follows the ``residual
+stream'' view of \citet{elhage2021mathematical}.
+
+\subsection{From text to a prediction}
+
+A \emph{tokenizer} cuts the input text into pieces called \emph{tokens}, which are words or fragments of words,
+and replaces each piece by its index in a fixed vocabulary of size $V$. The input of the model is therefore a
+sequence of indices $t_1,\dots,t_n$ with $t_i\in\{1,\dots,V\}$. For every position $i$ the model returns a vector
+of $V$ real numbers called \emph{logits}. We write $\logit_i(t)$ for the logit of token $t$ at position $i$. The
+predicted probability that the next token $t_{i+1}$ equals $t$ is the softmax of the logits,
+\begin{equation}\label{eq:softmax}
+\Pr(t_{i+1}=t \mid t_1,\dots,t_i) \;=\; \frac{\exp(\logit_i(t))}{\sum_{t'=1}^{V}\exp(\logit_i(t'))} .
+\end{equation}
+Training adjusts the weights so that the true next token receives a high probability on a large corpus of text.
+
+\subsection{The residual stream}
+
+The model keeps, for every position $i$, a vector in $\R^d$ that is updated layer by layer. This vector is called
+the \emph{residual stream} at position $i$. We write $x_i^{(\ell)}\in\R^d$ for its value at the input of layer
+$\ell$, where the layers are numbered $\ell=0,\dots,L-1$, and $x_i^{(L)}$ for its final value.
+\Cref{fig:residual} shows the flow of the computation.
+
+\paragraph{Embedding.} The stream starts as the sum of a vector for the token and a vector for the position,
+\begin{equation}\label{eq:embed}
+x_i^{(0)} \;=\; W_E[t_i] + W_{\mathrm{pos}}[i],
+\end{equation}
+where $W_E[t]\in\R^d$ denotes the column of the embedding matrix $W_E\in\R^{d\times V}$ that belongs to token $t$,
+and $W_{\mathrm{pos}}[i]\in\R^d$ is a learned vector for position $i$.
+
+\paragraph{Layer normalisation.} Every component reads the stream through the map
+\begin{equation}\label{eq:ln}
+\LN(x) \;=\; \frac{x-\mean(x)\,\one}{\scale(x)},\qquad
+\mean(x)=\frac1d\,\one^\top x,\qquad
+\scale(x)=\frac{1}{\sqrt d}\,\big\|x-\mean(x)\,\one\big\|,
+\end{equation}
+where $\one\in\R^d$ is the vector of ones and $\|\cdot\|$ is the Euclidean norm. $\LN$ subtracts the average coordinate and rescales the result to a
+fixed length. The original definition also multiplies by a learned vector and adds another one. Since $\LN$ is
+always followed by a linear map, these two learned vectors can be absorbed into that map, and we do so throughout.
+
+\paragraph{Attention heads.} Layer $\ell$ contains $H$ attention heads, numbered $h=0,\dots,H-1$. A head is the
+only kind of component that moves information between positions. Head $h$ of layer $\ell$ has four weight matrices
+$W_Q,W_K,W_V\in\R^{d_{\mathrm{head}}\times d}$ and $W_O\in\R^{d\times d_{\mathrm{head}}}$ (each head has its own,
+and we suppress the indices $\ell,h$ on them). They enter only through the two products
+\begin{equation}\label{eq:qkov}
+W_{QK} \;=\; W_Q^\top W_K\in\R^{d\times d},\qquad W_{OV} \;=\; W_O W_V\in\R^{d\times d}.
+\end{equation}
+For a position $i$ and every earlier or equal position $j\le i$, the head computes a score, turns the scores into
+weights by a softmax over $j$, and outputs a weighted sum:
+\begin{align}
+A^{\ell,h}_{ij} &\;=\; \frac{\exp\!\big(\LN(x_i^{(\ell)})^\top W_{QK}\,\LN(x_j^{(\ell)})/\sqrt{d_{\mathrm{head}}}\big)}
+{\sum_{j'\le i}\exp\!\big(\LN(x_i^{(\ell)})^\top W_{QK}\,\LN(x_{j'}^{(\ell)})/\sqrt{d_{\mathrm{head}}}\big)},
+\label{eq:pattern}\\
+\head_i^{\ell,h} &\;=\; \sum_{j\le i}A^{\ell,h}_{ij}\;W_{OV}\,\LN(x_j^{(\ell)}) \;\in\R^d. \label{eq:headout}
+\end{align}
+The numbers $A^{\ell,h}_{ij}\ge 0$ sum to one over $j$ and are called the \emph{attention pattern} of the head.
+We call $i$ the \emph{destination} and $j$ the \emph{source}. The two products in \eqref{eq:qkov} have separate
+jobs. $W_{QK}$ decides \emph{from where} position $i$ reads, and $W_{OV}$ decides \emph{what} is written to
+position $i$ once a source has been chosen. The restriction $j\le i$ ensures that a position never sees later
+tokens.
+
+\paragraph{MLP.} After the heads, layer $\ell$ applies a two-layer perceptron to every position separately. With
+$\tilde x_i^{(\ell)}$ denoting the stream after the heads of layer $\ell$,
+\begin{equation}\label{eq:mlp}
+\mlp_i^{\ell} \;=\; W_{\mathrm{out}}\,\mathrm{GELU}\big(W_{\mathrm{in}}\,\LN(\tilde x_i^{(\ell)})+b_{\mathrm{in}}\big)+b_{\mathrm{out}} \;\in\R^d,
+\end{equation}
+where $\mathrm{GELU}$ is a smooth variant of $\max(0,\cdot)$ applied to each coordinate. The coordinates of the
+vector inside $\mathrm{GELU}$ are the \emph{neurons} of the layer.
+
+\paragraph{Update rule and output.} Both kinds of components \emph{add} their output to the stream,
+\begin{equation}\label{eq:update}
+\tilde x_i^{(\ell)} \;=\; x_i^{(\ell)}+\sum_{h=0}^{H-1}\head_i^{\ell,h},\qquad
+x_i^{(\ell+1)} \;=\; \tilde x_i^{(\ell)}+\mlp_i^{\ell},\qquad \ell=0,\dots,L-1 .
+\end{equation}
+The logits are a linear function of the normalised final stream. With $W_U[t]\in\R^d$ denoting the row of the
+unembedding matrix $W_U\in\R^{V\times d}$ that belongs to token $t$, written as a column vector,
+\begin{equation}\label{eq:unembed}
+\logit_i(t) \;=\; W_U[t]^\top\,\LN\big(x_i^{(L)}\big).
+\end{equation}
+The linear maps inside a head also have bias vectors, which we have omitted from \eqref{eq:pattern} and
+\eqref{eq:headout}. All statements below stay true with them, if the output bias of each attention layer is counted
+as one more component.
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}[>=Latex, font=\small,
+  box/.style={draw=tutgrey, rounded corners=2pt, minimum height=6.5mm, inner sep=4pt, fill=#1},
+  box/.default=white, add/.style={circle, draw=tutgrey, inner sep=0.5pt, fill=white}]
+\draw[line width=1.8pt, tutblue] (0,0.35) -- (0,5.55);
+\node[box=tutpaper] (emb) at (0,0) {embedding $W_E[t_i]+W_{\mathrm{pos}}[i]$};
+\node (tok) at (0,-0.95) {token $t_i$};
+\draw[->, tutgrey] (tok) -- (emb);
+\node[add] (p1) at (0,2.35) {$+$};
+\node[add] (p2) at (0,4.35) {$+$};
+\node[box=tutblue!12] (att) at (4.2,1.55) {$\LN$, then the $H$ attention heads};
+\node[box=tutred!12] (mlp) at (3.25,3.55) {$\LN$, then the MLP};
+\draw[->, tutgrey] (0,1.55) -- (att.west);
+\draw[->, tutgrey] (att.north) |- (p1);
+\draw[->, tutgrey] (0,3.55) -- (mlp.west);
+\draw[->, tutgrey] (mlp.north) |- (p2);
+\node[align=left] (others) at (9.3,1.55) {streams $x_j^{(\ell)}$ of the\\ positions $j\le i$};
+\draw[->, tutgrey] (others.west) -- (att.east);
+\node[box=tutpaper] (un) at (0,5.9) {$\LN$, then unembedding $W_U$};
+\node (out) at (0,6.85) {logits for the token after position $i$};
+\draw[->, tutgrey] (un) -- (out);
+\node[left] at (-0.1,1.0) {$x_i^{(\ell)}$};
+\node[left] at (-0.1,3.0) {$\tilde x_i^{(\ell)}$};
+\node[left] at (-0.1,5.0) {$x_i^{(\ell+1)}$};
+\draw[decorate, decoration={brace, amplitude=5pt}, tutgrey] (-1.5,0.75) -- (-1.5,5.2)
+  node[midway, left=6pt, align=right] {layer $\ell$,\\ repeated for\\ $\ell=0,\dots,L-1$};
+\end{tikzpicture}
+\caption{The residual stream at one position $i$ (thick blue line). Each component reads the stream through
+$\LN$ and adds its output back. Only the attention heads see the streams of other positions.}
+\label{fig:residual}
+\end{figure}
+
+\paragraph{Sizes.} GPT-2 small has $L=12$ layers, $H=12$ heads per layer, stream width $d=768$,
+$d_{\mathrm{head}}=64$, $3072$ neurons per MLP, a vocabulary of $V=50257$ tokens and about $124$ million
+parameters. It is customary to name a head by layer and index, so that ``head 9.6'' is head $h=6$ of layer
+$\ell=9$. Current large models have the same architecture up to details and are larger by two to three orders of
+magnitude.
+
+\subsection{Four structural facts}
+\label{sec:facts}
+
+The following facts are immediate from the definitions, and each of them is the basis of a family of methods.
+
+\begin{proposition}[The final stream is a sum of component outputs]\label{prop:sum}
+For every position $i$,
+\begin{equation}\label{eq:sum}
+x_i^{(L)} \;=\; W_E[t_i]+W_{\mathrm{pos}}[i]+\sum_{\ell=0}^{L-1}\Big(\sum_{h=0}^{H-1}\head_i^{\ell,h}+\mlp_i^{\ell}\Big).
+\end{equation}
+\end{proposition}
+\begin{proof}
+We write the final stream as a telescoping sum over the layers.
+\begin{align*}
+x_i^{(L)} &= x_i^{(0)}+\sum_{\ell=0}^{L-1}\big(x_i^{(\ell+1)}-x_i^{(\ell)}\big) && \by{telescoping sum}\\
+&= x_i^{(0)}+\sum_{\ell=0}^{L-1}\Big(\sum_{h=0}^{H-1}\head_i^{\ell,h}+\mlp_i^{\ell}\Big) && \by{by \eqref{eq:update}}\\
+&= W_E[t_i]+W_{\mathrm{pos}}[i]+\sum_{\ell=0}^{L-1}\Big(\sum_{h=0}^{H-1}\head_i^{\ell,h}+\mlp_i^{\ell}\Big). && \by{by \eqref{eq:embed}}\qedhere
+\end{align*}
+\end{proof}
+
+\begin{proposition}[Each logit is a sum over components, given the final scale]\label{prop:dla}
+Let $\mathcal G_i$ be the set of the $2+L(H+1)$ vectors on the right-hand side of \eqref{eq:sum}. We call them
+the \emph{components} at position $i$. Then for every token $t$,
+\begin{equation}\label{eq:dla}
+\logit_i(t) \;=\; \sum_{g\in\mathcal G_i}\frac{W_U[t]^\top\big(g-\mean(g)\,\one\big)}{\scale\big(x_i^{(L)}\big)} .
+\end{equation}
+\end{proposition}
+\begin{proof}
+We insert the definition of $\LN$ and the sum of \cref{prop:sum} into the read-out.
+\begin{align*}
+\logit_i(t) &= W_U[t]^\top\,\LN\big(x_i^{(L)}\big) && \by{by \eqref{eq:unembed}}\\
+&= \frac{W_U[t]^\top\big(x_i^{(L)}-\mean(x_i^{(L)})\,\one\big)}{\scale(x_i^{(L)})} && \by{by \eqref{eq:ln}}\\
+&= \frac{W_U[t]^\top\big(\sum_{g\in\mathcal G_i}g-\mean\big(\sum_{g\in\mathcal G_i}g\big)\,\one\big)}{\scale(x_i^{(L)})} && \by{by \cref{prop:sum}}\\
+&= \sum_{g\in\mathcal G_i}\frac{W_U[t]^\top\big(g-\mean(g)\,\one\big)}{\scale(x_i^{(L)})}. && \by{since $\mean$ is linear}\qedhere
+\end{align*}
+\end{proof}
+
+The summand of a component $g$ in \eqref{eq:dla} is called its \emph{direct logit attribution}. We use it in
+\cref{sec:lens}. Two more facts need no proof.
+
+\begin{itemize}
+\item \textbf{Information moves between positions only through attention.} By \eqref{eq:mlp}, the output of an
+MLP at position $i$ depends on the stream at position $i$ alone, and the same holds for $\LN$ and for the
+unembedding. If the final position ``knows'' something about an earlier token, some attention head has carried
+it there.
+\item \textbf{The coordinates of the stream have no special meaning.} Every component reads the stream through
+a linear map after $\LN$ and writes to it through a linear map. Let $R$ be an orthogonal matrix with $R\one=\one$.
+Then $\LN(Rx)=R\,\LN(x)$. If we replace the stream by $Rx$, multiply every reading matrix by $R^\top$ from the
+right and every writing matrix by $R$ from the left, the model computes the same function. Hence nothing singles out coordinate number
+$17$ of the stream. The MLP neurons are different, because $\mathrm{GELU}$ acts on each coordinate separately.
+One says that the neurons form a \emph{privileged basis} and that the residual stream has none.
+\end{itemize}
+
+\begin{intuition}
+Think of the residual stream as a shared whiteboard with $d$ dimensions of space. Each head and each MLP reads
+what is on the board, computes something, and adds its result to the board. The final answer is read off the
+board by one linear map. \Cref{prop:sum,prop:dla} say that we can account for the final answer contribution by
+contribution. The last fact says that the board has no natural grid: the meaningful ``places'' on it are
+directions that we have to find.
+\end{intuition}
+
+\subsection{The running example in this notation}
+\label{sec:metric}
+
+In the IOI task of \cref{sec:running} we look at the last position $n$ and compare two tokens, the indirect object
+(the correct name) and the subject (the repeated name). Our measure of performance is the \emph{logit difference}
+\begin{equation}\label{eq:ld}
+\logit_n(\mathrm{IO})-\logit_n(\mathrm{S}) \;=\; \big(W_U[\mathrm{IO}]-W_U[\mathrm{S}]\big)^\top\LN\big(x_n^{(L)}\big).
+\end{equation}
+By \eqref{eq:softmax}, the ratio of the two predicted probabilities equals the exponential of this difference.
+On our 12 prompts the logit difference of GPT-2 small is $3.70$ on average and lies between $2.06$ and $5.53$.
+An average of $3.70$ means that the model judges the correct name about $e^{3.70}\approx 40$ times as likely as
+the repeated one.
+
+We prefer the logit difference to the probability of the correct name for two reasons. It is a linear function of
+$\LN(x_n^{(L)})$, so \cref{prop:dla} applies to it term by term. And it removes everything that the two names have
+in common. A component that only says ``the next token is a name'' raises both logits equally and cancels in
+\eqref{eq:ld}.
+
+\subsection{Why the problem is hard}
+
+Three properties of the object make interpretation difficult, and each later section responds to one of them.
+The first is \emph{size}. GPT-2 small already has $144$ heads and $36{,}864$ MLP neurons, and each of them acts
+at every position. The second is that information is \emph{distributed}. By the last fact of \cref{sec:facts},
+a concept need not sit in one coordinate or one neuron (\cref{sec:features,sec:sae}). The third is
+\emph{nonlinearity}. The attention pattern \eqref{eq:pattern}, the $\mathrm{GELU}$ and the scale in $\LN$ make
+the effect of a component depend on what all the others are doing, which is why we will need interventions
+(\cref{sec:interventions}) and cannot stop at decompositions.
+
+\begin{takeaways}
+A transformer keeps one vector per position, the residual stream, and every component adds to it. The final
+stream is a sum of component outputs, and each logit is a sum of per-component terms once the final scale is
+fixed. Attention heads are the only route between positions. The stream has no privileged coordinates, and the
+MLP neurons do.
+\end{takeaways}
+
+\begin{exercise}\label{ex:params}
+Count the weights of one attention head of GPT-2 small, without biases. Using the total of $124$ million
+parameters, which fraction of the model is taken by the token embedding matrix $W_E$?
+\end{exercise}
+\begin{exercise}\label{ex:ones}
+Let $s\in\R$. Show that $\LN(x+s\,\one)=\LN(x)$. Conclude that replacing the stream $x_i^{(\ell)}$ by
+$x_i^{(\ell)}+s\,\one$ at any single layer and position does not change any logit.
+\end{exercise}
+\begin{exercise}\label{ex:rank}
+Show that $W_{OV}$ has rank at most $d_{\mathrm{head}}$. What does this say about the set of vectors that a single
+head of GPT-2 small can write to the stream?
+\end{exercise}
