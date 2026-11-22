@@ -109,8 +109,8 @@ inputs that were never tried. \Cref{tab:map} places the methods of this tutorial
 \begin{exercise}[\extitle{Three kinds of evidence}{concept}]\label{ex:evidence}
 Consider three statements about one neuron of a language model. (a) It is active on $93\%$ of all French tokens
 and on $2\%$ of all other tokens. (b) When it is set to zero, the loss on French text rises and the loss on English
-text stays the same. (c) Its output weights have a large inner product with the unembedding vectors of common
-French words. Classify each statement as observational, interventional or mechanistic. Then take the claim ``this
+text stays the same. (c) Its outgoing weights directly raise the output scores of common French
+words. Classify each statement as observational, interventional or mechanistic. Then take the claim ``this
 neuron is how the model recognises French'' and say, for each statement, what it leaves open.
 \end{exercise}
 
@@ -183,7 +183,7 @@ attempting each exercise before reading on, because several of them prepare a po
 \Cref{app:solutions} contains detailed solutions to all of them.
 
 Every section ends with a short list of \emph{recommended reading}. These lists contain only articles that have
-appeared in peer-reviewed machine learning venues, mostly in the last five years, and each entry says what the
+appeared in peer-reviewed venues, mostly in the last five years, and each entry says what the
 article adds to the section. A glossary of the technical terms is in \cref{app:glossary}, and
 \cref{sec:practice} lists software and first projects.
 
@@ -198,7 +198,7 @@ tutorial.
 \begin{readinglist}
 \item \citet{jacovi2020towards}, \emph{ACL}. The source of the distinction between plausible and faithful
 explanations. It also argues that faithfulness should be treated as a matter of degree.
-\item \citet{turpin2023language}, \emph{NeurIPS}. The experiments behind \cref{ex:plausible}: step-by-step
+\item \citet{turpin2023language}, \emph{NeurIPS}. The experiments described in this section: step-by-step
 explanations that leave out the feature of the prompt which determined the answer.
 \item \citet{bereska2024mechanistic}, \emph{TMLR}. A review of the concepts and methods of mechanistic
 interpretability, organised around their relevance for the safety of AI systems.

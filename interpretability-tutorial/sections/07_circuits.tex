@@ -353,7 +353,9 @@ called memorisation, circuit formation and cleanup. A curve that looks like a su
 gradual process on the inside.
 
 \begin{exercise}[\extitle{Why the modulus is prime}{derivation}]\label{ex:cosprime}
-Let $P=113$ and $r=14$. For which integers $q$ is $\cos(2\pi rq/P)=1$? Why does the argument fail for $P=112$?
+(a) Let $P=112$ and $r=14$. List the integers $q$ with $0<q<P$ for which $\cos(2\pi rq/P)=1$. What would a network
+that uses only this frequency predict for $a+b$ modulo $112$? (b) For a modulus $P$ that is not prime, which
+frequencies $r$ still have the property that $\cos(2\pi rq/P)=1$ forces $q$ to be divisible by $P$?
 \end{exercise}
 
 \begin{exercise}[\extitle{One frequency is not enough}{derivation}]\label{ex:onefreq}
@@ -449,9 +451,10 @@ year, with a clear account of the role of the MLPs.
 \item \citet{conmy2023towards}, \emph{NeurIPS}, and \citet{bhaskar2024finding}, \emph{NeurIPS}. Automatic circuit
 discovery by greedy pruning and by gradient-based optimisation.
 \item \citet{merullo2024circuit}, \emph{ICLR}. Finds that most components of the IOI circuit are used again in a
-different task, which is evidence that circuits are built from reusable parts.
-\item \citet{geva2023dissecting}, \emph{EMNLP}. Traces the recall of a fact through three stages: enrichment of
-the subject, propagation of the relation, and extraction of the attribute.
+different task in GPT-2 medium, which is evidence that circuits are built from reusable parts.
+\item \citet{geva2023dissecting}, \emph{EMNLP}, and \citet{hernandez2024linearity}, \emph{ICLR}. The first traces
+the recall of a fact through three stages: enrichment of the subject, propagation of the relation, and extraction
+of the attribute. The second shows that for a subset of relations the last stage is close to an affine map.
 \item \citet{bietti2023birth}, \emph{NeurIPS}, \citet{nichani2024transformers}, \emph{ICML}, and
 \citet{singh2024needs}, \emph{ICML}. How induction-like circuits form during training, from the theoretical and
 from the experimental side.

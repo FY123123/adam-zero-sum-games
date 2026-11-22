@@ -145,8 +145,7 @@ intermediate one \citep{nostalgebraist2020logit}:
 \text{lens logit of token $t$ after $\ell$ layers} \;=\; W_U[t]^\top\,\LN\big(x_i^{(\ell)}\big),\qquad \ell=0,\dots,L .
 \end{equation}
 This shows what the model would predict if it had to stop after $\ell$ layers. For example, $\ell=10$ means
-that the layers $0$ to $9$ have been applied. For example, $\ell=10$ means that
-the layers $0$ to $9$ have been applied. \Cref{fig:lens} shows the result
+that the layers $0$ to $9$ have been applied. \Cref{fig:lens} shows the result
 for the running example. Up to $\ell=7$ the lens logit difference stays within half a logit of zero. It becomes
 positive at $\ell=8$ and jumps at $\ell=10$, which is after layer 9 has been applied. On the first prompt, the most likely
 token under the lens is \tok{drink} at $\ell=5$, \tok{the} at $\ell=8$, \tok{them} at $\ell=9$ and \tok{Mary}
@@ -314,8 +313,8 @@ example these tools point at layers 7 to 9, at the name mover heads 9.9, 9.6 and
 \item \citet{jain2019attention}, \emph{NAACL}, and \citet{wiegreffe2019attention}, \emph{EMNLP}. The two sides of
 the debate on whether attention weights explain a prediction. Reading them together teaches how much depends on
 the definition of ``explanation''.
-\item \citet{kobayashi2020attention}, \emph{EMNLP}. Shows that the norm of the vector that a head moves matters as
-much as the attention weight, which is the point of \cref{ex:pattern}.
+\item \citet{kobayashi2020attention}, \emph{EMNLP}. Shows that the attention weight is only one of two factors in what
+a head moves. The other is the norm of the transformed vector, which is the point of \cref{ex:pattern}.
 \item \citet{adebayo2018sanity}, \emph{NeurIPS}. The randomisation tests for attribution maps. The experimental
 design carries over to every method of this tutorial.
 \item \citet{bilodeau2024impossibility}, \emph{PNAS}. Proves that attribution methods which are complete and

@@ -258,10 +258,10 @@ is (a) $M=\max(g_1,g_2)$ and (b) $M=\min(g_1,g_2)$. Relate the result to Lesson 
 \end{exercise}
 
 \begin{exercise}[\extitle{Additive metrics}{derivation}]\label{ex:additive}
-Suppose that the metric is a sum of separate terms, one for each node $g$ of a finite set $\mathcal G$ of nodes,
-that the term of $g$ depends only on the value of $g$, and that the nodes do not influence one another. (a) Show
+Suppose that the metric is a sum of separate terms, one for each node $g$ of a finite collection of nodes, that
+the term of $g$ depends only on the value of $g$, and that the nodes do not influence one another. (a) Show
 that the denoising effect \eqref{eq:denoise} and the noising effect \eqref{eq:noise} of every node coincide.
-(b) Show that the effects of all nodes of $\mathcal G$ add up to one. (c) Use three rows of \cref{tab:heads} to
+(b) Show that the effects of all these nodes add up to one. (c) Use three rows of \cref{tab:heads} to
 show that GPT-2 small is far from additive on the IOI task.
 \end{exercise}
 
@@ -367,7 +367,7 @@ is the same as applying it once, and that it does not change the read-out $w^\to
 that is orthogonal to $v$.
 \end{exercise}
 
-\begin{exercise}[\extitle{Where and how strongly to steer}{concept}]\label{ex:everylayer}
+\begin{exercise}[\extitle{Where and how strongly to steer}{derivation}]\label{ex:everylayer}
 (a) \citet{arditi2024refusal} apply directional ablation \eqref{eq:dirabl} at every layer and position. Why is it
 not enough to apply it once, at the layer where the direction was found? (b) Activation addition
 \eqref{eq:actadd} with a very large $\eta$ makes a model produce nonsense. Use the definition \eqref{eq:ln} of
@@ -414,8 +414,8 @@ a behaviour.
 \end{takeaways}
 
 \begin{readinglist}
-\item \citet{vig2020investigating}, \emph{NeurIPS}. Brings causal mediation analysis to language models. It is the
-origin of the vocabulary of direct and indirect effects.
+\item \citet{vig2020investigating}, \emph{NeurIPS}. Brings causal mediation analysis to language models, and with it
+the vocabulary of direct and indirect effects.
 \item \citet{meng2022locating}, \emph{NeurIPS}, and \citet{hase2023does}, \emph{NeurIPS}. Localisation of facts by
 patching with noise, and the later finding that the localisation does not predict where editing works.
 \item \citet{zhang2024towards}, \emph{ICLR}. A systematic study of how the choice of corruption and of metric
@@ -425,8 +425,8 @@ steering and concept erasure in one formal language.
 \item \citet{wu2023interpretability}, \emph{NeurIPS}. Scales the search for a subspace that implements a variable
 of an algorithm to a model with billions of parameters.
 \item \citet{makelov2024subspace}, \emph{ICLR}, and \citet{sutter2025nonlinear}, \emph{NeurIPS}. Two warnings. The
-first shows how a subspace found by optimisation can mislead. The second proves that without a restriction on the
-alignment map, any algorithm can be aligned with any network.
+first shows how a subspace found by optimisation can mislead. The second proves, under mild assumptions on the
+network, that without a restriction on the alignment map any algorithm can be aligned with it.
 \item \citet{arditi2024refusal}, \emph{NeurIPS}, \citet{rimsky2024steering}, \emph{ACL}, and
 \citet{li2023inference}, \emph{NeurIPS}. Three influential steering studies: refusal, a range of behaviours of a
 chat model, and truthfulness.

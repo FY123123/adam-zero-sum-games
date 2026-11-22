@@ -90,11 +90,12 @@ switch on the first concept. What else happens? (d) How should the data set be c
 
 \begin{exercise}[\extitle{A feature that is not a direction}{derivation}]\label{ex:circle}
 Suppose that a model represents the seven days of the week by the points
-$x_q=\big(\cos(2\pi q/7),\ \sin(2\pi q/7)\big)$, $q=0,\dots,6$, of a two-dimensional subspace, as
-\citet{engels2025not} found. (a) Show that for every unit vector $w$ of this plane the read-out $w^\top x_q$ is the
-cosine of the angle between $w$ and $x_q$. Conclude that for every day there is a linear read-out that is largest
-on that day. (b) Show that there is no $w$ for which $w^\top x_q$ increases strictly from $q=0$ to $q=6$. (c) In
-which sense does this representation satisfy \cref{def:lrh}, and in which sense does it not?
+$x(\sigma)=\big(\cos(2\pi\sigma/7),\ \sin(2\pi\sigma/7)\big)$, $\sigma=0,\dots,6$, of a two-dimensional subspace, as
+\citet{engels2025not} found. (a) Show that for every unit vector $w$ of this plane the read-out
+$w^\top x(\sigma)$ is the cosine of the angle between $w$ and $x(\sigma)$. Conclude that for every day there is a
+linear read-out that is largest on that day. (b) Show that there is no $w$ for which $w^\top x(\sigma)$ increases
+strictly from $\sigma=0$ to $\sigma=6$. (c) Show that the seven points can be written in the form \eqref{eq:lrh}
+with seven features. Then explain what this description misses.
 \end{exercise}
 
 \subsection{Superposition: more features than dimensions}
@@ -369,10 +370,9 @@ features that need more than one dimension and a method for finding them.
 hierarchies of concepts, which appear as simple geometric shapes and as orthogonality relations.
 \item \citet{gurnee2023finding}, \emph{TMLR}. Evidence for superposition in real language models, obtained with
 probes that may use only a few neurons.
-\item \citet{hernandez2024linearity}, \emph{ICLR}. For a subset of the relations between a subject and an attribute,
-the map from the representation of the subject to the attribute is close to affine.
 \item \citet{marks2024geometry}, \emph{COLM}. Directions for the truth of a statement, and a careful comparison of
 the difference of means with logistic regression (\cref{ex:lda}).
-\item \citet{liu2025superposition}, \emph{NeurIPS}. A theoretical study that starts from the toy model of
-\cref{sec:toy} and relates superposition to the way in which the loss of a model decreases with its width.
+\item \citet{liu2025superposition}, \emph{NeurIPS}. Trains the toy model of \cref{sec:toy} with a controlled degree
+of superposition, finds that under strong superposition the loss falls in inverse proportion to the width, and
+observes the same law in open language models.
 \end{readinglist}
