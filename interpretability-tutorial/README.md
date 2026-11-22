@@ -1,6 +1,8 @@
 # Opening the Black Box: a first course in LLM interpretability
 
-A tutorial of about 40 pages. The compiled text is `llm-interpretability-tutorial.pdf`.
+A tutorial with exercises (placed after the material they use, with full solutions in an appendix) and an
+annotated list of peer-reviewed reading at the end of every section. The compiled text is
+`llm-interpretability-tutorial.pdf`.
 
 - Build the PDF: `latexmk -pdf -jobname=llm-interpretability-tutorial main.tex`
 - Regenerate the GPT-2 small figures and numbers (about 4 minutes on a laptop CPU):

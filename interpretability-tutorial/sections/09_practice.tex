@@ -72,18 +72,22 @@ of a network, and methods that are judged by their measurable use in tasks such 
 \citep{nanda2025pragmatic,marks2025auditing}.
 \end{itemize}
 
-\subsection{What to read next}
+\subsection{Sources outside the peer-reviewed literature}
 
-\begin{itemize}
-\item \citet{elhage2021mathematical} is the source of the residual-stream view of \cref{sec:transformer} and of
-\cref{sec:pathexp}. Read it first.
-\item \citet{elhage2022toy} develops superposition (\cref{sec:features}) with many experiments.
-\item \citet{wang2023interpretability} is the model of a circuit analysis, and \citet{nanda2023progress} of a
-complete one.
-\item \citet{heimersheim2024use} is a practical guide to activation patching and its interpretation.
-\item \citet{bricken2023monosemanticity} and \citet{templeton2024scaling} introduce sparse autoencoders, and
-\citet{ameisen2025circuit} and \citet{lindsey2025biology} the attribution graphs built on them.
-\item \citet{ferrando2024primer} and \citet{bereska2024mechanistic} are broad surveys. The glossary of
-\citet{nanda2022glossary} explains the jargon of the field, and the ARENA course \citep{mcdougall2023arena}
-teaches the methods through programming exercises.
-\end{itemize}
+The reading lists of this tutorial are restricted to peer-reviewed work. Part of the field's primary literature
+is not of this kind, and a reader who wants to do research will need it. The articles of the Transformer Circuits
+Thread \citep{elhage2021mathematical,elhage2022toy,bricken2023monosemanticity,templeton2024scaling,ameisen2025circuit,lindsey2025biology}
+introduced the residual-stream view, superposition, sparse autoencoders at scale and attribution graphs.
+\citet{heimersheim2024use} is a practical guide to activation patching. \citet{ferrando2024primer} and
+\citet{barez2026understanding} are broad surveys. The glossary of \citet{nanda2022glossary} explains the jargon of
+the field, and the ARENA course \citep{mcdougall2023arena} teaches the methods through programming exercises.
+\begin{readinglist}
+\item \citet{sharkey2025open}, \emph{TMLR}, and \citet{mueller2026quest}, \emph{Computational Linguistics}. The
+two most useful overviews for choosing a research question.
+\item \citet{fiottokaufman2025nnsight}, \emph{ICLR}. The design of the nnsight library and of a shared
+infrastructure for experiments on models that are too large for one's own hardware.
+\item \citet{mueller2025mib}, \emph{ICML}, and \citet{karvonen2025saebench}, \emph{ICML}. Two benchmarks. A new
+method should be compared with existing ones on these before anything else.
+\item \citet{gao2025weight}, \emph{ICML}. Trains transformers with sparse weights and obtains circuits that are
+small enough to be understood completely, as an alternative to interpreting dense models after the fact.
+\end{readinglist}

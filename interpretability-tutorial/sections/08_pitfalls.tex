@@ -49,6 +49,14 @@ and a label can be more general or more specific than what the component does. \
 distribution on which the claim was tested, derive a prediction for inputs outside it, test that prediction,
 and report the share of the behaviour that the explanation leaves open.
 
+\begin{exercise}[\extitle{Base rates}{derivation}]\label{ex:baserate}
+A latent fires on $90\%$ of the texts about a certain concept and on $5\%$ of all other texts. The concept occurs
+in $1\%$ of the corpus. (a) Which fraction of the texts on which the latent fires is about the concept?
+(b) Suppose that the latent fires more strongly on texts about the concept than on other texts. What will the
+list of its $20$ strongest activations look like, and what will a reader of that list conclude? (c) Which control
+of failure mode 3 reveals the problem?
+\end{exercise}
+
 \subsection{Matching the evidence to the claim}
 
 A useful habit is to ask of every claim, including one's own, which kind of evidence it would need.
@@ -75,6 +83,28 @@ a weaker claim.}
 \label{tab:evidence}
 \end{table}
 
+\begin{exercise}[\extitle{A lie detector}{concept}]\label{ex:critique}
+A blog post reports: ``We trained a linear probe on layer 20 of a chat model and can predict with 99\% accuracy
+whether the model is about to lie. We have found the model's lie detector.'' List three experiments that are
+missing, and say for each which failure mode of this section it addresses.
+\end{exercise}
+
+\begin{exercise}[\extitle{Three abstracts}{concept}]\label{ex:abstracts}
+For each of the following summaries, name the row of \cref{tab:evidence} to which the claim belongs and the most
+important piece of evidence that is missing. (a) ``Zero-ablating the MLP of layer 14 destroys the ability of the
+model to add two-digit numbers. Addition is therefore computed in this MLP.'' (b) ``A latent of our SAE fires on
+$85\%$ of the answers in which the model deceives the user. The model therefore knows when it is deceiving.''
+(c) ``Our automatically discovered circuit reaches $98\%$ faithfulness under mean ablation. It contains $70\%$ of
+all edges of the model.''
+\end{exercise}
+
+\begin{exercise}[\extitle{A baseline for steering}{concept}]\label{ex:steerbaseline}
+Adding a steering vector raises the rate of a certain behaviour from $10\%$ to $60\%$. Adding a random vector of
+the same norm raises it to $35\%$. (a) Which part of the increase can be credited to the direction? (b) Suggest a
+reason why a random vector changes the behaviour at all. (c) Which further measurements are needed before the
+vector is used to control the model?
+\end{exercise}
+
 \begin{takeaways}
 Before believing an interpretability result, ask six questions. What exactly is the hypothesis, and what would
 count against it? On which distribution of inputs was it tested? What was the counterfactual in each
@@ -83,8 +113,18 @@ evidence observational or interventional, and does the claim go beyond it? How m
 unexplained?
 \end{takeaways}
 
-\begin{exercise}\label{ex:critique}
-A blog post reports: ``We trained a linear probe on layer 20 of a chat model and can predict with 99\% accuracy
-whether the model is about to lie. We have found the model's lie detector.'' List three experiments that are
-missing, and say for each which failure mode of this section it addresses.
-\end{exercise}
+\begin{readinglist}
+\item \citet{adebayo2018sanity}, \emph{NeurIPS}, and \citet{heap2025sparse}, \emph{ICLR}. The same control, a model
+with random weights, applied to attribution maps and to sparse autoencoders (failure mode 2).
+\item \citet{hewitt2019designing}, \emph{EMNLP}. Control tasks, the standard guard against failure mode 1.
+\item \citet{makelov2024subspace}, \emph{ICLR}. A complete worked example of failure mode 6, on the IOI task.
+\item \citet{hase2023does}, \emph{NeurIPS}. The evidence behind failure mode 7.
+\item \citet{friedman2024interpretability}, \emph{ICML}. Simplified descriptions of a model can agree with it on
+the training distribution and disagree elsewhere (failure mode 8).
+\item \citet{miller2024transformer}, \emph{COLM}. Shows how much reported faithfulness depends on details of the
+ablation.
+\item \citet{shi2024hypothesis}, \emph{NeurIPS}. Turns the criteria for circuits into statistical hypothesis
+tests and applies them to published circuits.
+\item \citet{meloux2025everything}, \emph{ICLR}. Enumerates all candidate explanations in small networks and finds
+that many different ones pass the usual criteria. An explanation that passes need not be the only one.
+\end{readinglist}

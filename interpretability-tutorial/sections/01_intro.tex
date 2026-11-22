@@ -43,6 +43,13 @@ The literature separates two properties of an explanation \citep{jacovi2020towar
 of the model. Self-explanations are selected for plausibility. Interpretability research is the attempt to obtain
 faithfulness, and for that we have to look inside.
 
+\begin{exercise}[\extitle{Plausible or faithful}{concept}]\label{ex:plausible}
+A model is asked whether $3599$ is a prime number. It answers ``no'' and, asked for its reason, writes ``because
+$3599=59\times61$''. (a) Is this explanation plausible? (b) Describe an experiment that uses only inputs and
+outputs and that could show the explanation to be unfaithful. (c) Explain why no experiment of this kind can show
+it to be faithful.
+\end{exercise}
+
 \subsection{Why it matters}
 
 We give four reasons, in decreasing order of how often they are cited.
@@ -99,6 +106,19 @@ explanations go one step further and derive the behaviour from the weights, so t
 inputs that were never tried. \Cref{tab:map} places the methods of this tutorial on this map.
 
 
+\begin{exercise}[\extitle{Three kinds of evidence}{concept}]\label{ex:evidence}
+Consider three statements about one neuron of a language model. (a) It is active on $93\%$ of all French tokens
+and on $2\%$ of all other tokens. (b) When it is set to zero, the loss on French text rises and the loss on English
+text stays the same. (c) Its output weights have a large inner product with the unembedding vectors of common
+French words. Classify each statement as observational, interventional or mechanistic. Then take the claim ``this
+neuron is how the model recognises French'' and say, for each statement, what it leaves open.
+\end{exercise}
+
+\begin{exercise}[\extitle{The limits of an analogy}{concept}]\label{ex:binary}
+This section compares a trained network with a compiled program whose source code is lost. Name two respects in
+which the network is easier to reverse engineer than such a program, and two respects in which it is harder.
+\end{exercise}
+
 \subsection{The running example}
 \label{sec:running}
 
@@ -152,7 +172,39 @@ of training a neural network by gradient descent. It does not assume any knowled
 
 Three kinds of boxes mark material with a special role. An \emph{Intuition} box gives an informal picture of a
 formal statement. A \emph{Caution} box states a limit of a method or a common misreading. A \emph{Takeaways} box
-closes each of Sections~\ref{sec:transformer} to~\ref{sec:pitfalls}. Symbols are defined at the place where they are first used. Proofs are written as chains of
-equalities in which the reason for each line is printed in grey on the right. Each of these sections also ends with a
-few exercises, and \cref{app:solutions} contains solutions. A glossary of the technical terms is in
-\cref{app:glossary}. Finally, \cref{sec:practice} lists software, first projects and further reading.
+closes each of Sections~\ref{sec:intro} to~\ref{sec:pitfalls}. Symbols are defined at the place where they are
+first used. Proofs are written as chains of equalities in which the reason for each line is printed in grey on the
+right.
+
+\emph{Exercises} are set in boxes with a green bar and appear directly after the material that they use. Each one
+is marked as a \textsc{derivation}, which asks for a calculation or a proof, or as a \textsc{concept} question,
+which asks for an argument in words. The concept questions often have more than one good answer. We recommend
+attempting each exercise before reading on, because several of them prepare a point that the text makes later.
+\Cref{app:solutions} contains detailed solutions to all of them.
+
+Every section ends with a short list of \emph{recommended reading}. These lists contain only articles that have
+appeared in peer-reviewed machine learning venues, mostly in the last five years, and each entry says what the
+article adds to the section. A glossary of the technical terms is in \cref{app:glossary}, and
+\cref{sec:practice} lists software and first projects.
+
+\begin{takeaways}
+An interpretation of a model has to be understandable and faithful, and only faithfulness is hard to check. The
+explanations that a model gives of itself are selected for plausibility. Evidence about the internals of a model
+is observational, interventional or mechanistic, and a claim should not be stronger than the kind of evidence
+behind it. One task, indirect object identification in GPT-2 small, serves as the running example of this
+tutorial.
+\end{takeaways}
+
+\begin{readinglist}
+\item \citet{jacovi2020towards}, \emph{ACL}. The source of the distinction between plausible and faithful
+explanations. It also argues that faithfulness should be treated as a matter of degree.
+\item \citet{turpin2023language}, \emph{NeurIPS}. The experiments behind \cref{ex:plausible}: step-by-step
+explanations that leave out the feature of the prompt which determined the answer.
+\item \citet{bereska2024mechanistic}, \emph{TMLR}. A review of the concepts and methods of mechanistic
+interpretability, organised around their relevance for the safety of AI systems.
+\item \citet{mueller2026quest}, \emph{Computational Linguistics}. A survey that sorts the field by the kind of
+unit in which a method describes the model: neurons, heads, directions, latents. It is a good second map after
+\cref{tab:map}.
+\item \citet{sharkey2025open}, \emph{TMLR}. A statement of the open problems by about thirty researchers. It is
+best read after this tutorial, as a guide to what is not yet known.
+\end{readinglist}

@@ -83,6 +83,14 @@ def normalise(metric_value):
 
 
 # ----------------------------------------------------------------------------------------------
+# 0. A check quoted in an exercise: GPT-2 small does not reliably know where the Eiffel Tower is.
+# ----------------------------------------------------------------------------------------------
+with torch.no_grad():
+    fact_logits = model(model.to_tokens("The Eiffel Tower is located in the city of"))
+fact_top = fact_logits[0, -1].softmax(-1).topk(5)
+results["eiffel_tower_top5"] = [(model.to_string(i), v.item()) for v, i in zip(fact_top.values, fact_top.indices)]
+
+# ----------------------------------------------------------------------------------------------
 # 0a. Attention patterns: where do a few late heads look from the last position?
 # ----------------------------------------------------------------------------------------------
 attention = {}

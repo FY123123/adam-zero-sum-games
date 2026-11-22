@@ -32,6 +32,13 @@ alike, for every subset. It detects components outside the circuit that could st
 removing it changes the performance noticeably.
 \end{itemize}
 
+\begin{exercise}[\extitle{Faithful and still incomplete}{concept}]\label{ex:redundant}
+A model solves a task with two heads that do the same job, so that the task is solved as long as at least one of
+them works. To ablate a head means to switch it off. A colleague proposes the circuit that consists of the first
+head alone. Evaluate the faithfulness, the completeness and the minimality of this circuit. Which class of heads
+of the IOI task plays the role of the second head?
+\end{exercise}
+
 \subsection{Reading an algorithm from the weights}
 \label{sec:pathexp}
 
@@ -83,6 +90,29 @@ With two layers, the input of a head in the second layer contains the outputs of
 query (what the destination asks for), its key (what a source offers) or its value (what is moved). Composition is where
 real algorithms begin.
 
+\begin{exercise}[\extitle{A bug of one-layer models}{concept}]\label{ex:skiptrigram}
+In the model \eqref{eq:onelayer} with a single head, suppose the head makes ``\tok{keep} $\dots$ \tok{in}
+$\to$ \tok{mind}'' and ``\tok{keep} $\dots$ \tok{at} $\to$ \tok{bay}'' likely. Using the three tables above,
+argue that it will also raise the probability of ``\tok{keep} $\dots$ \tok{in} $\to$ \tok{bay}'' to some extent.
+Which table would have to depend on the destination token to avoid this?
+\end{exercise}
+
+\begin{exercise}[\extitle{Counting paths}{derivation}]\label{ex:paths}
+Consider an attention-only transformer with $L$ layers and $H$ heads per layer, without $\LN$, and regard all
+attention patterns as fixed numbers. (a) Show that the map from the embeddings to the final streams is then
+linear, and that expanding it gives one term for every way of choosing, in each layer, either no head or one of
+the $H$ heads. (b) Conclude that the logits are a sum of $(1+H)^L$ kinds of paths, which generalises
+\cref{prop:path}. (c) Evaluate this number for $L=2$, $H=12$ and for $L=12$, $H=12$. What does the result say
+about reading a large model from its weights, term by term?
+\end{exercise}
+
+\begin{exercise}[\extitle{Copying heads}{concept}]\label{ex:copying}
+A head is said to \emph{copy} if attending to a token raises the logit of that same token. (a) In the model
+\eqref{eq:onelayer}, express this property as a condition on the table $W_U[t]^\top W_{OV}^{0,h}W_E[t_j]$.
+(b) Describe a test for copying that uses only the weights. (c) Give two reasons why the same test is only
+approximate for a head in a late layer of GPT-2 small.
+\end{exercise}
+
 \subsection{Induction heads}
 \label{sec:induction}
 
@@ -126,6 +156,12 @@ sizes and showed that they form during a short window early in training, at the 
 ability to use its context improves sharply. They are a mechanism of \emph{in-context learning}: the model picks
 up a pattern from the prompt and continues it. Heads 5.5 and 6.9 of GPT-2 small are induction heads, and we have
 already met them in \cref{tab:heads}.
+
+\begin{exercise}[\extitle{Why induction needs two layers}{concept}]\label{ex:induction}
+Explain why the induction circuit cannot be implemented by a transformer with one layer. Use the fact that in
+\eqref{eq:path} the attention score depends only on the tokens $t_i$ and $t_j$, and on the positions $i$ and $j$
+if positional embeddings are kept.
+\end{exercise}
 
 \subsection{The IOI circuit}
 \label{sec:ioi}
@@ -214,6 +250,14 @@ previous-token heads behave identically in both runs and cannot show up in our p
 are also not a validation of the circuit. We did not run path patching, and we did not test faithfulness,
 completeness or minimality.
 \end{caution}
+
+\begin{exercise}[\extitle{Eighty-seven per cent}{concept}]\label{ex:eightyseven}
+The IOI circuit retains $87\%$ of the logit difference when all other heads are mean-ablated. (a) Give two
+different explanations of where the remaining $13\%$ could come from. (b) The reference distribution for the mean
+ablation consists of sentences with three unrelated names, none of which is repeated. What would change, and
+why, if the means were taken over the IOI prompts themselves? (c) Could a circuit reach $100\%$ and still be a
+poor explanation?
+\end{exercise}
 
 \subsection{A network that was understood completely}
 \label{sec:modadd}
@@ -308,6 +352,28 @@ sudden improvement happens when weight decay finally removes the memorised solut
 called memorisation, circuit formation and cleanup. A curve that looks like a sudden jump from the outside is a
 gradual process on the inside.
 
+\begin{exercise}[\extitle{Why the modulus is prime}{derivation}]\label{ex:cosprime}
+Let $P=113$ and $r=14$. For which integers $q$ is $\cos(2\pi rq/P)=1$? Why does the argument fail for $P=112$?
+\end{exercise}
+
+\begin{exercise}[\extitle{One frequency is not enough}{derivation}]\label{ex:onefreq}
+Suppose that the network used a single frequency $r$ with $0<r<P$, so that the logit of the candidate $c$ is
+$\cos(2\pi r(a+b-c)/P)$. (a) Show that some wrong candidate receives the logit $\cos(2\pi/P)$. Hint: since $P$ is
+prime, there is an integer $q$ with $rq\equiv1\pmod P$. (b) For $P=113$, compute the margin $1-\cos(2\pi/P)$
+between the correct answer and this wrong candidate, using $\cos\phi\approx1-\phi^2/2$ for small $\phi$.
+(c) Compare with the margin in \cref{fig:modadd} and explain why the network uses several frequencies.
+\end{exercise}
+
+\begin{exercise}[\extitle{Products from sums}{derivation}]\label{ex:product}
+Step 2 of the algorithm needs products of two numbers, and a neuron can only apply a fixed function to a
+weighted sum of its inputs. (a) Verify that $\xi_1\xi_2=\tfrac14(\xi_1+\xi_2)^2-\tfrac14(\xi_1-\xi_2)^2$ for all
+real numbers $\xi_1,\xi_2$. (b) Conclude that two neurons whose nonlinearity is the square function can compute the
+product of two of their inputs. (c) The network of \citet{nanda2023progress} uses $\relu$ neurons. Show that
+$\relu(\xi)+\relu(-\xi)=|\xi|$, and argue informally that a sum of a few $\relu$ neurons can approximate the
+square function on a bounded interval. (d) What does this exercise suggest about why a learned algorithm can look
+strange to us and still be natural for a network?
+\end{exercise}
+
 \subsection{Scaling up: automatic discovery and feature circuits}
 \label{sec:featurecircuits}
 
@@ -355,6 +421,13 @@ summary of a graph is ``this is a mechanism consistent with the model's computat
 the replacement captures it''.
 \end{caution}
 
+\begin{exercise}[\extitle{Questions for an attribution graph}{concept}]\label{ex:graphcritique}
+An attribution graph for the prompt about the capital of the state that contains Dallas shows a path from latents
+for Dallas through latents for Texas to the answer \tok{Austin}. Suppose that the error nodes account for $40\%$
+of the total effect on the answer. List three checks that should be made before we conclude that the model
+reasons in two steps, and name the limitation that each check addresses.
+\end{exercise}
+
 \begin{takeaways}
 A circuit is a subgraph of components with a description of what each one computes, and it has to be tested
 for faithfulness, completeness and minimality. In small models circuits can be read from the weights. The
@@ -364,17 +437,29 @@ write. Attribution graphs extend the approach to large models, one prompt at a t
 remainder.
 \end{takeaways}
 
-\begin{exercise}\label{ex:skiptrigram}
-In the model \eqref{eq:onelayer} with a single head, suppose the head makes ``\tok{keep} $\dots$ \tok{in}
-$\to$ \tok{mind}'' and ``\tok{keep} $\dots$ \tok{at} $\to$ \tok{bay}'' likely. Using the three tables of
-\cref{sec:pathexp}, argue that it will also raise the probability of ``\tok{keep} $\dots$ \tok{in} $\to$
-\tok{bay}'' to some extent. Which table would have to depend on the destination token to avoid this?
-\end{exercise}
-\begin{exercise}\label{ex:induction}
-Explain why the induction circuit of \cref{sec:induction} cannot be implemented by a transformer with one
-layer. Use the fact that in \eqref{eq:path} the attention score depends only on the tokens $t_i$ and $t_j$, and on the
-positions $i$ and $j$ if positional embeddings are kept.
-\end{exercise}
-\begin{exercise}\label{ex:cosprime}
-Let $P=113$ and $r=14$. For which integers $q$ is $\cos(2\pi rq/P)=1$? Why does the argument fail for $P=112$?
-\end{exercise}
+\begin{readinglist}
+\item \citet{wang2023interpretability}, \emph{ICLR}. The IOI circuit. It remains the model of how to argue for a
+circuit, including the three criteria of this section.
+\item \citet{nanda2023progress}, \emph{ICLR}, \citet{zhong2023clock}, \emph{NeurIPS}, and
+\citet{chughtai2023toy}, \emph{ICML}. The modular addition network, a second algorithm that other networks learn
+for the same task, and the generalisation to group operations. Together they show what can and cannot be expected
+to be universal.
+\item \citet{hanna2023how}, \emph{NeurIPS}. A circuit in GPT-2 small for predicting a year that is later than a given
+year, with a clear account of the role of the MLPs.
+\item \citet{conmy2023towards}, \emph{NeurIPS}, and \citet{bhaskar2024finding}, \emph{NeurIPS}. Automatic circuit
+discovery by greedy pruning and by gradient-based optimisation.
+\item \citet{merullo2024circuit}, \emph{ICLR}. Finds that most components of the IOI circuit are used again in a
+different task, which is evidence that circuits are built from reusable parts.
+\item \citet{geva2023dissecting}, \emph{EMNLP}. Traces the recall of a fact through three stages: enrichment of
+the subject, propagation of the relation, and extraction of the attribute.
+\item \citet{bietti2023birth}, \emph{NeurIPS}, \citet{nichani2024transformers}, \emph{ICML}, and
+\citet{singh2024needs}, \emph{ICML}. How induction-like circuits form during training, from the theoretical and
+from the experimental side.
+\item \citet{marks2025sparse}, \emph{ICLR}. Circuits whose nodes are SAE latents, with an application to removing
+an unwanted signal from a classifier.
+\item \citet{mueller2025mib}, \emph{ICML}. A benchmark for methods that locate circuits and methods that locate
+variables. It gives a comparison on equal terms of most methods of \cref{sec:interventions,sec:circuits}.
+\item \citet{arora2026language}, \emph{ICML}, and \citet{hanna2026latent}, \emph{ICLR}. Two recent developments of
+circuit tracing: circuits built directly on MLP neurons, and a study of planning across models of different
+size.
+\end{readinglist}

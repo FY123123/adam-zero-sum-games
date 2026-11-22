@@ -16,7 +16,18 @@ predicted probability that the next token $t_{i+1}$ equals $t$ is the softmax of
 \begin{equation}\label{eq:softmax}
 \Pr(t_{i+1}=t \mid t_1,\dots,t_i) \;=\; \frac{\exp(\logit_i(t))}{\sum_{t'=1}^{V}\exp(\logit_i(t'))} .
 \end{equation}
-Training adjusts the weights so that the true next token receives a high probability on a large corpus of text.
+Training adjusts the weights so as to minimise the average of $-\log\Pr(t_{i+1}\mid t_1,\dots,t_i)$ over a large
+corpus of text. This quantity is called the cross-entropy loss, and it is small when the true next token receives a
+high probability.
+
+\begin{exercise}[\extitle{Softmax sees only differences}{derivation}]\label{ex:softmax}
+(a) Show that adding the same number to all logits at position $i$ does not change the probabilities
+\eqref{eq:softmax}. (b) Show that the ratio of the probabilities of two tokens $t$ and $t'$ equals
+$\exp(\logit_i(t)-\logit_i(t'))$. (c) Let $t^\star$ be the true next token. Show that the derivative of the loss
+$-\log\Pr(t_{i+1}=t^\star\mid t_1,\dots,t_i)$ with respect to $\logit_i(t)$ equals
+$\Pr(t_{i+1}=t\mid t_1,\dots,t_i)-1$ if $t=t^\star$ and $\Pr(t_{i+1}=t\mid t_1,\dots,t_i)$ if $t\ne t^\star$.
+(d) What do (a) to (c) suggest about the right way to measure how well a model separates two candidate tokens?
+\end{exercise}
 
 \subsection{The residual stream}
 
@@ -131,6 +142,26 @@ parameters. It is customary to name a head by layer and index, so that ``head 9.
 $\ell=9$. Current large models have the same architecture up to details and are larger by two to three orders of
 magnitude.
 
+\begin{exercise}[\extitle{Attention by hand}{derivation}]\label{ex:byhand}
+Consider one head with $d=2$ and $d_{\mathrm{head}}=1$ in a model without $\LN$ and without biases. Its weights are
+$W_Q=(0\ \ 2)$, $W_K=(1\ \ 0)$, $W_V=(1\ \ 0)$ and $W_O=(0\ \ 1)^\top$. The stream at the input of the layer is
+$x_1^{(\ell)}=(1,0)^\top$ at position $1$ and $x_2^{(\ell)}=(0,1)^\top$ at position $2$. (a) Compute $W_{QK}$ and
+$W_{OV}$. (b) Compute the attention pattern and the output of the head at the destination $i=2$. (c) Do the same
+at the destination $i=1$. (d) The attention weights of a destination always sum to one, so a head cannot decide
+to read from nowhere. How can a model still arrange that a head writes almost nothing at some destinations?
+\end{exercise}
+
+\begin{exercise}[\extitle{Counting parameters}{derivation}]\label{ex:params}
+Count the weights of one attention head of GPT-2 small, without biases. Using the total of $124$ million
+parameters, which fraction of the model is taken by the token embedding matrix $W_E$?
+\end{exercise}
+
+\begin{exercise}[\extitle{What one head can write}{derivation}]\label{ex:rank}
+(a) Show that $W_{OV}$ has rank at most $d_{\mathrm{head}}$. What does this say about the set of vectors that a
+single head of GPT-2 small can write to the stream? (b) In GPT-2 small, $d_{\mathrm{head}}=d/H$. What is the
+largest possible dimension of the space to which the $H$ heads of one layer can write together?
+\end{exercise}
+
 \subsection{Four structural facts}
 \label{sec:facts}
 
@@ -193,6 +224,19 @@ contribution. The last fact says that the board has no natural grid: the meaning
 directions that we have to find.
 \end{intuition}
 
+\begin{exercise}[\extitle{A direction that nobody reads}{derivation}]\label{ex:ones}
+Let $s\in\R$. Show that $\LN(x+s\,\one)=\LN(x)$. Conclude that replacing the stream $x_i^{(\ell)}$ by
+$x_i^{(\ell)}+s\,\one$ at any single layer and position does not change any logit.
+\end{exercise}
+
+\begin{exercise}[\extitle{Rotating the stream}{derivation}]\label{ex:rotation}
+(a) Prove the claim made above that $\LN(\Omega x)=\Omega\,\LN(x)$ for every orthogonal matrix $\Omega$ with
+$\Omega\one=\one$. (b) Show by an example with $d=2$ that the claim fails for a general orthogonal matrix.
+(c) A colleague plots coordinate number $17$ of the residual stream over many prompts and finds that it is large
+on texts about sports. Use the last fact of this subsection to explain why this observation says little about
+how the model represents sports.
+\end{exercise}
+
 \subsection{The running example in this notation}
 \label{sec:metric}
 
@@ -211,6 +255,12 @@ $\LN(x_n^{(L)})$, so \cref{prop:dla} applies to it term by term. And it removes 
 in common. A component that only says ``the next token is a name'' raises both logits equally and cancels in
 \eqref{eq:ld}.
 
+\begin{exercise}[\extitle{What the logit difference hides}{concept}]\label{ex:metric}
+Suppose that some head raises the logits of all first names by the same amount at the last position of every IOI
+prompt. (a) What is its contribution to the logit difference \eqref{eq:ld}? (b) Is this head irrelevant for the
+task? (c) Propose a metric under which its contribution becomes visible.
+\end{exercise}
+
 \subsection{Why the problem is hard}
 
 Three properties of the object make interpretation difficult, and each later section responds to one of them.
@@ -228,15 +278,21 @@ fixed. Attention heads are the only route between positions. The stream has no p
 MLP neurons do.
 \end{takeaways}
 
-\begin{exercise}\label{ex:params}
-Count the weights of one attention head of GPT-2 small, without biases. Using the total of $124$ million
-parameters, which fraction of the model is taken by the token embedding matrix $W_E$?
-\end{exercise}
-\begin{exercise}\label{ex:ones}
-Let $s\in\R$. Show that $\LN(x+s\,\one)=\LN(x)$. Conclude that replacing the stream $x_i^{(\ell)}$ by
-$x_i^{(\ell)}+s\,\one$ at any single layer and position does not change any logit.
-\end{exercise}
-\begin{exercise}\label{ex:rank}
-Show that $W_{OV}$ has rank at most $d_{\mathrm{head}}$. What does this say about the set of vectors that a single
-head of GPT-2 small can write to the stream?
-\end{exercise}
+\begin{readinglist}
+\item \citet{vaswani2017attention}, \emph{NeurIPS}. The original description of the architecture. It predates the
+residual-stream view, and comparing the two presentations is instructive.
+\item \citet{weiss2021thinking}, \emph{ICML}. Defines a small programming language whose operations correspond to
+attention and to MLP layers. Writing a task in this language shows how many layers and heads a transformer needs
+for it.
+\item \citet{geva2021transformer}, \emph{EMNLP}, and \citet{geva2022transformer}, \emph{EMNLP}. Two studies of the
+MLP layers. The first reads their input weights as patterns that are detected and their output weights as tokens
+that are promoted. The second describes the output of an MLP as a sum of updates to the stream, read through the
+unembedding.
+\item \citet{dar2023analyzing}, \emph{ACL}. Interprets the weights of a transformer directly, by expressing them
+in the space of token embeddings, without running the model on any input.
+\item \citet{lindner2023tracr}, \emph{NeurIPS}. A compiler that turns a known algorithm into the weights of a
+transformer. The resulting models have a known ground truth, on which interpretability methods can be tested.
+\item \citet{csordas2025language}, \emph{NeurIPS}. Uses the additive structure of the residual stream to ask how
+much each layer of current large models contributes, and finds that the later layers contribute much less than
+the earlier ones.
+\end{readinglist}

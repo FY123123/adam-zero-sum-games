@@ -30,6 +30,15 @@ gradient-based importance measures, and that very different attention distributi
 prediction. \citet{wiegreffe2019attention} discuss in which sense attention can still serve as an explanation.
 \end{caution}
 
+\begin{exercise}[\extitle{Two heads with the same pattern}{derivation}]\label{ex:pattern}
+(a) Heads 9.9 and 10.7 both attend from the last position to the indirect object with a weight of about $0.8$.
+Which quantity would we compute to find out whether each of them helps or hurts the prediction? (b) Show that
+the output \eqref{eq:headout} of a head satisfies
+$\|\head_i^{\ell,h}\|\le\max_{j\le i}\|W_{OV}\LN(x_j^{(\ell)})\|$. (c) A head puts the weight $0.9$ on a source
+whose value vector $W_{OV}\LN(x_j^{(\ell)})$ has norm $0.1$, and the weight $0.1$ on a source whose value vector
+has norm $10$. Which source dominates the output?
+\end{exercise}
+
 \subsection{Input attribution}
 \label{sec:attribution}
 
@@ -111,6 +120,19 @@ is silent on how they are processed. Methods such as LIME \citep{ribeiro2016shou
 its input-output behaviour.
 \end{caution}
 
+\begin{exercise}[\extitle{When gradient times input is right}{derivation}]\label{ex:linearig}
+Let $F$ be a linear function of $z$ without a constant term, so that its gradient $\nabla_{z_i}F$ is the same at
+every point. Show that integrated gradients with baseline $\bar z=0$ coincide with gradient times input. Then
+take $n=d=1$ and $F(z)=z^2$, and show that gradient times input is twice the integrated gradient.
+\end{exercise}
+
+\begin{exercise}[\extitle{The baseline decides}{derivation}]\label{ex:baseline}
+Let $n=2$ and $d=1$, so that the input consists of two numbers $z_1,z_2$, and let $F(z)=z_1z_2$. Compute the
+integrated gradients \eqref{eq:ig} at $z=(1,1)$ (a) for the baseline $\bar z=(0,0)$ and (b) for the baseline
+$\bar z=(0,1)$. Check \cref{prop:ig} in both cases. (c) Compute gradient times input at $z=(1,1)$. (d) The second
+input receives different attributions in (a) and in (b). Which of the two is correct?
+\end{exercise}
+
 \subsection{The logit lens and direct logit attribution}
 \label{sec:lens}
 
@@ -189,6 +211,23 @@ the output. A head in layer 5 that is essential for the task because head 9.9 de
 \Cref{sec:necessity} shows that this is exactly what happens in our example.
 \end{caution}
 
+\begin{exercise}[\extitle{Lens and attribution use different scales}{derivation}]\label{ex:lenslast}
+Show that at $\ell=L$ the lens logits \eqref{eq:lens} are the logits of the model. Then explain why the sum of
+the DLA terms of all components in layers $0,\dots,8$, together with the embeddings, is in general \emph{not}
+equal to the lens logit difference at $\ell=9$.
+\end{exercise}
+
+\begin{exercise}[\extitle{Deleting a component}{derivation}]\label{ex:delete}
+Fix a component $g\in\mathcal G_n$ and write $\mathrm{DLA}(g)$ for its summand in \eqref{eq:dla-ld}. Suppose that we
+could delete $g$ from the final stream, replacing $x_n^{(L)}$ by $x_n^{(L)}-g$, while all other components keep
+their values. Ignore the bias terms. Show that the logit difference becomes
+\[
+\Big(\logit_n(\mathrm{IO})-\logit_n(\mathrm{S})-\mathrm{DLA}(g)\Big)\cdot\frac{\scale\big(x_n^{(L)}\big)}{\scale\big(x_n^{(L)}-g\big)} .
+\]
+Then name the two reasons why the effect of really removing a component from the model differs from
+$\mathrm{DLA}(g)$.
+\end{exercise}
+
 \subsection{Probing}
 \label{sec:probing}
 
@@ -233,6 +272,35 @@ means and report that the latter is more often the one that changes the model's 
 We return to this simple estimator in \cref{sec:lrh}.
 \end{enumerate}
 
+\begin{exercise}[\extitle{A control for a probe}{concept}]\label{ex:probecontrol}
+Suppose that a linear probe trained on the stream of layer 6 reaches 95\% accuracy for the property ``the
+current token is a first name''. Describe a control experiment that shows whether this says anything about layer
+6, and predict its outcome using \eqref{eq:embed}.
+\end{exercise}
+
+\begin{exercise}[\extitle{The probe direction is not the difference of means}{derivation}]\label{ex:lda}
+Suppose that the activations of the two classes are Gaussian with the same covariance. That is, $x$ is Gaussian
+with mean $\mu_1\in\R^d$ if $y=1$ and Gaussian with mean $\mu_0\in\R^d$ if $y=0$, in both cases with the same
+invertible covariance matrix $\Gamma$, and both classes are equally likely. (a) Show
+that
+\[
+\log\frac{\Pr(y=1\mid x)}{\Pr(y=0\mid x)} \;=\; w^\top x+b_{\mathrm{probe}}\qquad\text{with}\qquad w=\Gamma^{-1}(\mu_1-\mu_0)
+\]
+and a suitable number $b_{\mathrm{probe}}$, so that the probe \eqref{eq:probe} with this $w$ is exactly right.
+(b) Let $d=2$, $\mu_1-\mu_0=(1,0)^\top$ and $\Gamma=\begin{pmatrix}1&\rho\\ \rho&1\end{pmatrix}$ with $0<\rho<1$.
+Compute $w$ up to a positive factor. (c) The two classes differ only in the first coordinate, and the probe
+direction still has a nonzero second coordinate. What does the probe use the second coordinate for? (d) If we
+want to change the concept inside the model by moving its activation, which direction is the better candidate,
+$w$ or $\mu_1-\mu_0$?
+\end{exercise}
+
+\begin{exercise}[\extitle{What a failed probe shows}{concept}]\label{ex:othello}
+The first study of the Othello model found that a probe with one hidden layer decodes the colour of each square
+and that a linear probe does not. (a) State two different hypotheses about the model that are both consistent
+with this pair of results. (b) Which of them is supported by the later finding that the variable ``my piece or
+the opponent's piece'' is linearly decodable? (c) What does the episode teach about negative probing results?
+\end{exercise}
+
 \begin{takeaways}
 Attention patterns show from where a head reads and hide what it writes. Input attribution depends on a
 baseline, and only integrated gradients are a true decomposition of the output change. The logit lens shows at
@@ -242,18 +310,25 @@ example these tools point at layers 7 to 9, at the name mover heads 9.9, 9.6 and
 10.7 and 11.10.
 \end{takeaways}
 
-\begin{exercise}\label{ex:linearig}
-Let $F$ be a linear function of $z$ without a constant term, so that its gradient $\nabla_{z_i}F$ is the same at
-every point. Show that integrated gradients with baseline $\bar z=0$ coincide with gradient times input. Then take $n=d=1$ and $F(z)=z^2$, and show that
-gradient times input is twice the integrated gradient.
-\end{exercise}
-\begin{exercise}\label{ex:lenslast}
-Show that at $\ell=L$ the lens logits \eqref{eq:lens} are the logits of the model. Then explain why the sum of
-the DLA terms of all components in layers $0,\dots,8$, together with the embeddings, is in general \emph{not}
-equal to the lens logit difference at $\ell=9$.
-\end{exercise}
-\begin{exercise}\label{ex:probecontrol}
-Suppose that a linear probe trained on the stream of layer 6 reaches 95\% accuracy for the property ``the
-current token is a first name''. Describe a control experiment that shows whether this says anything
-about layer 6, and predict its outcome using \eqref{eq:embed}.
-\end{exercise}
+\begin{readinglist}
+\item \citet{jain2019attention}, \emph{NAACL}, and \citet{wiegreffe2019attention}, \emph{EMNLP}. The two sides of
+the debate on whether attention weights explain a prediction. Reading them together teaches how much depends on
+the definition of ``explanation''.
+\item \citet{kobayashi2020attention}, \emph{EMNLP}. Shows that the norm of the vector that a head moves matters as
+much as the attention weight, which is the point of \cref{ex:pattern}.
+\item \citet{adebayo2018sanity}, \emph{NeurIPS}. The randomisation tests for attribution maps. The experimental
+design carries over to every method of this tutorial.
+\item \citet{bilodeau2024impossibility}, \emph{PNAS}. Proves that attribution methods which are complete and
+linear, such as integrated gradients, can fail to do better than random guessing at predicting how a model behaves
+near an input.
+\item \citet{hewitt2019designing}, \emph{EMNLP}, and \citet{belinkov2022probing}, \emph{Computational Linguistics}.
+Control tasks for probes, and a survey of what probing can and cannot show.
+\item \citet{li2023emergent}, \emph{ICLR}. The Othello study of \cref{ex:othello}. It is also an early example of
+checking a probe by an intervention.
+\item \citet{gurnee2024language}, \emph{ICLR}. Linear probes recover the coordinates of places and the dates of
+events from the activations of large models, with careful controls.
+\item \citet{ghandeharioun2024patchscopes}, \emph{ICML}. A framework that decodes an activation by inserting it
+into a second prompt and letting the model describe it. The logit lens is a special case.
+\item \citet{karvonen2026activation}, \emph{ICML}. Trains language models to answer questions in natural language
+about activations that are given to them as input, and tests how far this generalises.
+\end{readinglist}

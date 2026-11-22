@@ -1,0 +1,574 @@
+\section{Solutions to the exercises}
+\label{app:solutions}
+
+{\small
+The solutions to derivations are written out in full. The answers to concept questions are one good answer among
+several.
+
+\subsection*{Section 1}
+
+\paragraph{\Cref{ex:plausible}.}
+(a) Yes. The factorisation is correct, and it is the reason that a person would give.
+(b) We ask the same question about prime numbers of the same size, for example $3593$. If the model also answers
+``no'' there and supports the answer with a factorisation that is false, then its answers do not come from
+factoring. We can also add an irrelevant hint to the prompt, such as ``I am fairly sure that it is prime'', and
+check whether the answer follows the hint while the explanation stays arithmetical, as in the experiments of
+\citet{turpin2023language}.
+(c) An experiment on inputs and outputs can contradict an explanation, and it cannot confirm one, because every
+finite set of answers is produced by many different internal computations. There is also a structural reason in
+this example. The word ``no'' is generated before the factorisation is written. Whatever produced the ``no'' did
+not have the written factorisation in front of it, and whether it used the factors internally is a question about
+activations.
+
+\paragraph{\Cref{ex:evidence}.}
+(a) Observational. It leaves open whether anything in the model reads this neuron, and whether the neuron
+recognises French or is a by-product of something else that does.
+(b) Interventional. It shows that the output of the neuron matters for French text, in comparison with the value
+zero. It leaves open what the neuron contributes, since zero may be far from every value that the neuron takes on
+French text, and whether other components also recognise French.
+(c) Mechanistic in kind, because it is read from the weights and holds for all inputs. It shows what the neuron
+does to the output when it is active, through the direct path. It leaves open on which inputs the neuron is active
+and what it does through later layers.
+The claim needs all three statements together, and in addition a test that no other component does the same job.
+
+\paragraph{\Cref{ex:binary}.}
+Easier: every intermediate value of a network can be read exactly, overwritten at will and recomputed, and
+gradients are available. The architecture is simple, uniform and fully known, and nobody has tried to hide
+anything. Harder: no programmer designed the computation, so nothing guarantees that it consists of modules and
+variables that a person would recognise. The information is spread over many units, each of which mixes many
+concepts (\cref{sec:features}). There are no discrete instructions. And the behaviour that we want to explain is
+itself only loosely specified.
+
+\subsection*{Section 2}
+
+\paragraph{\Cref{ex:softmax}.}
+(a) Let all logits at position $i$ be increased by a number $s$. The new probability of token $t$ is
+\begin{align*}
+\frac{\exp(\logit_i(t)+s)}{\sum_{t'=1}^{V}\exp(\logit_i(t')+s)}
+&= \frac{e^{s}\exp(\logit_i(t))}{e^{s}\sum_{t'=1}^{V}\exp(\logit_i(t'))} && \by{since $\exp(\logit+s)=e^s\exp(\logit)$}\\
+&= \frac{\exp(\logit_i(t))}{\sum_{t'=1}^{V}\exp(\logit_i(t'))}, && \by{cancelling $e^s$}
+\end{align*}
+which is the old probability \eqref{eq:softmax}.
+(b) The probabilities of $t$ and $t'$ in \eqref{eq:softmax} have the same denominator. Their ratio is therefore
+$\exp(\logit_i(t))/\exp(\logit_i(t'))=\exp(\logit_i(t)-\logit_i(t'))$.
+(c) By \eqref{eq:softmax},
+\[
+-\log\Pr(t_{i+1}=t^\star\mid t_1,\dots,t_i) \;=\; -\logit_i(t^\star)+\log\sum_{t'=1}^{V}\exp(\logit_i(t')).
+\]
+The derivative of the first term with respect to $\logit_i(t)$ is $-1$ if $t=t^\star$ and $0$ otherwise. The
+derivative of the second term is $\exp(\logit_i(t))/\sum_{t'}\exp(\logit_i(t'))$, which is
+$\Pr(t_{i+1}=t\mid t_1,\dots,t_i)$. Adding the two gives the claim.
+(d) By (a), a single logit has no meaning, and by (b) the difference of two logits is the logarithm of the ratio
+of the two probabilities. By (c), training raises the logit of the true token and lowers every other logit in
+proportion to its probability, so what it shapes are differences. The natural measure of how well two candidates
+are separated is the difference of their logits.
+
+\paragraph{\Cref{ex:byhand}.}
+(a) $W_{QK}=W_Q^\top W_K=\begin{pmatrix}0\\2\end{pmatrix}\begin{pmatrix}1&0\end{pmatrix}=\begin{pmatrix}0&0\\2&0\end{pmatrix}$ and
+$W_{OV}=W_OW_V=\begin{pmatrix}0\\1\end{pmatrix}\begin{pmatrix}1&0\end{pmatrix}=\begin{pmatrix}0&0\\1&0\end{pmatrix}$.
+(b) Since $d_{\mathrm{head}}=1$, the scores are not rescaled. The score of the source $j=1$ is
+$(x_2^{(\ell)})^\top W_{QK}\,x_1^{(\ell)}=2$ and the score of the source $j=2$ is
+$(x_2^{(\ell)})^\top W_{QK}\,x_2^{(\ell)}=0$. The attention weights are $e^2/(e^2+1)\approx0.88$ and
+$1/(e^2+1)\approx0.12$. Since $W_{OV}x_1^{(\ell)}=(0,1)^\top$ and $W_{OV}x_2^{(\ell)}=(0,0)^\top$, the output of the
+head is $0.88\cdot(0,1)^\top+0.12\cdot(0,0)^\top=(0,\ 0.88)^\top$. In words: a destination whose second coordinate
+is set asks for sources whose first coordinate is set, and the head records in the second coordinate of the
+destination that such a source was found.
+(c) At the destination $i=1$ the only admissible source is $j=1$, so its weight is $1$ whatever the score is.
+The output is $W_{OV}x_1^{(\ell)}=(0,1)^\top$.
+(d) The model can provide a source whose value vector $W_{OV}\LN(x_j^{(\ell)})$ is close to zero, and let the head
+attend to this source whenever it has nothing to report. In practice the start token often plays this role.
+
+\paragraph{\Cref{ex:params}.}
+A head has $4\cdot d\cdot d_{\mathrm{head}}=4\cdot768\cdot64=196{,}608$ weights. $W_E$ has
+$50257\cdot768=38{,}597{,}376$ entries, which is $31\%$ of the model.
+
+\paragraph{\Cref{ex:rank}.}
+(a) $W_{OV}=W_OW_V$ is a product of a $d\times d_{\mathrm{head}}$ matrix and a $d_{\mathrm{head}}\times d$ matrix, so its
+rank is at most $d_{\mathrm{head}}=64$. Whatever a head writes lies in the column space of $W_O$, a fixed subspace
+of dimension at most $64$ of $\R^{768}$.
+(b) The outputs of the $H$ heads lie in $H$ subspaces of dimension at most $d_{\mathrm{head}}$ each. Their sum has
+dimension at most $H\,d_{\mathrm{head}}=d$. The heads of one layer can reach the whole stream at best, and only if
+their subspaces are linearly independent.
+
+\paragraph{\Cref{ex:ones}.}
+Since $\mean(x+s\,\one)=\mean(x)+s$, we get $x+s\,\one-\mean(x+s\,\one)\,\one=x-\mean(x)\,\one$. The numerator and
+the scale in \eqref{eq:ln} are therefore unchanged. Every component reads the stream through $\LN$, so all
+component outputs stay the same. By \eqref{eq:update}, all later streams at this position differ from the original
+ones by the same $s\,\one$, which the final $\LN$ in \eqref{eq:unembed} removes.
+
+\paragraph{\Cref{ex:rotation}.}
+(a) From $\Omega\one=\one$ and $\Omega^\top\Omega=I$ we get $\Omega^\top\one=\Omega^\top\Omega\one=\one$. Hence
+\begin{align*}
+\mean(\Omega x) &= \tfrac1d\,\one^\top\Omega x && \by{by \eqref{eq:ln}}\\
+&= \tfrac1d\,(\Omega^\top\one)^\top x \;=\; \tfrac1d\,\one^\top x \;=\; \mean(x). && \by{since $\Omega^\top\one=\one$}
+\end{align*}
+We use this in the numerator and in the scale of \eqref{eq:ln}.
+\begin{align*}
+\Omega x-\mean(\Omega x)\,\one &= \Omega x-\mean(x)\,\Omega\one && \by{by the line above, $\Omega\one=\one$}\\
+&= \Omega\big(x-\mean(x)\,\one\big), && \by{linearity}\\
+\scale(\Omega x) &= \tfrac{1}{\sqrt d}\,\big\|\Omega\big(x-\mean(x)\,\one\big)\big\| \;=\; \scale(x). && \by{$\Omega$ preserves the norm}
+\end{align*}
+Dividing the first result by the second gives $\LN(\Omega x)=\Omega\,\LN(x)$.
+(b) Let $\Omega=\begin{pmatrix}0&-1\\1&0\end{pmatrix}$, the rotation by a quarter turn, and $x=(2,0)^\top$. Then
+$\mean(x)=1$, $x-\mean(x)\,\one=(1,-1)^\top$ and $\scale(x)=1$, so $\LN(x)=(1,-1)^\top$ and
+$\Omega\,\LN(x)=(1,1)^\top$. On the other hand $\Omega x=(0,2)^\top$ and $\LN(\Omega x)=(-1,1)^\top$. The two differ.
+(c) The model can be rewritten, without changing the function that it computes, so that its stream is rotated by
+any such $\Omega$. In the rewritten model coordinate $17$ is a different mixture of the old coordinates. The model
+therefore has no reason to treat coordinate $17$ as a unit. The observation only says that one arbitrary direction
+has a nonzero overlap with whatever represents sports, and the same will hold for most directions.
+
+\paragraph{\Cref{ex:metric}.}
+(a) Zero. The head adds the same amount to $\logit_n(\mathrm{IO})$ and to $\logit_n(\mathrm{S})$, and the amount
+cancels in the difference \eqref{eq:ld}.
+(b) No. Without it the model might continue with a word that is no name at all.
+(c) Any metric that compares the correct name with tokens that are not names, for example the logit of the
+indirect object minus the average logit of all tokens, or the total probability of all first names.
+
+\subsection*{Section 3}
+
+\paragraph{\Cref{ex:pattern}.}
+(a) The direct logit attribution of each head, which is its summand in \eqref{eq:dla-ld}. It combines what the head
+reads with what it writes. It is $+3.57$ for head 9.9 and $-2.52$ for head 10.7 (\cref{fig:dla}).
+(b) By \eqref{eq:headout},
+\begin{align*}
+\big\|\head_i^{\ell,h}\big\| &= \Big\|\sum_{j\le i}A^{\ell,h}_{ij}\,W_{OV}\LN(x_j^{(\ell)})\Big\| && \by{by \eqref{eq:headout}}\\
+&\le \sum_{j\le i}A^{\ell,h}_{ij}\,\big\|W_{OV}\LN(x_j^{(\ell)})\big\| && \by{triangle inequality, $A^{\ell,h}_{ij}\ge0$}\\
+&\le \max_{j\le i}\big\|W_{OV}\LN(x_j^{(\ell)})\big\|. && \by{since $\textstyle\sum_{j\le i}A^{\ell,h}_{ij}=1$}
+\end{align*}
+(c) The first source contributes a vector of norm $0.9\cdot0.1=0.09$ and the second one a vector of norm
+$0.1\cdot10=1$. The second source dominates, although it receives a ninth of the attention.
+
+\paragraph{\Cref{ex:linearig}.}
+The gradient $\nabla_{z_i}F$ does not depend on the point, so
+$\mathrm{IG}_i(z)=z_i^\top\int_0^1\nabla_{z_i}F\,du=z_i^\top\nabla_{z_i}F$, which is gradient times input. For
+$F(z)=z^2$ we have $F'(z)=2z$. Gradient times input is $2z^2$, and
+$\mathrm{IG}(z)=z\int_0^12uz\,du=z^2=F(z)-F(0)$.
+
+\paragraph{\Cref{ex:baseline}.}
+The partial derivatives are $\partial F/\partial z_1=z_2$ and $\partial F/\partial z_2=z_1$.
+(a) The path is $\bar z+u\,(z-\bar z)=(u,u)$. Hence $\mathrm{IG}_1=(1-0)\int_0^1u\,du=\tfrac12$ and in the same way
+$\mathrm{IG}_2=\tfrac12$. The sum is $1=F(1,1)-F(0,0)$.
+(b) The path is $(u,1)$. Hence $\mathrm{IG}_1=(1-0)\int_0^11\,du=1$ and $\mathrm{IG}_2=(1-1)\int_0^1u\,du=0$. The sum is
+$1=F(1,1)-F(0,1)$.
+(c) Gradient times input gives $z_1z_2=1$ for each input and $2$ in total, which is not the change of $F$ from
+either baseline.
+(d) Both. They answer different questions. Compared with a world in which both inputs are absent, the two inputs
+share the credit. Compared with a world in which the second input is already present, the whole change is due to
+the first. An attribution is a statement about a pair of inputs, and never about one input alone.
+
+\paragraph{\Cref{ex:lenslast}.}
+At $\ell=L$, \eqref{eq:lens} is \eqref{eq:unembed}. The components up to layer 8 add up to $x_n^{(9)}$ by the
+telescoping argument of \cref{prop:sum}. Their DLA terms therefore add up to
+$(W_U[\mathrm{IO}]-W_U[\mathrm{S}])^\top(x_n^{(9)}-\mean(x_n^{(9)})\,\one)/\scale(x_n^{(L)})$. The lens divides the same
+numerator by $\scale(x_n^{(9)})$. The two numbers differ by the factor $\scale(x_n^{(9)})/\scale(x_n^{(L)})$.
+
+\paragraph{\Cref{ex:delete}.}
+By \eqref{eq:ld} and \eqref{eq:ln}, applied to the stream $x_n^{(L)}-g$, the new logit difference is a fraction
+with the denominator $\scale(x_n^{(L)}-g)$. We compute its numerator.
+\begin{align*}
+&\big(W_U[\mathrm{IO}]-W_U[\mathrm{S}]\big)^\top\big(x_n^{(L)}-g-\mean(x_n^{(L)}-g)\,\one\big)\\
+&\quad= \big(W_U[\mathrm{IO}]-W_U[\mathrm{S}]\big)^\top\big(x_n^{(L)}-\mean(x_n^{(L)})\,\one\big)
+-\big(W_U[\mathrm{IO}]-W_U[\mathrm{S}]\big)^\top\big(g-\mean(g)\,\one\big) && \by{$\mean$ is linear}\\
+&\quad= \scale(x_n^{(L)})\,\big(\logit_n(\mathrm{IO})-\logit_n(\mathrm{S})\big)-\scale(x_n^{(L)})\,\mathrm{DLA}(g). && \by{by \eqref{eq:ld}, \eqref{eq:dla-ld}}
+\end{align*}
+Dividing by $\scale(x_n^{(L)}-g)$ gives the claim. The real effect of removing a component differs from $\mathrm{DLA}(g)$ for two reasons. The
+scale of the final stream changes, which is the factor in the formula. And in the real model the other components
+do not keep their values, because every component after $g$ reads a stream that has changed.
+
+\paragraph{\Cref{ex:probecontrol}.}
+Being a first name is a function of the current token, and the token is encoded in $x_i^{(0)}$ by
+\eqref{eq:embed}. We train the same probe on layer $0$, and on a control task that gives each token type a random
+label. The probe on layer $0$ will succeed as well, so the result shows nothing that is specific to layer 6.
+
+\paragraph{\Cref{ex:lda}.}
+(a) Since both classes are equally likely, Bayes' rule says that the ratio of the two posterior probabilities
+equals the ratio of the two densities at $x$. The density at $x$ of a Gaussian with mean $\mu$ and covariance matrix $\Gamma$ is a constant times
+$\exp(-\tfrac12(x-\mu)^\top\Gamma^{-1}(x-\mu))$, and the constant is the same for both classes. Hence
+\begin{align*}
+\log\frac{\Pr(y=1\mid x)}{\Pr(y=0\mid x)}
+&= -\tfrac12(x-\mu_1)^\top\Gamma^{-1}(x-\mu_1)+\tfrac12(x-\mu_0)^\top\Gamma^{-1}(x-\mu_0) && \by{ratio of the densities}\\
+&= x^\top\Gamma^{-1}\mu_1-\tfrac12\mu_1^\top\Gamma^{-1}\mu_1-x^\top\Gamma^{-1}\mu_0+\tfrac12\mu_0^\top\Gamma^{-1}\mu_0 && \by{the terms $x^\top\Gamma^{-1}x$ cancel}\\
+&= \big(\Gamma^{-1}(\mu_1-\mu_0)\big)^\top x+\tfrac12\big(\mu_0^\top\Gamma^{-1}\mu_0-\mu_1^\top\Gamma^{-1}\mu_1\big). && \by{$\Gamma^{-1}$ is symmetric}
+\end{align*}
+This is $w^\top x+b_{\mathrm{probe}}$ with the stated $w$. Since $\Pr(y=0\mid x)=1-\Pr(y=1\mid x)$, solving for
+$\Pr(y=1\mid x)$ gives \eqref{eq:probe}.
+(b) $\Gamma^{-1}=\frac{1}{1-\rho^2}\begin{pmatrix}1&-\rho\\-\rho&1\end{pmatrix}$, so
+$w=\frac{1}{1-\rho^2}(1,\ -\rho)^\top$, a positive multiple of $(1,\ -\rho)^\top$.
+(c) The second coordinate says nothing about the class by itself. It is correlated with the noise in the first
+coordinate. Subtracting $\rho$ times the second coordinate removes the part of that noise that can be predicted,
+and the two classes separate better. The probe uses the second coordinate to cancel noise.
+(d) The difference of means. It is the change that the activation undergoes, on average, when the concept changes.
+A move along $w$ lowers the second coordinate while it raises the first, and this combination does not accompany
+the concept in the data. Under \cref{def:lrh}, \eqref{eq:diffmeans} says the same: the difference of means is the
+feature direction when nothing else differs between the classes.
+
+\paragraph{\Cref{ex:othello}.}
+(a) First hypothesis: the model stores the colours in a form that no linear map can read. Second hypothesis: the
+model stores a different variable linearly, and the colour is a nonlinear function of that variable, which a
+probe with a hidden layer can compute. A third possibility is that the probe computes the board by itself from
+simpler information about the moves.
+(b) The second. The colour of a piece is determined by whether it is mine or the opponent's together with whose
+turn it is. This combination is not linear, and one hidden layer suffices for it.
+(c) A linear probe that fails shows that one particular variable is not linearly decodable. The same information
+may be linear in another variable. A negative probing result is a statement about the question that was asked.
+
+\subsection*{Section 4}
+
+\paragraph{\Cref{ex:contaminated}.}
+(a) We have $\E[f_1\mid y=1]-\E[f_1\mid y=0]=1-0=1$ and $\E[f_2\mid y=1]-\E[f_2\mid y=0]=0.8-0.2=0.6$. By
+\eqref{eq:diffmeans}, the difference of means is $v_1+0.6\,v_2$.
+(b) Its norm is $\sqrt{1+0.36}\approx1.17$, and its inner product with $v_1$ is $1$. The cosine is
+$1/1.17\approx0.86$.
+(c) The second feature is switched on as well, at $0.6$ times the strength of the first.
+(d) The second feature should be equally frequent in both classes. The cleanest way is to use pairs of prompts
+that differ in the first concept and in nothing else.
+
+\paragraph{\Cref{ex:circle}.}
+(a) Each $x_q$ is a unit vector, and the inner product of two unit vectors is the cosine of the angle between
+them. With $w=x_q$ the read-out is $1$ on day $q$ and the cosine of a nonzero angle, which is smaller than $1$, on
+every other day.
+(b) Let $\psi$ be the angle of $w$, so that $w^\top x_q=\cos(2\pi q/7-\psi)$. For every angle $\phi$,
+\[
+\cos\!\big(\phi+\tfrac{2\pi}{7}\big)-\cos\phi \;=\; -2\,\sin\!\big(\phi+\tfrac{\pi}{7}\big)\,\sin\!\big(\tfrac{\pi}{7}\big).
+\]
+With $\phi=2\pi q/7-\psi$ and $\sin(\pi/7)>0$, the read-out increases from day $q$ to day $q+1$ exactly if
+$\sin(2\pi q/7+\pi/7-\psi)<0$. A strict increase from $q=0$ to $q=6$ needs this for $q=0,\dots,5$. The sine is
+negative on arcs of length $\pi$, and two such arcs are separated by an arc of length $\pi$. The six angles
+$2\pi q/7+\pi/7-\psi$ are spaced by $2\pi/7<\pi$, so they cannot jump from one arc to the next and would all have
+to lie in one arc of length $\pi$. But the first and the last of them differ by $10\pi/7>\pi$. This is a
+contradiction.
+(c) It is linear in the sense that the days live in a linear subspace and that each day can be read by a linear
+map. It does not have the form \eqref{eq:lrh}: the feature ``day of the week'' is not one direction with a
+strength. It needs two dimensions, and its values differ by their angle and not by their length.
+
+\paragraph{\Cref{ex:bound}.}
+$N\le e^{10.24}\approx2.8\times10^4$ for $\varepsilon=0.1$ and $N\le e^{40.96}\approx6\times10^{17}$ for
+$\varepsilon=0.2$. The condition $k\varepsilon<1/2$ allows $k\le4$ and $k\le2$.
+
+\paragraph{\Cref{ex:triangle}.}
+$v_i^\top v_j=\cos120^\circ=-1/2$. If only feature $i$ is active, $x=f_iv_i$. Then $\relu(v_i^\top x)=f_i$ and, for
+$j\ne i$, $\relu(v_j^\top x)=\relu(-f_i/2)=0$. If no feature is active, $x=0$ and all read-outs are zero.
+
+\paragraph{\Cref{ex:typical}.}
+(a) The vectors $v_1$ and $-v_1$ have the same distribution, so $\E\,v_1^\top v_2=-\E\,v_1^\top v_2$, which gives
+$\E\,v_1^\top v_2=0$. For the second moment we fix $v_2$, which is independent of $v_1$. The distribution of $v_1$
+does not change under rotations, and some rotation maps $v_2$ to the first standard basis vector. So
+$v_1^\top v_2$ has the same distribution as the first coordinate of $v_1$. For the same reason all $d$ coordinates
+of $v_1$ have the same distribution. Their squares add up to $\|v_1\|^2=1$, so each of them has the second moment
+$1/d$.
+(b) We have $v_{k+1}^\top x=\sum_{i=1}^{k}v_{k+1}^\top v_i$, and every term has mean zero by (a). For the variance,
+\begin{align*}
+\E\Big(\sum_{i=1}^{k}v_{k+1}^\top v_i\Big)^2
+&= \sum_{i=1}^{k}\E\,(v_{k+1}^\top v_i)^2+\sum_{i\ne i'}\E\big[(v_{k+1}^\top v_i)(v_{k+1}^\top v_{i'})\big] && \by{expanding the square}\\
+&= \frac kd+0. && \by{by (a), see below}
+\end{align*}
+The mixed terms vanish because, for a fixed $v_{k+1}$, the vectors $v_i$ and $v_{i'}$ are independent and each of
+the two inner products has mean zero.
+(c) $\sqrt{40/768}\approx0.23$, while $k\varepsilon=12$. Activations are of size one, so the bound of the lemma is
+useless here and the typical interference is harmless. The lemma covers the worst arrangement of the active
+directions. For directions in general position the interference grows like $\sqrt k$ and not like $k$, and a
+stream of width $768$ tolerates dozens of simultaneously active features.
+
+\paragraph{\Cref{ex:negative}.}
+(a) We expand the squared norm of the sum.
+\begin{align*}
+0 &\le \Big\|\sum_{i=1}^{N}v_i\Big\|^2 \;=\; \sum_{i=1}^{N}\|v_i\|^2+\sum_{i\ne j}v_i^\top v_j && \by{expanding the square}\\
+&\le N-N(N-1)\,\varepsilon. && \by{unit vectors, $N(N-1)$ pairs, each at most $-\varepsilon$}
+\end{align*}
+Dividing by $N$ gives $(N-1)\varepsilon\le1$, which is the claim.
+(b) If both signs are allowed, \cref{prop:jl} gives a number of directions that grows exponentially with $d$. If
+all inner products have to be negative, there are at most $1+1/\varepsilon$ directions in every dimension, for
+example at most four for $\varepsilon=0.3$.
+(c) The read-out $\relu(v_j^\top x)$ silences an absent feature only if all the interference that it receives is
+negative. By (a), only a handful of directions can be pairwise negative. Among many features, most pairs must have
+inner products that are close to zero or positive. Positive interference passes through the $\relu$ and has to be
+removed by a threshold, and a threshold costs accuracy on weak features.
+
+\paragraph{\Cref{ex:nobias}.}
+Now $\hat f_2=0$ and the loss is $\E f_2^2=\delta/3$, which exceeds $\delta^2/3$ for every $\delta<1$. The bias
+lets the model output the mean of the feature that it ignores. This lowers the error from the second moment
+$\delta/3$ to the variance $\delta/3-\delta^2/4$.
+
+\paragraph{\Cref{ex:binaryfeat}.}
+\textbf{Dedicated solution.} Here $\hat f_1=f_1$ and $\hat f_2=\relu(\delta)=\delta$, so
+\begin{align*}
+\text{loss} &= \E\,(f_2-\delta)^2 \;=\; \delta\,(1-\delta)^2+(1-\delta)\,\delta^2 && \by{$f_2=1$ with probability $\delta$, else $0$}\\
+&= \delta\,(1-\delta)\,\big((1-\delta)+\delta\big) \;=\; \delta\,(1-\delta). && \by{factoring}
+\end{align*}
+\textbf{Antipodal solution.} As in the proof of \cref{prop:toy}, there is an error only when both features are
+active, which has probability $\delta^2$. Then $x=1-1=0$ and $\hat f=(0,0)$, so both errors are $1$ and the squared
+error is $2$. The loss is $2\delta^2$.
+\textbf{Comparison.} For $\delta>0$ we have $2\delta^2<\delta(1-\delta)$ exactly if $2\delta<1-\delta$, which means
+$\delta<1/3$. The threshold is lower because collisions are more expensive. In \cref{prop:toy} a collision loses
+twice the square of the smaller activation, which is $1/3$ on average. Here every collision cancels both features
+completely and costs $2$.
+
+\paragraph{\Cref{ex:polysem}.}
+Let the two features have the directions $v_1=(1,1)/\sqrt2$ and $v_2=(1,-1)/\sqrt2$. The first neuron has the
+activation $(f_1+f_2)/\sqrt2$ and the second one $(f_1-f_2)/\sqrt2$. Both respond to both features, and there is no
+superposition, since $N=d$ and the directions are orthogonal. Polysemantic neurons only show that the features
+are not aligned with the neurons. Superposition is the stronger statement that there are more features than
+dimensions, so that no choice of basis could separate them.
+
+\subsection*{Section 5}
+
+\paragraph{\Cref{ex:normconstraint}.}
+Halving the argument of a $\relu$ halves its value, so the new activation is $\hat f_j(x)/2$. Its product with the
+doubled column is unchanged, and its penalty is halved. Without the constraint, training would let the columns
+grow and the activations shrink towards zero, and the penalty would lose its meaning.
+
+\paragraph{\Cref{ex:fvu}.}
+The optimal value is $\hat f=\max(0,f-0.2)$. The error is $f$ for $f<0.2$ and $0.2$ otherwise. Hence
+$\E\,(f-\hat f)^2=\int_0^{0.2}u^2\,du+0.8\cdot0.04=0.0027+0.032\approx0.035$.
+
+\paragraph{\Cref{ex:hard}.}
+(a) Among the active choices $\hat f>0$, the cost $(f-\hat f)^2+\lambda$ is smallest for $\hat f=f$, where it
+equals $\lambda$. This requires $f>0$. The inactive choice $\hat f=0$ costs $f^2$. Being active is better exactly
+if $\lambda<f^2$, which means $f>\sqrt\lambda$.
+(b) The graph is zero up to $f=\sqrt\lambda$ and then jumps to the dashed diagonal.
+(c) JumpReLU with the threshold $\theta_j=\sqrt\lambda$. The price is paid for being active and does not depend on
+the size of the activation, so nothing pushes the activation below its true value.
+
+\paragraph{\Cref{ex:perfect}.}
+(a) The input of the $\relu$ of latent $j$ is $v_j^\top x=\sum_{i=1}^{N}f_i\,v_j^\top v_i=f_j$, because the
+directions are orthonormal. Since $f_j\ge0$, we get $\hat f_j(x)=\relu(f_j)=f_j$ and
+$\hat x(x)=\sum_jf_jv_j=x$.
+(b) The input of the $\relu$ is now $v_j^\top x-k\varepsilon$. By \cref{lem:interference},
+$f_j-k\varepsilon\le v_j^\top x\le f_j+k\varepsilon$, so this input lies between $f_j-2k\varepsilon$ and $f_j$. If
+the feature is inactive, $f_j=0$, the input is at most zero and $\hat f_j(x)=0$. If it is active, then
+$\hat f_j(x)$ is at least the input, hence at least $f_j-2k\varepsilon$, and it is at most $\max(0,f_j)=f_j$.
+(c) Shrinkage. Active latents are reported too small, by up to $2k\varepsilon$, and features that are weaker than
+this can be lost. This time it does not come from a penalty in the loss. It comes from the bias that is needed to
+suppress the interference between directions in superposition.
+
+\paragraph{\Cref{ex:wrongplace}.}
+(a) Reconstruction A, with squared error $0.01$ against $0.09$.
+(b) Only A. It changes $w^\top x$ by $0.1$, and B does not change it at all.
+(c) Item 3, the effect on the model. The reconstruction error treats all directions alike, and the model does not.
+
+\paragraph{\Cref{ex:ggb}.}
+Observations: weak and medium activations are also about the bridge, and the latent fires on most mentions of the
+bridge in a new corpus. Intervention: amplifying the latent makes the model talk about the bridge, and a random
+latent of equal strength does not.
+
+\paragraph{\Cref{ex:splitting}.}
+(a) Three directions that are each fitted to one group of texts reconstruct these texts better than one
+compromise direction. Since every text still activates a single latent, the sparsity term does not grow. With
+latents to spare, the loss is lower.
+(b) No. Both minimise the same loss for their size, and still larger dictionaries split further. The latents of
+different sizes form a family and not a single correct list.
+(c) It should be replaced by a statement that does not depend on the dictionary, for example that there is a
+region of activation space whose members the model treats in a common way, and it should be tested by an
+intervention.
+
+\paragraph{\Cref{ex:transcoder}.}
+(a) Either. The decoder columns of both describe directions in the output of the MLP, and the SAE reconstructs
+that output more directly.
+(b) The transcoder. Its encoder reads the input of the MLP, so each latent links a property of the input to what
+is written. A latent of the SAE is computed from the output and says nothing about how the output was computed.
+(c) Neither. This is a question about the residual stream, and it calls for an SAE trained on the stream.
+
+\subsection*{Section 6}
+
+\paragraph{\Cref{ex:meanresample}.}
+(a) An affine function of an average is the average of its values. Mean ablation writes the average of the node
+over the reference set, and resample ablation writes each of the values in turn. For an affine metric the first
+result is therefore the average of the second.
+(b) Under mean ablation the value $0$ is written and the metric is $0$. Under resample ablation the value is $+1$
+or $-1$ and the metric is $1$ for every draw.
+(c) The result of resample ablation. The value $0$ never occurs in the model.
+
+\paragraph{\Cref{ex:design}.}
+(a) A sentence that differs only in the landmark, such as \tok{The Colosseum is located in the city of}. The two
+prompts must have the same number of tokens, which has to be checked with the tokenizer.
+(b) The logit of \tok{Paris} minus the logit of \tok{Rome} at the last position.
+(c) It finds the components that carry information about which landmark is meant, from the tokens of the name to
+the last position. It misses everything that the two prompts share, in particular the components that represent
+the question ``in which city''.
+(d) That the model shows the behaviour. In our own check, GPT-2 small gives \tok{Paris} and \tok{London} a
+probability of about $7\%$ each on this prompt, so the experiment makes sense only in a larger model.
+
+\paragraph{\Cref{ex:andor}.}
+(a) Denoising gives $\max(1,0)=1$, effect $1$. Noising gives $\max(0,1)=1$, effect $0$. Each node is sufficient and
+none is necessary. (b) Denoising gives $\min(1,0)=0$, effect $0$. Noising gives $\min(0,1)=0$, effect $1$. Each node
+is necessary and none is sufficient.
+
+\paragraph{\Cref{ex:additive}.}
+We write $M_g(\text{value})$ for the term of the node $g$.
+(a) Overwriting $g$ changes only the term of $g$, because the other terms do not depend on $g$ and the other nodes
+are not influenced by it. Hence
+\[
+M\big(\corr\mid g\leftarrow g(\clean)\big)-M(\corr) \;=\; M_g\big(g(\clean)\big)-M_g\big(g(\corr)\big)
+\;=\; M(\clean)-M\big(\clean\mid g\leftarrow g(\corr)\big).
+\]
+The numerators of \eqref{eq:denoise} and \eqref{eq:noise} agree, and the denominators are the same.
+(b) Summing the middle expression over all nodes gives $M(\clean)-M(\corr)$, which is the common denominator.
+(c) Dividing the total effects of noising by the gap of $8.04$ logits gives $0.17$ for head 9.9, $-0.10$ for head
+9.6 and $0.19$ for head 8.6. The denoising effects of the same heads are $0.29$, $0.01$ and $0.37$.
+
+\paragraph{\Cref{ex:affine}.}
+An affine function has the same gradient everywhere, and its increment between two points equals this gradient
+times their difference. Example: the node $\LN(x_n^{(L)})$ with the logit difference as metric, by \eqref{eq:ld}.
+
+\paragraph{\Cref{ex:trapezoid}.}
+(a) The exact effect is $3^2-1^2=8$. The gradient at the value $1$ is $2$, so the estimate is $(3-1)\cdot2=4$.
+(b) The gradient at the value $3$ is $6$. The average of the two gradients is $4$, and $(3-1)\cdot4=8$.
+(c) The derivative of a polynomial of degree two is an affine function. By the fundamental theorem of calculus,
+the exact effect is the integral of this derivative from $g(\corr)$ to $g(\clean)$. The integral of an affine
+function over an interval equals the length of the interval times the average of its two end values, which is
+the modified estimate.
+(d) \Cref{prop:ig}, applied with the corrupted value as baseline and the clean value as input, says that the
+average of the gradient over the whole segment gives the exact effect for every continuously differentiable
+metric. The price is one forward and one backward pass for every point of the segment that is used. If this is
+done for each node separately, the cost again grows with the number of nodes, so practical variants interpolate
+between the two prompts at the input and remain approximations.
+
+\paragraph{\Cref{ex:projection}.}
+The map is $x\mapsto(I-vv^\top)x$, which is linear.
+$(I-vv^\top)^2=I-2vv^\top+v(v^\top v)v^\top=I-vv^\top$. And $w^\top(I-vv^\top)x=w^\top x-(w^\top v)(v^\top x)=w^\top x$
+when $w^\top v=0$.
+
+\paragraph{\Cref{ex:everylayer}.}
+(a) Ablation at one layer removes what was written along $v$ before that layer. The components of later layers
+add their own outputs, and the components that compute the refusal signal will write along $v$ again.
+(b) By \eqref{eq:ln}, and after dividing numerator and denominator by $\eta$,
+\[
+\LN(x+\eta v) \;=\; \frac{v-\mean(v)\,\one+\tfrac1\eta\big(x-\mean(x)\,\one\big)}{\scale\big(v+\tfrac1\eta x\big)} .
+\]
+For large $\eta$ this is close to $\LN(v)$, whatever $x$ is. Every later component then reads almost the same
+vector on every prompt, and the information about the prompt has shrunk to a relative size of order $1/\eta$.
+
+\paragraph{\Cref{ex:interchange}.}
+(a) We run the model on the prompt in which \tok{Mary} is repeated and replace the stream at the last position,
+at the input of layer 9, by its value from the prompt in which \tok{John} is repeated. The hypothesis predicts
+that the model now avoids \tok{John} and answers \tok{Mary}.
+(b) The cell in the last column and the row of layer 9. Its value of $0.96$ says that the patch moves the logit
+difference almost all the way to its value on the prompt in which \tok{John} is repeated, as predicted.
+(c) Under the first reading, the patched variable names a person who does not occur in the first prompt. Neither
+of its two names is avoided, and the model should hesitate between them. Under the second reading the variable
+says ``avoid the name at this place in the sentence'', and the model should avoid whichever name of the first
+prompt stands there. The two readings predict different outputs, which is what makes the experiment informative.
+\citet{wang2023interpretability} report that the S-inhibition heads transmit both kinds of information and that
+the positional one has the larger effect.
+
+\subsection*{Section 7}
+
+\paragraph{\Cref{ex:redundant}.}
+Faithful: yes. With everything outside the circuit switched off, the first head still solves the task. Complete:
+no. If we remove the first head from the circuit and from the model, the empty circuit fails and the model still
+succeeds with the second head. Minimal: yes, since the circuit fails without its only head. Faithfulness alone
+cannot detect a redundant component that was left out. In the IOI task the backup name movers play this role.
+
+\paragraph{\Cref{ex:skiptrigram}.}
+Both \tok{in} and \tok{at} attend to \tok{keep}. What the head then writes depends only on the source \tok{keep},
+and it promotes both \tok{mind} and \tok{bay}. So \tok{bay} is also promoted after \tok{in}. To avoid this, the
+table $W_U[t]^\top W_{OV}^{0,h}W_E[t_j]$ would have to depend on the destination token.
+
+\paragraph{\Cref{ex:paths}.}
+(a) With fixed patterns and without $\LN$, \eqref{eq:update} and \eqref{eq:headout} give
+\[
+x_i^{(\ell+1)} \;=\; x_i^{(\ell)}+\sum_{h=0}^{H-1}\sum_{j\le i}A^{\ell,h}_{ij}\,W_{OV}^{\ell,h}\,x_j^{(\ell)},
+\]
+where $W_{OV}^{\ell,h}$ is the matrix $W_{OV}$ of head $h$ in layer $\ell$. Each layer therefore maps the
+family of all streams linearly to the next family, and this linear map is the identity plus one linear map for
+each head. The final streams result from applying $L$ such maps in a row. Multiplying out a product of $L$ sums
+with $1+H$ summands each gives one term for every choice of one summand per layer.
+(b) There are $(1+H)^L$ such choices, and the logits are linear in the final streams. For $L=1$ these are the
+$1+H$ terms of \cref{prop:path}.
+(c) $13^2=169$ and $13^{12}\approx2.3\times10^{13}$. Reading the terms one by one is hopeless beyond toy models,
+and real models also have MLPs and attention patterns that depend on the stream. We need methods that find the
+few paths that matter, which is what patching does.
+
+\paragraph{\Cref{ex:copying}.}
+(a) The entry with $t=t_j$ is positive and large compared with the other entries that belong to the same source
+token $t_j$.
+(b) We compute the table for all pairs of tokens, or for a sample of them, and count for which fraction of the
+source tokens the entry of the same token is the largest one. For a copying head this fraction is high.
+(c) First, the stream that a late head reads at the source is no longer $W_E[t_j]$. It is the sum of many
+components, passed through $\LN$. Second, what the head writes is processed by later layers before it reaches
+the unembedding, and the table describes the direct path only.
+
+\paragraph{\Cref{ex:induction}.}
+The induction head has to attend to the position $j$ whose \emph{previous} token equals the current token. In one
+layer, the score of the pair $(i,j)$ depends on $t_i$, $t_j$ and at most the positions $i$ and $j$, and not on
+$t_{j-1}$. An earlier layer must first write $t_{j-1}$ into position $j$.
+
+\paragraph{\Cref{ex:eightyseven}.}
+(a) Components outside the circuit may contribute a little each, below the threshold of the analysis. And the
+heads of the circuit may work less well when everything around them is replaced by averages, because they then
+read streams that never occur.
+(b) All IOI prompts share their structure. In each of them a name is repeated, at a fixed place of the template.
+The average of a head over IOI prompts still carries whatever is common to them, for instance the signal that the
+token at this place is a repetition. Heads outside the circuit would keep supplying task information after
+ablation, and the circuit would look more faithful than it is. A reference distribution without repetition
+removes this information.
+(c) Yes. The whole model is a circuit with a faithfulness of $100\%$, and it explains nothing. Faithfulness has to
+be weighed against the size of the circuit and against how well the role of each node is understood.
+
+\paragraph{\Cref{ex:cosprime}.}
+$\cos(2\pi\cdot14q/113)=1$ holds exactly when $113$ divides $14q$, which means that $113$ divides $q$, since $113$
+is prime. For $P=112$ the number $14q/112=q/8$ is an integer for $q=8$, so a wrong answer would score as high as
+the correct one at this frequency.
+
+\paragraph{\Cref{ex:onefreq}.}
+(a) Let $q$ be an integer with $rq\equiv1\pmod P$, and let $c$ be the candidate with $c\equiv a+b-q\pmod P$. Then
+$r(a+b-c)\equiv rq\equiv1\pmod P$, so the logit of $c$ is $\cos(2\pi/P)$. This $c$ is wrong, because $q$ is not
+divisible by $P$.
+(b) $2\pi/113\approx0.0556$, so the margin is about $0.0556^2/2\approx0.0015$.
+(c) With five frequencies the margin is $5-2.59=2.41$. With one frequency the correct answer and its strongest
+competitor are almost tied, and after the softmax they would receive almost the same probability. A wrong
+candidate can be close to $1$ at one frequency. It cannot be close to $1$ at five frequencies at once.
+
+\paragraph{\Cref{ex:product}.}
+(a) $(\xi_1+\xi_2)^2-(\xi_1-\xi_2)^2=4\xi_1\xi_2$, since the squares cancel and the mixed terms add.
+(b) One neuron receives the sum $\xi_1+\xi_2$ and the other the difference $\xi_1-\xi_2$. A quarter of the
+difference of their outputs is the product, and this last step is linear.
+(c) If $\xi\ge0$, then $\relu(\xi)+\relu(-\xi)=\xi+0$. If $\xi<0$, it is $0+(-\xi)$. In both cases the result is
+$|\xi|$. The square function is even and convex. For a threshold that is not negative, the pair
+$\relu(\xi-\text{threshold})+\relu(-\xi-\text{threshold})$ is zero between the two thresholds and grows linearly
+outside. A sum of such pairs with positive coefficients is an even convex function with kinks at the thresholds,
+and with a few different thresholds it follows the parabola closely on a bounded interval.
+(d) Addition and fixed nonlinearities are cheap for a network, and a table with $P^2$ entries is expensive. An
+algorithm built from sums, products and a linear read-out fits these building blocks. It looks strange to us
+because we count in other units.
+
+\paragraph{\Cref{ex:graphcritique}.}
+First, an intervention in the real model: suppressing the latents for Texas, or exchanging them for those of
+another state, should change the answer accordingly. This addresses the fact that the graph describes a
+replacement and that the error nodes carry a large share. Second, the same analysis on other prompts of this form.
+This addresses the limitation to one prompt. Third, a check of what the latents called ``Texas'' respond to in
+other texts. This addresses the limits of the dictionary. A fourth check concerns the attention patterns, which
+the graph takes as given.
+
+\subsection*{Section 8}
+
+\paragraph{\Cref{ex:baserate}.}
+(a) The latent fires on a fraction $0.9\cdot0.01=0.009$ of the corpus because of the concept and on a fraction
+$0.05\cdot0.99=0.0495$ without it. The share of the concept is $0.009/(0.009+0.0495)\approx0.15$.
+(b) All twenty examples will be about the concept, and the reader will conclude that the latent stands for the
+concept. Yet $85\%$ of its activations occur on other texts.
+(c) Sampling examples over the whole range of activations, and counting how often the latent fires without the
+concept.
+
+\paragraph{\Cref{ex:critique}.}
+A control task or shuffled labels, a probe on a model with random weights, and a check that lying and honest
+prompts do not differ in topic or length (mode 2). An intervention along the probe direction that changes whether
+the model lies, compared with a random direction (modes 1 and 6). A test on lies of a different kind than those
+in the training set (mode 8).
+
+\paragraph{\Cref{ex:abstracts}.}
+(a) Third row. The ablation shows that the layer matters, relative to the value zero. Missing are a replacement
+value that occurs naturally, a check that other abilities survive the ablation, and any evidence about what the
+MLP computes. Knowing where an ablation hurts is not knowing where a computation happens (modes 4 and 7).
+(b) First row at most, and the claim belongs to the second. Missing are the rate at which the latent fires on
+honest answers, the control with a random model, and an intervention on the latent that changes the behaviour.
+(c) Fourth row. Missing is minimality: a circuit with $70\%$ of all edges is close to the whole model. Also
+missing are completeness, a description of what the nodes do, and the result under another kind of ablation.
+
+\paragraph{\Cref{ex:steerbaseline}.}
+(a) The $25$ percentage points between the random vector and the steering vector.
+(b) Any large perturbation moves the activations away from their usual range. It can weaken whatever normally
+holds the behaviour back, without having anything to do with the behaviour.
+(c) The effect on unrelated tasks and on the quality of the text, the dependence on the strength $\eta$, and a
+comparison with simply asking for the behaviour in the prompt.
+}

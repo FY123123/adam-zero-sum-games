@@ -80,6 +80,23 @@ direction with a strength. There are also several inequivalent ways to make the 
 \citet{park2024linear} disentangle. \Cref{def:lrh} should be read as a productive first approximation.
 \end{caution}
 
+\begin{exercise}[\extitle{A contaminated direction}{derivation}]\label{ex:contaminated}
+Let $x=f_1v_1+f_2v_2$ with orthonormal vectors $v_1,v_2$ and $f_1,f_2\in\{0,1\}$. The label is $y=f_1$. In the data
+set, feature $2$ is present in $80\%$ of the examples with $y=1$ and in $20\%$ of the examples with $y=0$.
+(a) Compute the difference of means with \eqref{eq:diffmeans}. (b) Compute the cosine of the angle between the
+difference of means and $v_1$. (c) We add a large multiple of the difference of means to the stream in order to
+switch on the first concept. What else happens? (d) How should the data set be changed?
+\end{exercise}
+
+\begin{exercise}[\extitle{A feature that is not a direction}{derivation}]\label{ex:circle}
+Suppose that a model represents the seven days of the week by the points
+$x_q=\big(\cos(2\pi q/7),\ \sin(2\pi q/7)\big)$, $q=0,\dots,6$, of a two-dimensional subspace, as
+\citet{engels2025not} found. (a) Show that for every unit vector $w$ of this plane the read-out $w^\top x_q$ is the
+cosine of the angle between $w$ and $x_q$. Conclude that for every day there is a linear read-out that is largest
+on that day. (b) Show that there is no $w$ for which $w^\top x_q$ increases strictly from $q=0$ to $q=6$. (c) In
+which sense does this representation satisfy \cref{def:lrh}, and in which sense does it not?
+\end{exercise}
+
 \subsection{Superposition: more features than dimensions}
 \label{sec:superposition}
 
@@ -187,6 +204,35 @@ antipodal, with inner product $-1$. Both arrangements appear as solutions of the
 \label{fig:superposition}
 \end{figure}
 
+\begin{exercise}[\extitle{Evaluating the bound}{derivation}]\label{ex:bound}
+Evaluate the bound of \cref{prop:jl} for $d=4096$ with $\varepsilon=0.1$ and with $\varepsilon=0.2$. For which
+$k$ does \cref{lem:interference} then guarantee an interference below $1/2$?
+\end{exercise}
+
+\begin{exercise}[\extitle{Three features in the plane}{derivation}]\label{ex:triangle}
+Three features are stored in $d=2$ dimensions along unit vectors at mutual angles of $120^\circ$. Show that
+$v_i^\top v_j=-1/2$ for $i\ne j$. Show that the read-out $\hat f_j=\relu(v_j^\top x)$ recovers $f$ exactly whenever
+at most one feature is active.
+\end{exercise}
+
+\begin{exercise}[\extitle{Typical interference}{derivation}]\label{ex:typical}
+\Cref{lem:interference} is a worst-case bound. This exercise estimates the interference for directions in general
+position. (a) Let $v_1,v_2$ be independent random vectors, each uniformly distributed on the unit sphere of
+$\R^d$. Show that $\E\,v_1^\top v_2=0$ and $\E\,(v_1^\top v_2)^2=1/d$. (b) Let $v_1,\dots,v_{k+1}$ be independent
+and uniformly distributed on the unit sphere, and let $x=v_1+\dots+v_k$, so that $k$ features are active with
+activation one. Show that the interference $v_{k+1}^\top x$ on the inactive feature $k+1$ has mean zero and
+variance $k/d$. (c) For $d=768$ and $k=40$, compare the typical size $\sqrt{k/d}$ of the interference with the
+bound $k\varepsilon$ of the lemma for $\varepsilon=0.3$. What do we learn about the lemma?
+\end{exercise}
+
+\begin{exercise}[\extitle{Negative interference is scarce}{derivation}]\label{ex:negative}
+(a) Let $v_1,\dots,v_N$ be unit vectors with $v_i^\top v_j\le-\varepsilon$ for all $i\ne j$, where
+$\varepsilon>0$. Show that $N\le1+1/\varepsilon$. Hint: the squared norm of $v_1+\dots+v_N$ is not negative.
+(b) Compare the result with \cref{prop:jl}. (c) The read-out $\relu(v_j^\top x)$ removes negative interference at
+no cost, as in \cref{ex:triangle}. Use (a) to explain why this trick alone cannot support a large number of
+features.
+\end{exercise}
+
 \subsection{A toy model that can be solved by hand}
 \label{sec:toy}
 
@@ -264,6 +310,19 @@ transition. When the features are dense, the model stores the $d$ most important
 and drops the rest. As the features become sparser, it stores more and more of them, in regular arrangements
 such as antipodal pairs and the pentagon of \cref{fig:superposition}(b).
 
+\begin{exercise}[\extitle{What the bias is for}{derivation}]\label{ex:nobias}
+In \cref{prop:toy}, replace the bias of the dedicated solution by $b_{\mathrm{toy}}=(0,0)$. Compute the loss and
+show that the antipodal solution is now better for every $\delta<1$. What does the bias $\delta/2$ achieve?
+\end{exercise}
+
+\begin{exercise}[\extitle{Features that are fully on or off}{derivation}]\label{ex:binaryfeat}
+Repeat the comparison of \cref{prop:toy} for features that are either absent or fully present: each $f_j$ equals
+$1$ with probability $\delta$ and $0$ otherwise. Use the dedicated solution with $b_{\mathrm{toy}}=(0,\ \delta)$ and
+the antipodal solution as before. Show that the losses are $\delta(1-\delta)$ and $2\delta^2$, and that the
+antipodal solution has the smaller loss if and only if $\delta<1/3$. Why is the threshold lower than the value
+$4/7$ of \cref{prop:toy}?
+\end{exercise}
+
 \subsection{Consequences for interpretability}
 
 If superposition is how networks store features, three conclusions follow.
@@ -285,6 +344,12 @@ for it.
 \emph{compute} with features in superposition is a separate question with its own theory
 \citep{hanni2024mathematical,adler2024complexity}.
 
+\begin{exercise}[\extitle{Polysemantic without superposition}{concept}]\label{ex:polysem}
+Give an example of a layer with $d=2$ neurons and $N=2$ features that are represented in orthogonal directions,
+in which both neurons are polysemantic. What does the example show about the relation between polysemantic
+neurons and superposition?
+\end{exercise}
+
 \begin{takeaways}
 The working hypothesis is that features are directions, and that their activations are lengths along these
 directions. High-dimensional spaces contain exponentially many almost orthogonal directions, so a network can
@@ -293,16 +358,21 @@ are active at once. Neurons are then mixtures of many features, and the features
 dictionary learning.
 \end{takeaways}
 
-\begin{exercise}\label{ex:triangle}
-Three features are stored in $d=2$ dimensions along unit vectors at mutual angles of $120^\circ$. Show that
-$v_i^\top v_j=-1/2$ for $i\ne j$. Show that the read-out $\hat f_j=\relu(v_j^\top x)$ recovers $f$ exactly whenever
-at most one feature is active.
-\end{exercise}
-\begin{exercise}\label{ex:bound}
-Evaluate the bound of \cref{prop:jl} for $d=4096$ with $\varepsilon=0.1$ and with $\varepsilon=0.2$. For which
-$k$ does \cref{lem:interference} then guarantee an interference below $1/2$?
-\end{exercise}
-\begin{exercise}\label{ex:nobias}
-In \cref{prop:toy}, replace the bias of the dedicated solution by $b_{\mathrm{toy}}=(0,0)$. Compute the loss and
-show that the antipodal solution is now better for every $\delta<1$. What does the bias $\delta/2$ achieve?
-\end{exercise}
+\begin{readinglist}
+\item \citet{park2024linear}, \emph{ICML}. Makes the linear representation hypothesis precise. It separates
+several meanings of ``linear'' and shows which inner product connects them.
+\item \citet{jiang2024origins}, \emph{ICML}. A theoretical account of why linear representations arise. In a latent
+variable model, next-token prediction with gradient descent is shown to favour them.
+\item \citet{engels2025not}, \emph{ICLR}. The circular features of \cref{ex:circle}, with a definition of
+features that need more than one dimension and a method for finding them.
+\item \citet{park2025geometry}, \emph{ICLR}. Extends the hypothesis to concepts with several values and to
+hierarchies of concepts, which appear as simple geometric shapes and as orthogonality relations.
+\item \citet{gurnee2023finding}, \emph{TMLR}. Evidence for superposition in real language models, obtained with
+probes that may use only a few neurons.
+\item \citet{hernandez2024linearity}, \emph{ICLR}. For a subset of the relations between a subject and an attribute,
+the map from the representation of the subject to the attribute is close to affine.
+\item \citet{marks2024geometry}, \emph{COLM}. Directions for the truth of a statement, and a careful comparison of
+the difference of means with logistic regression (\cref{ex:lda}).
+\item \citet{liu2025superposition}, \emph{NeurIPS}. A theoretical study that starts from the toy model of
+\cref{sec:toy} and relates superposition to the way in which the loss of a model decreases with its width.
+\end{readinglist}

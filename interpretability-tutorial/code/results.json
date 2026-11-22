@@ -21,6 +21,28 @@
  "mean_prob_correct_clean": 0.4801037013530731,
  "mean_prob_repeated_clean": 0.014259246177971363,
  "top1_is_correct_fraction": 1.0,
+ "eiffel_tower_top5": [
+  [
+   " London",
+   0.0691484808921814
+  ],
+  [
+   " Paris",
+   0.06882774084806442
+  ],
+  [
+   " Amsterdam",
+   0.04029715806245804
+  ],
+  [
+   " Berlin",
+   0.032289110124111176
+  ],
+  [
+   " New",
+   0.027914516627788544
+  ]
+ ],
  "attention_from_last_position": {
   "9.9": {
    "IO": 0.7905128598213196,

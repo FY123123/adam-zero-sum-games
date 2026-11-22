@@ -70,7 +70,14 @@ back. Right: the latent activation that minimises reconstruction error plus L1 p
 \label{fig:sae}
 \end{figure}
 
+\begin{exercise}[\extitle{Why the dictionary directions are normalised}{derivation}]\label{ex:normconstraint}
+Consider the loss \eqref{eq:saeloss} without the constraint that the columns of $\Wdec$ have unit norm. Show
+that multiplying column $j$ of $\Wdec$ by $2$ and dividing row $j$ of $\Wenc$ and entry $j$ of $\benc$ by $2$
+leaves the reconstruction unchanged and reduces the penalty. What would training do without the constraint?
+\end{exercise}
+
 \subsection{What the sparsity penalty does to the activations}
+\label{sec:shrinkage}
 
 The penalty in \eqref{eq:saeloss} is a compromise. What we want to keep small is the \emph{number} of active
 latents. That number is not differentiable, and the sum of the activations is used in its place. The price of
@@ -115,6 +122,30 @@ of active latents directly, and the missing gradient is replaced by an estimate.
 active, and another part estimates their magnitudes.
 \end{itemize}
 
+\begin{exercise}[\extitle{The cost of shrinkage}{derivation}]\label{ex:fvu}
+In the setting of \cref{prop:shrink}, let the true activation $f$ be uniform on $[0,1]$ and $\lambda=0.4$. Compute
+the mean squared reconstruction error $\E\,(f-\hat f)^2$ of the optimal $\hat f$.
+\end{exercise}
+
+\begin{exercise}[\extitle{Paying for activity instead of size}{derivation}]\label{ex:hard}
+In \cref{prop:shrink}, replace the penalty $\lambda\hat f$ by a fixed price $\lambda>0$ that is paid whenever the
+latent is active. The quantity to be minimised over $\hat f\ge0$ is then $(f-\hat f)^2$ if $\hat f=0$ and
+$(f-\hat f)^2+\lambda$ if $\hat f>0$. (a) Show that the minimiser is $\hat f=f$ if $f>\sqrt\lambda$ and
+$\hat f=0$ if $f<\sqrt\lambda$. (b) Sketch the minimiser as a function of $f$ in the right panel of
+\cref{fig:sae}. (c) Which of the architectures listed above does this correspond to, and why does it not shrink?
+\end{exercise}
+
+\begin{exercise}[\extitle{An autoencoder that is exactly right}{derivation}]\label{ex:perfect}
+(a) Suppose that $x=\sum_{j=1}^{N}f_jv_j$ holds exactly, with orthonormal directions $v_1,\dots,v_N$ and
+activations $f_j\ge0$. Consider the SAE with $m=N$ latents, $\Wdec[j]=v_j$, an encoder $\Wenc$ whose row $j$ is
+$v_j^\top$, and $\benc=0$, $\bdec=0$. Show that $\hat f_j(x)=f_j$ for all $j$ and that $\hat x(x)=x$. (b) Now let
+the directions be only almost orthogonal, $|v_i^\top v_j|\le\varepsilon$ for $i\ne j$, with at most $k$ active
+features and all $f_j\in[0,1]$, as in \cref{lem:interference}. Keep the same weights and set every entry of
+$\benc$ to $-k\varepsilon$. Show that $\hat f_j(x)=0$ for every inactive feature and that
+$f_j-2k\varepsilon\le\hat f_j(x)\le f_j$ for every active feature. (c) Which phenomenon of this subsection does
+(b) reproduce, and where does it come from this time?
+\end{exercise}
+
 \subsection{How to judge a dictionary}
 \label{sec:saeeval}
 
@@ -139,6 +170,14 @@ activations on new texts \citep{bills2023language}.
 Items 1 and 2 trade off against each other, so two SAEs can only be compared along a whole curve.
 \citet{karvonen2025saebench} collect these and further tests in a benchmark.
 
+\begin{exercise}[\extitle{A small error in the wrong place}{derivation}]\label{ex:wrongplace}
+Suppose that the rest of the model reads the activation $x$ only through the number $w^\top x$, for one unit
+vector $w$. Reconstruction A differs from $x$ by $0.1\,w$. Reconstruction B differs from $x$ by $0.3$ times a
+unit vector that is orthogonal to $w$. (a) Which reconstruction has the smaller squared error? (b) Which one
+changes the output of the model? (c) Which item of the list above detects the difference, and why can the
+reconstruction error not detect it?
+\end{exercise}
+
 \subsection{Reading a single latent}
 \label{sec:latent}
 
@@ -160,6 +199,11 @@ middle layer of the production model Claude 3 Sonnet. One latent fired on mentio
 Gate Bridge. When the authors clamped it to ten times its maximal observed value, the model began to describe
 itself as the Golden Gate Bridge. Open dictionaries exist for open models, for example Gemma Scope for the
 Gemma 2 models \citep{lieberum2024gemma}, and can be browsed on Neuronpedia \citep{lin2023neuronpedia}.
+
+\begin{exercise}[\extitle{From examples to a feature}{concept}]\label{ex:ggb}
+The ten strongest activations of a latent are all on text about the Golden Gate Bridge. Name two further
+observations and one intervention that are required before calling it a ``Golden Gate Bridge feature''.
+\end{exercise}
 
 \subsection{What a sparse autoencoder does not give}
 
@@ -189,6 +233,14 @@ None of this makes SAEs useless. They remain the main tool for discovering conce
 advance. It does mean that a latent is a hypothesis about the model, to be tested with the interventions of
 \cref{sec:interventions}.
 
+\begin{exercise}[\extitle{One latent or three}{concept}]\label{ex:splitting}
+An SAE with $4{,}000$ latents has one latent that fires on every mention of dogs. An SAE with $64{,}000$ latents,
+trained on the same activations, has no such latent. It has three latents instead, which fire on dogs in
+veterinary texts, on dogs in fiction and on names of dog breeds. (a) Use the loss \eqref{eq:saeloss} to explain
+why the larger SAE prefers three latents, although each text still activates only one of them. (b) Is one of the
+two dictionaries the correct one? (c) What remains of the statement ``the model has a dog feature''?
+\end{exercise}
+
 \subsection{Relatives: transcoders and crosscoders}
 \label{sec:transcoders}
 
@@ -203,6 +255,13 @@ uses one set of latents to reconstruct several activations at once, either sever
 same layer of two models. The second use allows one to ask what changed between a model and its fine-tuned
 version.
 
+\begin{exercise}[\extitle{Autoencoder or transcoder}{concept}]\label{ex:transcoder}
+An SAE is trained on the output of the MLP of layer 10, and a transcoder is trained on the same MLP. For each of
+the following questions, say which tool is appropriate and why. (a) Which directions does this MLP write to the
+stream? (b) From which properties of its input does the MLP compute what it writes? (c) Does the stream after
+layer 10 contain a certain concept, wherever it was computed?
+\end{exercise}
+
 \begin{takeaways}
 A sparse autoencoder rewrites an activation as a sparse, non-negative combination of many learned directions.
 The L1 penalty biases activations downward, which TopK and JumpReLU variants avoid. A dictionary is judged
@@ -210,16 +269,26 @@ by reconstruction, sparsity, effect on the model and interpretability together. 
 features. They depend on training choices, they leave an unexplained remainder, and they need causal tests.
 \end{takeaways}
 
-\begin{exercise}\label{ex:normconstraint}
-Consider the loss \eqref{eq:saeloss} without the constraint that the columns of $\Wdec$ have unit norm. Show
-that multiplying column $j$ of $\Wdec$ by $2$ and dividing row $j$ of $\Wenc$ and entry $j$ of $\benc$ by $2$
-leaves the reconstruction unchanged and reduces the penalty. What would training do without the constraint?
-\end{exercise}
-\begin{exercise}\label{ex:fvu}
-In the setting of \cref{prop:shrink}, let the true activation $f$ be uniform on $[0,1]$ and $\lambda=0.4$. Compute
-the mean squared reconstruction error $\E\,(f-\hat f)^2$ of the optimal $\hat f$.
-\end{exercise}
-\begin{exercise}\label{ex:ggb}
-The ten strongest activations of a latent are all on text about the Golden Gate Bridge. Name two further
-observations and one intervention that are required before calling it a ``Golden Gate Bridge feature''.
-\end{exercise}
+\begin{readinglist}
+\item \citet{cunningham2024sparse}, \emph{ICLR}. The first peer-reviewed demonstration that sparse autoencoders
+find more interpretable units than neurons in a language model.
+\item \citet{gao2025scaling}, \emph{ICLR}. TopK autoencoders, training at the scale of millions of latents, and a
+set of evaluation metrics that later work adopted.
+\item \citet{rajamanoharan2024improving}, \emph{NeurIPS}. Analyses the shrinkage of \cref{prop:shrink} and removes
+it by separating the decision to fire from the magnitude.
+\item \citet{dunefsky2024transcoders}, \emph{NeurIPS}. Introduces transcoders and uses them to read circuits
+through MLP layers.
+\item \citet{chanin2024absorption}, \emph{NeurIPS}. Shows how the sparsity objective makes a general latent stop
+firing on cases that a more specific latent covers.
+\item \citet{leask2025sparse}, \emph{ICLR}, and \citet{paulo2025sparse}, \emph{ICLR}. Two studies of how the latents
+change with the size of the dictionary and with the random seed (\cref{ex:splitting}).
+\item \citet{bussmann2025learning}, \emph{ICML}. Trains dictionaries of several sizes inside one another, which
+reduces splitting and absorption.
+\item \citet{karvonen2025saebench}, \emph{ICML}, and \citet{kantamneni2025sparse}, \emph{ICML}. A benchmark with
+many evaluation tasks, and a sober test of whether latents help with probing.
+\item \citet{heap2025sparse}, \emph{ICLR}. The control with randomly initialised transformers. It is essential
+reading before any claim that is based on interpretability scores.
+\item \citet{minder2025overcoming}, \emph{NeurIPS}. Uses crosscoders to compare a model before and after
+fine-tuning for chat, and shows that the sparsity penalty can make latents look specific to one of the two models
+when they are not.
+\end{readinglist}
