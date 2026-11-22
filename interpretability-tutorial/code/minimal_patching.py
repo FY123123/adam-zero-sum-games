@@ -2,7 +2,7 @@ import torch
 from transformer_lens import TransformerBridge
 
 model = TransformerBridge.boot_transformers("gpt2")   # GPT-2 small
-model.enable_compatibility_mode()                      # hook names as in older versions
+model.enable_compatibility_mode()                      # folds LayerNorm, as older versions did
 
 clean   = "When Mary and John went to the store, John gave a drink to"
 corrupt = "When Mary and John went to the store, Mary gave a drink to"

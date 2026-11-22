@@ -2,11 +2,13 @@
 \label{sec:circuits}
 
 The tools of the last sections answer the first two questions of \cref{sec:intro}: what is represented, and
-which components matter. A \emph{circuit} is an answer to the third: how the components work together.
+which components matter. A \emph{circuit} is an answer to the third: how the components work together. The term was coined in the study
+of vision models \citep{olah2020zoom}.
 
 \subsection{What counts as a circuit}
 
-By \cref{prop:sum}, the input of every component is a sum of the outputs of earlier components. We can
+By the telescoping argument in the proof of \cref{prop:sum}, stopped at an earlier layer, the input of every
+component is a sum of the outputs of earlier components. We can
 therefore draw the model as a graph. The nodes are the embeddings, the attention heads and the MLPs. There is
 an edge from every component to every later component and to the output, which stands for the term that the
 earlier one contributes to the input of the later one. This graph has the same structure for every model of
@@ -68,7 +70,7 @@ table approximates the statistics of pairs of adjacent tokens.
 \item $W_U[t]^\top W_{OV}^{0,h}W_E[t_j]$ says how much token $t$ is promoted \emph{if} head $h$ attends to an
 earlier token $t_j$.
 \item Whether it attends there is decided by a third table. Without $\LN$, the score in \eqref{eq:pattern} is
-proportional to $W_E[t_i]^\top W_{QK}^{0,h}W_E[t_j]$.
+proportional to $W_E[t_i]^\top W_{QK}^{0,h}W_E[t_j]$, where $W_{QK}^{0,h}$ is the matrix $W_{QK}$ of the same head.
 \end{itemize}
 A one-layer attention-only transformer is therefore a sum of look-up tables of the form ``when the current
 token is $t_i$ and an earlier token is $t_j$, raise or lower the probability of $t$''. The three tables can be
@@ -78,13 +80,13 @@ were tried.
 With two layers, the input of a head in the second layer contains the outputs of the heads in the first, and
 \eqref{eq:path} acquires terms in which the tables of two heads are multiplied. This is called
 \emph{composition}. It comes in three kinds, according to whether the earlier head influences the later head's
-query (where it looks from), its key (what it looks for) or its value (what it moves). Composition is where
+query (what the destination asks for), its key (what a source offers) or its value (what is moved). Composition is where
 real algorithms begin.
 
 \subsection{Induction heads}
 \label{sec:induction}
 
-The first algorithm found in this way is also the most important one known. Text is full of repetitions. If the
+The first algorithm found in this way is also one of the most studied. Text is full of repetitions. If the
 sequence \tok{[A][B]} has occurred and the token \tok{[A]} occurs again, then \tok{[B]} is a good guess for the
 next token. Two-layer attention-only transformers implement this rule with two heads
 \citep{elhage2021mathematical}, as shown in \cref{fig:induction}.
@@ -143,8 +145,8 @@ that we saw in \cref{fig:residpatch}, and it explains why these heads have a lar
 direct effect in \cref{tab:heads}.
 
 \paragraph{How do the S-inhibition heads know which name is repeated?} Two groups of heads at S2 detect the
-repetition. The duplicate token heads 0.1 and 3.0 attend from S2 to the earlier occurrence S1 of the same
-token. The induction heads 5.5 and 6.9 attend from S2 to the token \emph{after} S1, using the output of the
+repetition. The duplicate token heads, among them 0.1 and 3.0, attend from S2 to the earlier occurrence S1 of the
+same token. The induction heads, among them 5.5 and 6.9, attend from S2 to the token \emph{after} S1, using the output of the
 previous-token heads 2.2 and 4.11 exactly as in \cref{sec:induction}. Both groups write to the stream at S2 that
 this token has occurred before, and the S-inhibition heads read it.
 
@@ -185,8 +187,8 @@ this token has occurred before, and the S-inhibition heads read it.
 \draw[->, tutblue, line width=0.9pt] (neg.north) -- node[right=2pt, text=black] {$-$} (out.south east);
 \end{tikzpicture}
 \caption{The circuit for indirect object identification in GPT-2 small, simplified from
-\citet{wang2023interpretability}. Each box is a class of attention heads, drawn above the position at which the
-heads write. Arrows show the flow of information. The backup name movers are omitted.}
+\citet{wang2023interpretability}. Each box is a class of attention heads with its main members, drawn above the position at which
+the heads write. Arrows show the flow of information. The backup name movers are omitted.}
 \label{fig:ioi}
 \end{figure}
 
@@ -206,9 +208,11 @@ classes of heads (negative and backup name movers) are described without a clear
 produced them. And the role of the MLPs is left open.
 
 \begin{caution}
-Our own figures on 12 prompts reproduce the observational and single-node signatures of this circuit. They are
-not a validation of it. We did not run path patching, and we did not test faithfulness, completeness or
-minimality.
+Our own figures on 12 prompts reproduce the signatures of the heads that act at S2 and at the last position.
+They say nothing about the heads that act earlier. The clean and the corrupted prompt agree before S2, so the
+previous-token heads behave identically in both runs and cannot show up in our patching experiment. Our figures
+are also not a validation of the circuit. We did not run path patching, and we did not test faithfulness,
+completeness or minimality.
 \end{caution}
 
 \subsection{A network that was understood completely}
@@ -221,7 +225,7 @@ $c\in\{0,\dots,P-1\}$ with $c\equiv a+b \pmod P$. The network was trained on $30
 memorises these and much later, quite suddenly, becomes correct on the rest. This delayed generalisation is
 called \emph{grokking} \citep{power2022grokking}.
 
-One would expect the network to learn something like a look-up table. It does something else. It uses a small
+We might expect the network to learn something like a look-up table. It does something else. It uses a small
 set of integer frequencies $r$ (five in the main model of the paper) and proceeds as follows.
 \begin{enumerate}
 \item The embedding maps the input $a$ to the numbers $\cos(2\pi ra/P)$ and $\sin(2\pi ra/P)$ for each of these
@@ -294,8 +298,8 @@ most $2.59$ at every other residue.}
 
 The authors did not guess this algorithm. They found periodic structure in the embedding matrix, traced it
 through the network and confirmed each step by interventions. Removing the key frequencies destroys the
-performance, and removing everything else improves it. They report that \eqref{eq:modadd} accounts for $95\%$ of
-the variance of the logits.
+performance, and removing everything else improves it. They report that a weighted version of \eqref{eq:modadd}, with one coefficient per frequency, accounts for $95\%$
+of the variance of the logits.
 
 Understanding the mechanism paid off in a second way. Knowing which weights belong to the trigonometric
 algorithm, the authors could measure its strength during training. The algorithm does not appear at the moment
@@ -330,11 +334,12 @@ values they take on this prompt.
 output and the transcoder output. The resulting \emph{local replacement model} then reproduces the activations
 of the real model on this prompt exactly.
 \item In the local replacement model, every latent influences every later latent through linear maps only. The
-direct effect of one latent on another is given by a formula, and the latents and effects that matter for the
-output form the attribution graph.
+direct effect of one latent on another is then a product of the linear maps between them, which is computed from
+the weights and the frozen attention patterns. The latents and effects that matter for the output form the
+attribution graph.
 \end{enumerate}
-The graph is a hypothesis about the real model. It is tested by interventions in the real model: one suppresses
-or activates a latent and checks that the output changes as the graph predicts.
+The graph is a hypothesis about the real model. It is tested by interventions in the real model: we suppress
+or activate a latent and check that the output changes as the graph predicts.
 
 Two findings of \citet{lindsey2025biology} show what such graphs can reveal. For the prompt asking for the
 capital of the state that contains Dallas, the graph contains latents for Texas between the input and the answer
@@ -367,8 +372,8 @@ $\to$ \tok{mind}'' and ``\tok{keep} $\dots$ \tok{at} $\to$ \tok{bay}'' likely. U
 \end{exercise}
 \begin{exercise}\label{ex:induction}
 Explain why the induction circuit of \cref{sec:induction} cannot be implemented by a transformer with one
-layer. Use the fact that in \eqref{eq:path} the attention score depends only on the tokens $t_i$ and $t_j$ and
-their positions.
+layer. Use the fact that in \eqref{eq:path} the attention score depends only on the tokens $t_i$ and $t_j$, and on the
+positions $i$ and $j$ if positional embeddings are kept.
 \end{exercise}
 \begin{exercise}\label{ex:cosprime}
 Let $P=113$ and $r=14$. For which integers $q$ is $\cos(2\pi rq/P)=1$? Why does the argument fail for $P=112$?

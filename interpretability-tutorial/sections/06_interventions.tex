@@ -11,7 +11,7 @@ repeat as often as we like.
 
 \begin{definition}[Intervention]\label{def:intervention}
 A \emph{node} $g$ is any intermediate quantity of the model: the residual stream at one layer and position, the
-output of one head, one neuron, one SAE latent. We write $g(\clean)$ for the value of the node when the model
+output of one head, one neuron, one SAE latent. The components of \cref{prop:dla} are examples. We write $g(\clean)$ for the value of the node when the model
 runs on a prompt called $\clean$, and $M(\clean)$ for a scalar measure of the output on that prompt, the
 \emph{metric}. For a value of the same shape as $g$, the \emph{intervened run} computes everything before the
 node as usual, overwrites the node with the given value, and recomputes everything after it. We write
@@ -82,7 +82,8 @@ $M(\corr)$ towards $M(\clean)$, the node carries information that distinguishes 
 \end{figure}
 
 Activation patching refines resample ablation by choosing the other prompt deliberately
-\citep{vig2020investigating,meng2022locating}. We prepare two prompts of equal length that differ in exactly
+\citep{vig2020investigating,wang2023interpretability}. The causal tracing of \citet{meng2022locating} is a
+variant in which the corrupted run is produced by adding noise to the embeddings of some tokens. We prepare two prompts of equal length that differ in exactly
 the aspect we want to study. In the running example,
 \begin{center}
 \begin{tabular}{@{}ll@{}}
@@ -92,7 +93,9 @@ $\corr$: & \tok{When Mary and John went to the store, Mary gave a drink to}
 \end{center}
 The corrupted prompt differs in one token, the second occurrence of the subject, and its correct continuation is
 the other name. Averaged over our 12 pairs of prompts, $M(\clean)=3.70$ and $M(\corr)=-4.33$, where the metric is
-always the logit difference in favour of the name that is correct for the clean prompt. The two runs are $8.04$
+always the logit difference in favour of the name that is correct for the clean prompt. The two values are not
+mirror images of each other, because in the corrupted prompts the repeated name is the one that was mentioned
+first. All effects below are computed from metrics that are averaged over the 12 pairs. The two runs are $8.04$
 logits apart (computed from the unrounded values).
 
 We now run the model on one prompt and overwrite a single node with its value from the other run
@@ -154,11 +157,16 @@ detail.
 \label{sec:necessity}
 
 We now take the output of each attention head, at all positions, as a node. \Cref{tab:heads} lists four numbers
-for the heads with the largest effects. The first is the direct logit attribution from \cref{sec:lens}. The second
+for twelve heads from the classes of \citet{wang2023interpretability}. The classes are explained in
+\cref{sec:ioi}, and for the moment they are only labels. The first is the direct logit attribution from \cref{sec:lens}. The second
 is the denoising effect \eqref{eq:denoise}. The last two describe the noising experiment in logits. The
 \emph{total effect} is the numerator of \eqref{eq:noise}, which is the drop of the metric when the head receives
 its corrupted output. The \emph{direct effect} is the part of this drop that comes from the head's own summand
-in \eqref{eq:dla-ld}, computed with the final scale held fixed.
+in \eqref{eq:dla-ld}, computed with the final scale held fixed. A negative entry in the table belongs to a head
+that works against the correct name: restoring it lowers the metric, and corrupting it raises the metric. The
+effects of different heads do not add up to one, because the heads depend on each other. For head 9.9 the direct
+effect of $7.00$ is about twice its DLA, because in the corrupted run this head writes with similar strength in
+favour of the other name.
 
 \begin{table}[t]
 \centering\small
@@ -214,9 +222,9 @@ parallel, each is sufficient and none is necessary. If several components are ne
 and none is sufficient. \Cref{ex:andor} makes this exact in a model with two nodes.
 
 \paragraph{Paths.} Patching a node changes everything downstream of it. To learn through \emph{which} later
-components a node acts, one patches along selected paths only. For example, to measure the effect of head 8.6
-that passes through head 9.9, one recomputes the input of head 9.9 with the corrupted output of head 8.6 and
-keeps the clean value on every other path. This is \emph{path patching}
+components a node acts, we patch along selected paths only. For example, to measure the effect of head 8.6
+that passes through head 9.9, we recompute the input of head 9.9 with the corrupted output of head 8.6 and
+keep the clean value on every other path. This is \emph{path patching}
 \citep{wang2023interpretability,goldowskydill2023localizing}. The direct effect in \cref{tab:heads} is the
 special case of the path that leads straight to the output.
 
@@ -246,8 +254,9 @@ provide, and the gradients with respect to all nodes, which a single backward pa
 depends on the number of nodes.
 
 \Cref{fig:attrpatch} compares the estimate with the exact denoising effect for all 144 heads of the running
-example. The correlation is $0.98$. The estimate identifies the same heads, and its errors are largest for the
-heads with the largest effects. For head 9.9 it gives $0.43$ where the exact value is $0.29$.
+example. The correlation is $0.98$. The estimate identifies the same heads. Its largest errors occur for two
+heads with large effects. For head 9.9 it gives $0.43$ where the exact value is $0.29$, and for head 5.5 it gives
+$0.25$ where the exact value is $0.33$.
 
 \begin{figure}[t]
 \centering
@@ -348,5 +357,6 @@ the value written to $g$. Give an example of a node and a metric in a transforme
 \end{exercise}
 \begin{exercise}\label{ex:projection}
 Show that directional ablation \eqref{eq:dirabl} with a unit vector $v$ is linear in $x$, that applying it twice
-is the same as applying it once, and that it does not change $w^\top x$ for any $w$ orthogonal to $v$.
+is the same as applying it once, and that it does not change the read-out $w^\top x$ of a probe direction $w$
+that is orthogonal to $v$.
 \end{exercise}

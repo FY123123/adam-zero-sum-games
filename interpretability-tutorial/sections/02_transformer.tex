@@ -40,12 +40,14 @@ and $W_{\mathrm{pos}}[i]\in\R^d$ is a learned vector for position $i$.
 \end{equation}
 where $\one\in\R^d$ is the vector of ones and $\|\cdot\|$ is the Euclidean norm. $\LN$ subtracts the average coordinate and rescales the result to a
 fixed length. The original definition also multiplies by a learned vector and adds another one. Since $\LN$ is
-always followed by a linear map, these two learned vectors can be absorbed into that map, and we do so throughout.
+always followed by a linear map, these two learned vectors can be absorbed into that map and its bias, and we do
+so throughout.
 
 \paragraph{Attention heads.} Layer $\ell$ contains $H$ attention heads, numbered $h=0,\dots,H-1$. A head is the
 only kind of component that moves information between positions. Head $h$ of layer $\ell$ has four weight matrices
 $W_Q,W_K,W_V\in\R^{d_{\mathrm{head}}\times d}$ and $W_O\in\R^{d\times d_{\mathrm{head}}}$ (each head has its own,
-and we suppress the indices $\ell,h$ on them). They enter only through the two products
+and we suppress the indices $\ell,h$ on them). The width $d_{\mathrm{head}}$ of a head is much smaller than
+$d$. They enter only through the two products
 \begin{equation}\label{eq:qkov}
 W_{QK} \;=\; W_Q^\top W_K\in\R^{d\times d},\qquad W_{OV} \;=\; W_O W_V\in\R^{d\times d}.
 \end{equation}
@@ -58,7 +60,10 @@ A^{\ell,h}_{ij} &\;=\; \frac{\exp\!\big(\LN(x_i^{(\ell)})^\top W_{QK}\,\LN(x_j^{
 \head_i^{\ell,h} &\;=\; \sum_{j\le i}A^{\ell,h}_{ij}\;W_{OV}\,\LN(x_j^{(\ell)}) \;\in\R^d. \label{eq:headout}
 \end{align}
 The numbers $A^{\ell,h}_{ij}\ge 0$ sum to one over $j$ and are called the \emph{attention pattern} of the head.
-We call $i$ the \emph{destination} and $j$ the \emph{source}. The two products in \eqref{eq:qkov} have separate
+We call $i$ the \emph{destination} and $j$ the \emph{source}. In the usual terminology,
+$W_Q\LN(x_i^{(\ell)})$ is the \emph{query} of the destination, $W_K\LN(x_j^{(\ell)})$ is the \emph{key} of the source
+and $W_V\LN(x_j^{(\ell)})$ is its \emph{value}. The score is the inner product of query and key, so a source
+receives a large weight if its key matches what the destination asks for. The two products in \eqref{eq:qkov} have separate
 jobs. $W_{QK}$ decides \emph{from where} position $i$ reads, and $W_{OV}$ decides \emph{what} is written to
 position $i$ once a source has been chosen. The restriction $j\le i$ ensures that a position never sees later
 tokens.
@@ -68,7 +73,8 @@ $\tilde x_i^{(\ell)}$ denoting the stream after the heads of layer $\ell$,
 \begin{equation}\label{eq:mlp}
 \mlp_i^{\ell} \;=\; W_{\mathrm{out}}\,\mathrm{GELU}\big(W_{\mathrm{in}}\,\LN(\tilde x_i^{(\ell)})+b_{\mathrm{in}}\big)+b_{\mathrm{out}} \;\in\R^d,
 \end{equation}
-where $\mathrm{GELU}$ is a smooth variant of $\max(0,\cdot)$ applied to each coordinate. The coordinates of the
+with weight matrices $W_{\mathrm{in}}$, $W_{\mathrm{out}}$ and bias vectors $b_{\mathrm{in}}$, $b_{\mathrm{out}}$ that
+belong to the layer. Here $\mathrm{GELU}$ is a smooth variant of $\max(0,\cdot)$ applied to each coordinate. The coordinates of the
 vector inside $\mathrm{GELU}$ are the \emph{neurons} of the layer.
 
 \paragraph{Update rule and output.} Both kinds of components \emph{add} their output to the stream,
@@ -81,9 +87,10 @@ unembedding matrix $W_U\in\R^{V\times d}$ that belongs to token $t$, written as 
 \begin{equation}\label{eq:unembed}
 \logit_i(t) \;=\; W_U[t]^\top\,\LN\big(x_i^{(L)}\big).
 \end{equation}
-The linear maps inside a head also have bias vectors, which we have omitted from \eqref{eq:pattern} and
-\eqref{eq:headout}. All statements below stay true with them, if the output bias of each attention layer is counted
-as one more component.
+Two kinds of bias terms are omitted from these formulas. The linear maps inside a head have bias vectors, and
+absorbing the learned shift of the final $\LN$ into the unembedding leaves a constant $b_U[t]$ that is added to the
+logit of token $t$. All statements below stay true with them, if the output bias of each attention layer is counted
+as one more component and $b_U[t]$ as one more summand of $\logit_i(t)$.
 
 \begin{figure}[t]
 \centering
@@ -170,11 +177,12 @@ MLP at position $i$ depends on the stream at position $i$ alone, and the same ho
 unembedding. If the final position ``knows'' something about an earlier token, some attention head has carried
 it there.
 \item \textbf{The coordinates of the stream have no special meaning.} Every component reads the stream through
-a linear map after $\LN$ and writes to it through a linear map. Let $R$ be an orthogonal matrix with $R\one=\one$.
-Then $\LN(Rx)=R\,\LN(x)$. If we replace the stream by $Rx$, multiply every reading matrix by $R^\top$ from the
-right and every writing matrix by $R$ from the left, the model computes the same function. Hence nothing singles out coordinate number
+a linear map after $\LN$ and writes to it through a linear map. Let $\Omega$ be an orthogonal matrix with $\Omega\one=\one$.
+Then $\LN(\Omega x)=\Omega\,\LN(x)$. If we replace the stream by $\Omega x$, multiply every reading matrix by
+$\Omega^\top$ from the right and every writing matrix by $\Omega$ from the left, the model computes the same
+function. Hence nothing singles out coordinate number
 $17$ of the stream. The MLP neurons are different, because $\mathrm{GELU}$ acts on each coordinate separately.
-One says that the neurons form a \emph{privileged basis} and that the residual stream has none.
+We say that the neurons form a \emph{privileged basis} and that the residual stream has none.
 \end{itemize}
 
 \begin{intuition}
@@ -195,8 +203,8 @@ In the IOI task of \cref{sec:running} we look at the last position $n$ and compa
 \end{equation}
 By \eqref{eq:softmax}, the ratio of the two predicted probabilities equals the exponential of this difference.
 On our 12 prompts the logit difference of GPT-2 small is $3.70$ on average and lies between $2.06$ and $5.53$.
-An average of $3.70$ means that the model judges the correct name about $e^{3.70}\approx 40$ times as likely as
-the repeated one.
+A logit difference of $3.70$ on a prompt means that the model judges the correct name about
+$e^{3.70}\approx 40$ times as likely as the repeated one on that prompt.
 
 We prefer the logit difference to the probability of the correct name for two reasons. It is a linear function of
 $\LN(x_n^{(L)})$, so \cref{prop:dla} applies to it term by term. And it removes everything that the two names have

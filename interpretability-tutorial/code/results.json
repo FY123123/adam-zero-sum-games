@@ -429,7 +429,7 @@
  ],
  "head_patching": {
   "pearson_r_attr_vs_denoise": 0.9807140719841235,
-  "top10_by_abs_denoising_effect": [
+  "top_heads_by_abs_denoising_effect": [
    {
     "head": "10.7",
     "denoise": -0.523342789401849,

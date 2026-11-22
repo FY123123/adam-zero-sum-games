@@ -50,7 +50,8 @@ comes from several independent sources.
 example is that the vector of \tok{king} minus that of \tok{man} plus that of \tok{woman} lies close to the
 vector of \tok{queen} \citep{mikolov2013linguistic}.
 \item \textbf{Linear probes.} A wide range of properties is linearly decodable (\cref{sec:probing}), including
-ones as abstract as the truth of a statement \citep{marks2024geometry}.
+ones as abstract as the truth of a statement \citep{marks2024geometry}. The concept activation vectors of
+\citet{kim2018interpretability} apply the same idea to image classifiers.
 \item \textbf{Steering.} Adding a suitable vector to the stream switches a behaviour on or off
 (\cref{sec:steering}). This is causal evidence, which the first two items are not.
 \item \textbf{An architectural reason.} Every component reads the stream through a linear map. A property that
@@ -108,7 +109,7 @@ use it for the sum $d\,v_i^\top v_j$ and for its negative:
 \Pr\big(|v_i^\top v_j|>\varepsilon\big)
 &\le \Pr\big(d\,v_i^\top v_j\ge\varepsilon d\big)+\Pr\big(-d\,v_i^\top v_j\ge\varepsilon d\big) && \by{union of two events}\notag\\
 &\le 2\exp\!\big(-(\varepsilon d)^2/(2d)\big) && \by{Hoeffding, twice}\notag\\
-&= 2\exp\!\big(-\varepsilon^2d/2\big). \label{eq:onepair}
+&= 2\exp\!\big(-\varepsilon^2d/2\big). && \by{since $(\varepsilon d)^2/(2d)=\varepsilon^2d/2$} \label{eq:onepair}
 \end{align}
 
 \textbf{All pairs.} There are $N(N-1)/2$ pairs $i<j$. Hence
@@ -124,7 +125,9 @@ which no pair violates it, and this outcome is the required family of vectors.
 
 For $d=768$ and $\varepsilon=0.3$ the proposition allows $N\le e^{17.28}$, which is more than $3\times10^7$
 directions, compared with $768$ exactly orthogonal ones. The constants in the bound are far from optimal. The
-point is the exponential dependence on $d$.
+point is the exponential dependence on $d$. The mechanism is easy to remember. A sum of $d$ random signs has
+typical size $\sqrt d$, so two random unit vectors have an inner product of typical size $1/\sqrt d$, which is
+$0.036$ for $d=768$.
 
 Almost orthogonal is not orthogonal, and the price is \emph{interference}. If we read feature $j$ from $x$ by
 projecting on $v_j$, the other active features leak into the result.
@@ -188,7 +191,7 @@ antipodal, with inner product $-1$. Both arrangements appear as solutions of the
 \label{sec:toy}
 
 \citet{elhage2022toy} study superposition in the smallest network that can show it. We describe their model in
-the notation of \cref{def:lrh}. They write $x$ for our $f$, $h$ for our $x$ and $1-S$ for our $\delta$.
+the notation of \cref{def:lrh}. They write $x$ for our $f$ and $h$ for our $x$, and their sparsity parameter is our $1-\delta$.
 
 There are $N$ features with activations $f=(f_1,\dots,f_N)$. The features are independent. Each $f_j$ is zero
 with probability $1-\delta$ and uniformly distributed on $[0,1]$ with probability $\delta$, so a small $\delta$
@@ -208,11 +211,12 @@ two features. We compare two ways of using it.
 \item \textbf{Dedicated solution.} $W=(1,\ 0)$ and $b_{\mathrm{toy}}=(0,\ \delta/2)$. The model stores feature $1$
 and ignores feature $2$, for which it always outputs the constant $\delta/2$.
 \item \textbf{Antipodal solution.} $W=(1,\ -1)$ and $b_{\mathrm{toy}}=(0,\ 0)$. The model stores the difference
-$x=f_1-f_2$, as in \cref{fig:superposition}(c).
+$x=f_1-f_2$, as in \cref{fig:superposition}(c). For example, the input $f=(0.6,\ 0.2)$ is stored as $x=0.4$ and read
+back as $\hat f=(0.4,\ 0)$.
 \end{itemize}
 
 \begin{proposition}[Superposition wins when features are sparse]\label{prop:toy}
-In the model \eqref{eq:toy} with $N=2$ and $d=1$, the dedicated solution has loss
+In the model \eqref{eq:toy} with $N=2$, $d=1$ and $0<\delta\le1$, the dedicated solution has loss
 $\delta/3-\delta^2/4$ and the antipodal solution has loss $\delta^2/3$. The antipodal solution has the smaller
 loss if and only if $\delta<4/7$.
 \end{proposition}

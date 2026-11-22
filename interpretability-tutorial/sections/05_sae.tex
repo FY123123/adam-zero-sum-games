@@ -13,23 +13,23 @@ We fix a place in the model, for instance the residual stream after layer 6, and
 $x\in\R^d$ at every token of a large text corpus. An SAE with $m$ \emph{latents}, where $m$ is much larger than
 $d$, consists of an encoder and a decoder,
 \begin{equation}\label{eq:sae}
-f(x) \;=\; \relu\big(\Wenc\,(x-\bdec)+\benc\big)\in\R^m,\qquad
-\hat x(x) \;=\; \Wdec\,f(x)+\bdec\in\R^d ,
+\hat f(x) \;=\; \relu\big(\Wenc\,(x-\bdec)+\benc\big)\in\R^m,\qquad
+\hat x(x) \;=\; \Wdec\,\hat f(x)+\bdec\in\R^d ,
 \end{equation}
 with $\Wenc\in\R^{m\times d}$, $\Wdec\in\R^{d\times m}$, $\benc\in\R^m$ and $\bdec\in\R^d$. We write $\Wdec[j]\in\R^d$
 for column $j$ of the decoder and call it the \emph{dictionary direction} of latent $j$. The columns are kept at
 unit norm. The parameters are trained to minimise
 \begin{equation}\label{eq:saeloss}
-\text{loss} \;=\; \E\Big[\big\|x-\hat x(x)\big\|^2+\lambda\sum_{j=1}^{m}f_j(x)\Big],\qquad\lambda>0,
+\text{loss} \;=\; \E\Big[\big\|x-\hat x(x)\big\|^2+\lambda\sum_{j=1}^{m}\hat f_j(x)\Big],\qquad\lambda>0,
 \end{equation}
 where the expectation is over the collected activations. The first term asks for a faithful reconstruction.
-The second term is the sum of the absolute values of the entries of $f(x)$, since $f_j(x)\ge0$. It is known as
+The second term is the sum of the absolute values of the entries of $\hat f(x)$, since $\hat f_j(x)\ge0$. It is known as
 an L1 penalty, and it pushes most latents to zero.
 \Cref{fig:sae} (left) shows the architecture.
 
-Comparing $\hat x(x)=\bdec+\sum_jf_j(x)\,\Wdec[j]$ with \eqref{eq:lrh}, we see what is hoped for: the dictionary
-directions $\Wdec[j]$ should be the feature directions $v_j$, and the latent activations should be the feature
-activations. We keep the two notions apart by name. A \emph{latent} is a unit of an SAE, which we can compute.
+Comparing $\hat x(x)=\bdec+\sum_j\hat f_j(x)\,\Wdec[j]$ with \eqref{eq:lrh}, we see what is hoped for: the
+dictionary directions $\Wdec[j]$ should be the feature directions $v_j$, and the latent activations $\hat f_j(x)$
+should be the feature activations $f_j$. The hat is a reminder that a latent activation is an estimate. We keep the two notions apart by name. A \emph{latent} is a unit of an SAE, which we can compute.
 A \emph{feature} is a property that the model represents, which we want to know. Whether a given latent
 corresponds to a feature is an empirical question in every single case.
 
@@ -47,7 +47,7 @@ range from a few thousand latents to $2^{25}\approx34$ million for a production 
 \foreach \y in {0,...,12} {\draw[tutgrey, fill=white] (3.1,0.34*\y-1.36) rectangle +(0.34,0.34);}
 \draw[tutgrey, fill=tutred!80] (3.1,0.34*3-1.36) rectangle +(0.34,0.34);
 \draw[tutgrey, fill=tutred!35] (3.1,0.34*9-1.36) rectangle +(0.34,0.34);
-\node[below, align=center] at (3.27,-1.41) {$f(x)\in\R^m$\\ few nonzero};
+\node[below, align=center] at (3.27,-1.41) {$\hat f(x)\in\R^m$\\ few nonzero};
 \foreach \y/\c in {0/55,1/30,2/75,3/40,4/20} {\draw[tutgrey, fill=tutblue!\c] (6.2,0.34*\y) rectangle +(0.34,0.34);}
 \node[below, align=center] at (6.37,-0.05) {$\hat x(x)\in\R^d$};
 \draw[->, tutgrey] (0.5,0.85) -- node[above] {encoder} (2.95,0.85);
@@ -56,12 +56,12 @@ range from a few thousand latents to $2^{25}\approx34$ million for a production 
 \hfill
 \begin{tikzpicture}
 \begin{axis}[width=6.0cm, height=4.7cm, xmin=0, xmax=1, ymin=0, ymax=1, axis lines=left,
-  xlabel={true activation $f^\star$}, ylabel={optimal latent activation}, label style={font=\small},
+  xlabel={true activation $f$}, ylabel={optimal latent activation $\hat f$}, label style={font=\small},
   tick label style={font=\footnotesize}, xtick={0,0.5,1}, ytick={0,0.5,1}, clip=false]
 \addplot[dashed, tutgrey, domain=0:1, samples=2] {x};
 \addplot[tutred, very thick, domain=0:1, samples=201] {max(0,x-0.2)};
 \node[font=\footnotesize, tutgrey, anchor=south east] at (axis cs:0.74,0.76) {no shrinkage};
-\node[font=\footnotesize, tutred!80!black, anchor=north west] at (axis cs:0.62,0.40) {$\max(0,f^\star-\lambda/2)$};
+\node[font=\footnotesize, tutred!80!black, anchor=north west] at (axis cs:0.62,0.40) {$\max(0,f-\lambda/2)$};
 \end{axis}
 \end{tikzpicture}
 \caption{Left: a sparse autoencoder maps an activation to a much longer vector with few nonzero entries and
@@ -77,21 +77,26 @@ latents. That number is not differentiable, and the sum of the activations is us
 the substitute can be computed exactly in the simplest situation.
 
 \begin{proposition}[Shrinkage]\label{prop:shrink}
-Let $v\in\R^d$ be a unit vector and let $x=f^\star v$ with $f^\star\ge0$. Among all $f\ge0$, the value that
-minimises $\|x-fv\|^2+\lambda f$ is
+Let $v\in\R^d$ be a unit vector and let $x=fv$ with a true activation $f\ge0$. Among all $\hat f\ge0$, the value
+that minimises $\|x-\hat fv\|^2+\lambda\hat f$ is
 \[
-f \;=\; \max\big(0,\ f^\star-\lambda/2\big).
+\hat f \;=\; \max\big(0,\ f-\lambda/2\big).
 \]
 \end{proposition}
 \begin{proof}
-Since $\|v\|=1$, we have $\|x-fv\|^2=\|(f^\star-f)\,v\|^2=(f^\star-f)^2$. We therefore minimise
-$(f^\star-f)^2+\lambda f$ over $f\ge0$. This function of $f$ is convex, and its derivative is
+We first simplify the reconstruction error.
+\begin{align*}
+\|x-\hat fv\|^2 &= \|(f-\hat f)\,v\|^2 && \by{since $x=fv$}\\
+&= (f-\hat f)^2. && \by{since $\|v\|=1$}
+\end{align*}
+We therefore minimise $(f-\hat f)^2+\lambda\hat f$ over $\hat f\ge0$. This function of $\hat f$ is convex, and its
+derivative is
 \begin{equation}\label{eq:shrinkderiv}
-\frac{d}{df}\Big((f^\star-f)^2+\lambda f\Big) \;=\; -2\,(f^\star-f)+\lambda .
+\frac{d}{d\hat f}\Big((f-\hat f)^2+\lambda\hat f\Big) \;=\; -2\,(f-\hat f)+\lambda .
 \end{equation}
-If $f^\star\ge\lambda/2$, the derivative \eqref{eq:shrinkderiv} vanishes at $f=f^\star-\lambda/2\ge0$, which is
-then the minimiser. If $f^\star<\lambda/2$, the derivative \eqref{eq:shrinkderiv} is at least
-$\lambda-2f^\star>0$ for all $f\ge0$, so the function is increasing on $[0,\infty)$ and the minimiser is $f=0$.
+If $f\ge\lambda/2$, the derivative \eqref{eq:shrinkderiv} vanishes at $\hat f=f-\lambda/2\ge0$, which is then the
+minimiser. If $f<\lambda/2$, the derivative \eqref{eq:shrinkderiv} is at least $\lambda-2f>0$ for all
+$\hat f\ge0$, so the function is increasing on $[0,\infty)$ and the minimiser is $\hat f=0$.
 \end{proof}
 
 So a latent that fires for the right reason is still reported too small, by $\lambda/2$, and weak features are
@@ -121,7 +126,7 @@ numbers at once.
 $\E\|x-\hat x(x)\|^2\,/\,\E\|x-\E x\|^2$, should be small.
 \item \textbf{Sparsity.} The average number of nonzero latents per activation, usually called the L0 of the SAE, should be
 small compared with $d$. Published dictionaries have values from about ten to a few hundred.
-\item \textbf{Effect on the model.} One runs the model with $x$ replaced by $\hat x(x)$ and measures how much the
+\item \textbf{Effect on the model.} We run the model with $x$ replaced by $\hat x(x)$ and measure how much the
 next-token loss increases. This matters because the model does not care equally about all directions of $x$. A
 small reconstruction error can sit in exactly the direction that a later layer reads.
 \item \textbf{Health.} \emph{Dead} latents never fire, and \emph{dense} latents fire on a large share of all
@@ -140,21 +145,21 @@ Items 1 and 2 trade off against each other, so two SAEs can only be compared alo
 Suppose a latent has passed these tests. Three views are combined to understand it.
 
 \begin{itemize}
-\item \textbf{Where it fires.} One reads text on which the latent is active. The examples should be sampled over
+\item \textbf{Where it fires.} We read text on which the latent is active. The examples should be sampled over
 the whole range of activations. The strongest ones alone give too clean a picture.
 \item \textbf{What it writes.} By \cref{prop:dla}, adding a multiple of $\Wdec[j]$ to the final stream changes
-the logit of token $t$ in proportion to $W_U[t]^\top(\Wdec[j]-\mean(\Wdec[j])\,\one)$. Sorting the vocabulary by
+the logit of token $t$, if the final scale is held fixed, in proportion to $W_U[t]^\top(\Wdec[j]-\mean(\Wdec[j])\,\one)$. Sorting the vocabulary by
 this number shows which tokens the latent promotes directly.
-\item \textbf{What happens when it is changed.} One runs the model while holding $f_j$ at zero or at a large
-value and adds the corresponding change of $\hat x$ to the stream. This is an intervention, and it is the only
+\item \textbf{What happens when it is changed.} We run the model while holding $\hat f_j$ at zero or at a large
+value and add the corresponding change of $\hat x$ to the stream. This is an intervention, and it is the only
 one of the three views that tests whether the model uses the direction.
 \end{itemize}
 
 The best-known example is from \citet{templeton2024scaling}, who trained SAEs with up to $2^{25}$ latents on a
 middle layer of the production model Claude 3 Sonnet. One latent fired on mentions and pictures of the Golden
 Gate Bridge. When the authors clamped it to ten times its maximal observed value, the model began to describe
-itself as the Golden Gate Bridge. Open dictionaries exist for open models, for example Gemma Scope for all layers
-of Gemma 2 \citep{lieberum2024gemma}, and can be browsed on Neuronpedia \citep{lin2023neuronpedia}.
+itself as the Golden Gate Bridge. Open dictionaries exist for open models, for example Gemma Scope for the
+Gemma 2 models \citep{lieberum2024gemma}, and can be browsed on Neuronpedia \citep{lin2023neuronpedia}.
 
 \subsection{What a sparse autoencoder does not give}
 
@@ -211,10 +216,10 @@ that multiplying column $j$ of $\Wdec$ by $2$ and dividing row $j$ of $\Wenc$ an
 leaves the reconstruction unchanged and reduces the penalty. What would training do without the constraint?
 \end{exercise}
 \begin{exercise}\label{ex:fvu}
-In the setting of \cref{prop:shrink}, let $f^\star$ be uniform on $[0,1]$ and $\lambda=0.4$. Compute the mean
-squared reconstruction error $\E\,(f^\star-f)^2$ of the optimal $f$.
+In the setting of \cref{prop:shrink}, let the true activation $f$ be uniform on $[0,1]$ and $\lambda=0.4$. Compute
+the mean squared reconstruction error $\E\,(f-\hat f)^2$ of the optimal $\hat f$.
 \end{exercise}
 \begin{exercise}\label{ex:ggb}
 The ten strongest activations of a latent are all on text about the Golden Gate Bridge. Name two further
-observations and one intervention that you would require before calling it a ``Golden Gate Bridge feature''.
+observations and one intervention that are required before calling it a ``Golden Gate Bridge feature''.
 \end{exercise}

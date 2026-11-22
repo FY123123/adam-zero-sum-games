@@ -56,7 +56,7 @@ latents (\cref{sec:sae}).
 \section{Solutions to the exercises}
 \label{app:solutions}
 
-{\small
+{\footnotesize
 \paragraph{\Cref{ex:params}.} A head has $4\cdot d\cdot d_{\mathrm{head}}=4\cdot768\cdot64=196{,}608$ weights. $W_E$ has
 $50257\cdot768=38{,}597{,}376$ entries, which is $31\%$ of the model.
 
@@ -70,8 +70,8 @@ the final $\LN$ in \eqref{eq:unembed} removes.
 $d_{\mathrm{head}}=64$. Whatever a head writes lies in the column space of $W_O$, a fixed subspace of dimension at
 most $64$ of $\R^{768}$.
 
-\paragraph{\Cref{ex:linearig}.} The gradient $\nabla_{z_i}F=w_i$ is constant, so
-$\mathrm{IG}_i(z)=z_i^\top\int_0^1w_i\,du=w_i^\top z_i$, which is gradient times input. For $F(z)=z^2$ we have
+\paragraph{\Cref{ex:linearig}.} The gradient $\nabla_{z_i}F$ does not depend on the point, so
+$\mathrm{IG}_i(z)=z_i^\top\int_0^1\nabla_{z_i}F\,du=z_i^\top\nabla_{z_i}F$, which is gradient times input. For $F(z)=z^2$ we have
 $F'(z)=2z$. Gradient times input is $2z^2$, and $\mathrm{IG}(z)=z\int_0^12uz\,du=z^2=F(z)-F(0)$.
 
 \paragraph{\Cref{ex:lenslast}.} At $\ell=L$, \eqref{eq:lens} is \eqref{eq:unembed}. The components up to layer 8
@@ -95,12 +95,12 @@ $k\le2$.
 every $\delta<1$. The bias lets the model output the mean of the feature it ignores. This lowers the error from
 the second moment $\delta/3$ to the variance $\delta/3-\delta^2/4$.
 
-\paragraph{\Cref{ex:normconstraint}.} Since $\relu(y/2)=\relu(y)/2$, the new activation is $f_j(x)/2$. Its product
+\paragraph{\Cref{ex:normconstraint}.} Halving the argument of a $\relu$ halves its value, so the new activation is $\hat f_j(x)/2$. Its product
 with the doubled column is unchanged, and its penalty is halved. Without the constraint, training would let the
 columns grow and the activations shrink towards zero, and the penalty would lose its meaning.
 
-\paragraph{\Cref{ex:fvu}.} The optimal value is $f=\max(0,f^\star-0.2)$. The error is $f^\star$ for $f^\star<0.2$
-and $0.2$ otherwise. Hence $\E\,(f^\star-f)^2=\int_0^{0.2}u^2\,du+0.8\cdot0.04=0.0027+0.032\approx0.035$.
+\paragraph{\Cref{ex:fvu}.} The optimal value is $\hat f=\max(0,f-0.2)$. The error is $f$ for $f<0.2$
+and $0.2$ otherwise. Hence $\E\,(f-\hat f)^2=\int_0^{0.2}u^2\,du+0.8\cdot0.04=0.0027+0.032\approx0.035$.
 
 \paragraph{\Cref{ex:ggb}.} Observations: weak and medium activations are also about the bridge, and the latent
 fires on most mentions of the bridge in a new corpus. Intervention: amplifying the latent makes the model talk
@@ -124,15 +124,15 @@ promoted after \tok{in}. To avoid this, the table $W_U[t]^\top W_{OV}^{0,h}W_E[t
 destination token.
 
 \paragraph{\Cref{ex:induction}.} The induction head has to attend to the position $j$ whose \emph{previous} token
-equals the current token. In one layer, the score of the pair $(i,j)$ depends on $t_i$, $t_j$ and the positions,
-and not on $t_{j-1}$. An earlier layer must first write $t_{j-1}$ into position $j$.
+equals the current token. In one layer, the score of the pair $(i,j)$ depends on $t_i$, $t_j$ and at most the
+positions $i$ and $j$, and not on $t_{j-1}$. An earlier layer must first write $t_{j-1}$ into position $j$.
 
 \paragraph{\Cref{ex:cosprime}.} $\cos(2\pi\cdot14q/113)=1$ holds exactly when $113$ divides $14q$, which means
 that $113$ divides $q$, since $113$ is prime. For $P=112$ the number $14q/112=q/8$ is an integer for $q=8$, so a
 wrong answer would score as high as the correct one at this frequency.
 
-\paragraph{\Cref{ex:critique}.} A control task or shuffled labels, and a check that lying and honest prompts do
-not differ in topic or length (modes 1 and 2). An intervention along the probe direction that changes whether
-the model lies, compared with a random direction (modes 1 and 6). A test on lies of a different kind than those
+\paragraph{\Cref{ex:critique}.} A control task or shuffled labels, a probe on a model with random weights, and a
+check that lying and honest prompts do not differ in topic or length (mode 2). An intervention along the probe
+direction that changes whether the model lies, compared with a random direction (modes 1 and 6). A test on lies of a different kind than those
 in the training set (mode 8).
 }

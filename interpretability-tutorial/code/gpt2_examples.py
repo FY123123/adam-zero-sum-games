@@ -1,4 +1,4 @@
-"""Worked examples for the tutorial, all on GPT-2 small (about two minutes on a 4-core laptop CPU).
+"""Worked examples for the tutorial, all on GPT-2 small (about four minutes on a 4-core laptop CPU).
 
 Produces the numbers in code/results.json and the figures in figures/:
   fig_logit_lens.pdf      logit lens on the indirect-object task
@@ -240,7 +240,7 @@ flat = lambda a: [(f"{l}.{h}", float(a[l, h])) for l in range(n_layers) for h in
 order = np.argsort(-np.abs(head_denoise).ravel())[:14]
 results["head_patching"] = {
     "pearson_r_attr_vs_denoise": float(np.corrcoef(head_denoise.ravel(), head_attr.ravel())[0, 1]),
-    "top10_by_abs_denoising_effect": [
+    "top_heads_by_abs_denoising_effect": [
         {"head": f"{i // n_heads}.{i % n_heads}", "denoise": float(head_denoise.ravel()[i]),
          "attribution": float(head_attr.ravel()[i]), "noise": float(head_noise.ravel()[i]),
          "dla": float(head_dla.ravel()[i]),
@@ -343,5 +343,5 @@ plt.close(fig)
 
 print(json.dumps({k: v for k, v in results.items() if k not in ("resid_patching", "head_patching")}, indent=1))
 print(json.dumps(results["input_attribution"], indent=1))
-print(json.dumps(results["head_patching"]["top10_by_abs_denoising_effect"], indent=1))
+print(json.dumps(results["head_patching"]["top_heads_by_abs_denoising_effect"], indent=1))
 print("pearson r:", results["head_patching"]["pearson_r_attr_vs_denoise"])

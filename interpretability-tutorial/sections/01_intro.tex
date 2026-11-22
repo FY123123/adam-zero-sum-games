@@ -3,9 +3,11 @@
 
 \subsection{The gap between knowing the weights and knowing the algorithm}
 
-A large language model (LLM) takes a piece of text and returns a probability distribution over the next token.
+A large language model (LLM) takes a piece of text and returns a probability distribution over the next
+\emph{token}, which is a word or a piece of a word.
 Inside, it is a long but completely explicit computation: matrix products, additions, a few simple nonlinear
-functions. Nothing is hidden from us. We can print any weight and record any intermediate number.
+functions. Nothing is hidden from us. We can print any weight and record any intermediate number. Such an
+intermediate value is called an \emph{activation}.
 
 And yet we cannot say how the model works in the sense in which we can say how a sorting algorithm works. The
 weights were not written by a programmer. They were found by gradient descent on a prediction loss, and the
@@ -25,7 +27,8 @@ algorithms: which quantities the model represents, where, and through which oper
 The two requirements pull in opposite directions. The full list of weights is perfectly faithful and not
 understandable. A one-sentence story such as ``the model looks for the subject of the sentence'' is understandable
 and may be false. The whole field lives in the tension between the two, and most of its methodological care goes
-into checking condition (ii).
+into checking condition (ii). What the word ``interpretable'' should mean in machine learning has itself been
+debated for a long time \citep{lipton2018mythos,doshivelez2017towards}.
 
 \subsection{Why not simply ask the model?}
 
@@ -99,13 +102,14 @@ inputs that were never tried. \Cref{tab:map} places the methods of this tutorial
 \subsection{The running example}
 \label{sec:running}
 
-Abstract descriptions of methods are hard to digest. We therefore apply every method to the same small task, so
+Abstract descriptions of methods are hard to digest. We therefore apply the methods to the same small task
+wherever this is possible, so
 that the reader can see how the different kinds of evidence fit together. The task is \emph{indirect object
 identification} (IOI), introduced by \citet{wang2023interpretability}. Consider the sentence
 \begin{center}
 \tok{When Mary and John went to the store, John gave a drink to}
 \end{center}
-A fluent reader continues with \tok{Mary}. To do so, one has to notice that two names were introduced, that
+A fluent reader continues with \tok{Mary}. To do so, the reader has to notice that two names were introduced, that
 \tok{John} appears a second time as the subject of the second clause, and that the remaining name is the
 recipient. The name that should be predicted is called the indirect object (IO), and the repeated name is called
 the subject (S).
@@ -148,7 +152,7 @@ of training a neural network by gradient descent. It does not assume any knowled
 
 Three kinds of boxes mark material with a special role. An \emph{Intuition} box gives an informal picture of a
 formal statement. A \emph{Caution} box states a limit of a method or a common misreading. A \emph{Takeaways} box
-closes each section. Symbols are defined at the place where they are first used. Proofs are written as chains of
-equalities in which the reason for each line is printed in grey on the right. Each section ends with a few
-exercises, and \cref{app:solutions} contains solutions. A glossary of the technical terms is in
+closes each of Sections~\ref{sec:transformer} to~\ref{sec:pitfalls}. Symbols are defined at the place where they are first used. Proofs are written as chains of
+equalities in which the reason for each line is printed in grey on the right. Each of these sections also ends with a
+few exercises, and \cref{app:solutions} contains solutions. A glossary of the technical terms is in
 \cref{app:glossary}. Finally, \cref{sec:practice} lists software, first projects and further reading.

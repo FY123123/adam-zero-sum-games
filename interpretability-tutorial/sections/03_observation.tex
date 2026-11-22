@@ -41,12 +41,14 @@ change of $z_i$. A popular variant, \emph{gradient times input}, takes $z_i^\top
 contribution of token $i$. This would be exact if $F$ were linear without a constant term, and in general it
 is a first-order guess.
 
-\emph{Integrated gradients} \citep{sundararajan2017axiomatic} repairs the main defect of this guess. One chooses
+\emph{Integrated gradients} \citep{sundararajan2017axiomatic} repairs the main defect of this guess. We choose
 a \emph{baseline} input $\bar z$ that stands for ``no information'' and averages the gradient along the straight
 line from $\bar z$ to $z$:
 \begin{equation}\label{eq:ig}
 \mathrm{IG}_i(z) \;=\; (z_i-\bar z_i)^\top\int_0^1\nabla_{z_i}F\big(\bar z+u\,(z-\bar z)\big)\,du .
 \end{equation}
+As $u$ runs from $0$ to $1$, the input is faded in from the baseline to the real prompt, and the integral records
+how strongly the output reacts to token $i$ along the way.
 
 \begin{proposition}[Completeness of integrated gradients]\label{prop:ig}
 Let $F$ be continuously differentiable on the segment between $\bar z$ and $z$. Then the attributions
@@ -67,14 +69,14 @@ F(z)-F(\bar z) &= \int_0^1\frac{d}{du}F\big(\bar z+u\,(z-\bar z)\big)\,du && \by
 The assumption holds for GPT-2, whose building blocks (the $\mathrm{GELU}$, the softmax, and $\LN$ away from
 $\scale(x)=0$) are smooth.
 
-\begin{table}[t]
+\begin{table}[ht]
 \centering\footnotesize
 \setlength{\tabcolsep}{3.2pt}
 \begin{tabular}{@{}l*{15}{r}@{}}
 \toprule
  & \tok{BOS} & \tok{When} & IO & \tok{and} & S1 & \tok{went} & \tok{to} & \tok{the} & \tok{store} & \tok{,} & S2 & \tok{gave} & \tok{a} & \tok{drink} & \tok{to}\\
 \midrule
-IG & $1.59$ & $-0.63$ & $2.11$ & $0.44$ & $-1.96$ & $1.21$ & $0.46$ & $0.50$ & $0.38$ & $0.53$ & $-1.15$ & $0.62$ & $-0.16$ & $-0.94$ & $0.74$\\
+IG & $1.59$ & $-0.63$ & $2.11$ & $0.43$ & $-1.96$ & $1.20$ & $0.46$ & $0.50$ & $0.38$ & $0.53$ & $-1.15$ & $0.62$ & $-0.16$ & $-0.94$ & $0.74$\\
 G$\times$I & $0.62$ & $-0.24$ & $-1.53$ & $-0.35$ & $0.23$ & $-0.15$ & $-0.01$ & $-0.01$ & $-0.18$ & $0.06$ & $-0.94$ & $-0.38$ & $-0.02$ & $0.60$ & $-0.43$\\
 \bottomrule
 \end{tabular}
@@ -120,7 +122,9 @@ intermediate one \citep{nostalgebraist2020logit}:
 \begin{equation}\label{eq:lens}
 \text{lens logit of token $t$ after $\ell$ layers} \;=\; W_U[t]^\top\,\LN\big(x_i^{(\ell)}\big),\qquad \ell=0,\dots,L .
 \end{equation}
-This shows what the model would predict if it had to stop after $\ell$ layers. \Cref{fig:lens} shows the result
+This shows what the model would predict if it had to stop after $\ell$ layers. For example, $\ell=10$ means
+that the layers $0$ to $9$ have been applied. For example, $\ell=10$ means that
+the layers $0$ to $9$ have been applied. \Cref{fig:lens} shows the result
 for the running example. Up to $\ell=7$ the lens logit difference stays within half a logit of zero. It becomes
 positive at $\ell=8$ and jumps at $\ell=10$, which is after layer 9 has been applied. On the first prompt, the most likely
 token under the lens is \tok{drink} at $\ell=5$, \tok{the} at $\ell=8$, \tok{them} at $\ell=9$ and \tok{Mary}
@@ -161,11 +165,12 @@ through its own addition to the stream, moves the logit difference.
 We computed all terms of \eqref{eq:dla-ld} for the running example. The terms add up to $3.7031$, and the logit
 difference measured at the output is $3.7031$, as the proposition demands. The 144 heads together contribute
 $3.45$, the 12 MLPs $0.25$, and the embeddings and bias terms less than $0.01$. \Cref{fig:dla} shows the heads.
-Almost all of them contribute nothing. Three heads write strongly in favour of the correct name: 9.9
-($+3.57$), 9.6 ($+1.10$) and 10.0 ($+0.59$). These are the heads whose attention patterns we inspected in
-\cref{sec:attention}. Two heads write \emph{against} it: 10.7 ($-2.52$) and 11.10 ($-1.05$). This explains the
-drop after layer 10 in \cref{fig:lens}. \citet{wang2023interpretability} call the first group \emph{name mover
-heads} and the second group \emph{negative name mover heads}.
+Almost all of them contribute nothing. Four heads write clearly in favour of the correct name: 9.9
+($+3.57$), 9.6 ($+1.10$), 10.6 ($+0.61$) and 10.0 ($+0.59$). Three of them are the heads whose attention patterns
+we inspected in \cref{sec:attention}. Two heads write \emph{against} it: 10.7 ($-2.52$) and 11.10 ($-1.05$). They
+sit in layers 10 and 11, which explains the drop after $\ell=10$ in \cref{fig:lens}.
+\citet{wang2023interpretability} call 9.9, 9.6 and 10.0 \emph{name mover heads}, 10.6 a \emph{backup name mover
+head}, and 10.7 and 11.10 \emph{negative name mover heads}.
 
 \begin{figure}[t]
 \centering
@@ -180,7 +185,7 @@ heads push against it.}
 Equation \eqref{eq:dla-ld} is an exact accounting identity, and a DLA term is still not the effect of removing
 the component. There are two reasons. The denominator $\scale(x_n^{(L)})$ depends on all components. And a
 component also acts \emph{indirectly}, by changing what later components read. DLA sees only the direct path to
-the output. A head in layer 5 that is essential for the task because head 9.9 depends on it has a DLA of zero.
+the output. A head in layer 5 that is essential for the task because head 9.9 depends on it can have a DLA of zero.
 \Cref{sec:necessity} shows that this is exactly what happens in our example.
 \end{caution}
 
@@ -188,7 +193,7 @@ the output. A head in layer 5 that is essential for the task because head 9.9 de
 \label{sec:probing}
 
 The lens asks whether the \emph{answer} can be read from an intermediate activation. Probing asks the same
-question for an arbitrary property \citep{alain2017understanding}. One collects a data set of pairs $(x,y)$,
+question for an arbitrary property \citep{alain2017understanding}. We collect a data set of pairs $(x,y)$,
 where $x\in\R^d$ is an activation (say, the stream at a fixed layer and position) and $y\in\{0,1\}$ labels a
 property of the input (say, whether the sentence is in the past tense). A \emph{linear probe} is a logistic
 regression trained on these pairs,
@@ -238,8 +243,8 @@ example these tools point at layers 7 to 9, at the name mover heads 9.9, 9.6 and
 \end{takeaways}
 
 \begin{exercise}\label{ex:linearig}
-Let $F(z)=\sum_{i=1}^{n}w_i^\top z_i$ be linear, with fixed vectors $w_i\in\R^d$. Show that integrated gradients
-with baseline $\bar z=0$ coincide with gradient times input. Then take $n=d=1$ and $F(z)=z^2$, and show that
+Let $F$ be a linear function of $z$ without a constant term, so that its gradient $\nabla_{z_i}F$ is the same at
+every point. Show that integrated gradients with baseline $\bar z=0$ coincide with gradient times input. Then take $n=d=1$ and $F(z)=z^2$, and show that
 gradient times input is twice the integrated gradient.
 \end{exercise}
 \begin{exercise}\label{ex:lenslast}
@@ -249,6 +254,6 @@ equal to the lens logit difference at $\ell=9$.
 \end{exercise}
 \begin{exercise}\label{ex:probecontrol}
 Suppose that a linear probe trained on the stream of layer 6 reaches 95\% accuracy for the property ``the
-current token is a first name''. Describe a control experiment that would tell you whether this says anything
+current token is a first name''. Describe a control experiment that shows whether this says anything
 about layer 6, and predict its outcome using \eqref{eq:embed}.
 \end{exercise}
