@@ -1,13 +1,13 @@
-"""Worked examples for the tutorial, all on GPT-2 small (about four minutes on a 4-core laptop CPU).
+"""Sessions 2, 6 and 7: the indirect-object task in GPT-2 small (about two minutes on a 4-core laptop CPU).
 
-Produces the numbers in code/results.json and the figures in figures/:
+Produces the numbers in code/results_ioi.json and the figures in figures/:
   fig_logit_lens.pdf      logit lens on the indirect-object task
   fig_dla_heads.pdf       direct logit attribution of every attention head
   fig_resid_patching.pdf  activation patching of the residual stream (layer x position)
   fig_attr_vs_act.pdf     attribution patching versus activation patching, per head
 
 Tested with transformer_lens 4.4.0, torch 2.15, Python 3.13.
-Usage:  python code/gpt2_examples.py
+Usage:  python code/exp_ioi.py
 """
 import json
 from pathlib import Path
@@ -83,15 +83,6 @@ def normalise(metric_value):
 
 
 # ----------------------------------------------------------------------------------------------
-# 0. A check for the exercise on designing a patching experiment: does GPT-2 small know where the
-#    Eiffel Tower is? (It gives Paris and London about the same probability.)
-# ----------------------------------------------------------------------------------------------
-with torch.no_grad():
-    fact_logits = model(model.to_tokens("The Eiffel Tower is located in the city of"))
-fact_top = fact_logits[0, -1].softmax(-1).topk(5)
-results["eiffel_tower_top5"] = [(model.to_string(i), v.item()) for v, i in zip(fact_top.values, fact_top.indices)]
-
-# ----------------------------------------------------------------------------------------------
 # 0a. Attention patterns: where do a few late heads look from the last position?
 # ----------------------------------------------------------------------------------------------
 attention = {}
@@ -100,43 +91,6 @@ for name in ("9.9", "9.6", "10.0", "10.7", "11.10"):
     pattern = clean_cache[f"blocks.{layer}.attn.hook_pattern"][:, head, -1, :]     # [prompt, source position]
     attention[name] = {label: pattern[:, pos].mean().item() for label, pos in (("IO", 2), ("S1", 4), ("S2", 10))}
 results["attention_from_last_position"] = attention
-
-# ----------------------------------------------------------------------------------------------
-# 0b. Input attribution. F maps the token embeddings to the logit difference. The baseline replaces
-#     every token embedding by zero (positional embeddings are kept). Integrated gradients uses a
-#     midpoint Riemann sum with n_steps points along the straight line from the baseline to the input.
-# ----------------------------------------------------------------------------------------------
-embeddings = clean_cache["hook_embed"].detach()                                   # [prompt, position, d]
-
-
-def metric_and_gradient(fraction):
-    """Value and gradient of the mean logit difference at the point baseline + fraction * (input - baseline)."""
-    kept = {}
-    def replace(embed, hook):
-        point = (fraction * embeddings).clone().requires_grad_(True)
-        kept["point"] = point
-        return point
-    value = logit_diff(model.run_with_hooks(clean_tokens, fwd_hooks=[("hook_embed", replace)]))
-    value.backward()
-    return value.item(), kept["point"].grad.detach()
-
-
-n_steps = 64
-f_input, grad_at_input = metric_and_gradient(1.0)
-f_baseline, _ = metric_and_gradient(0.0)
-average_gradient = sum(metric_and_gradient((m + 0.5) / n_steps)[1] for m in range(n_steps)) / n_steps
-# the metric is a mean over prompts, so sums over prompts of gradient * input are means of per-prompt attributions
-integrated_gradients = (average_gradient * embeddings).sum(dim=(0, 2))            # [position]
-gradient_times_input = (grad_at_input * embeddings).sum(dim=(0, 2))
-results["input_attribution"] = {
-    "positions": pos_labels,
-    "integrated_gradients": integrated_gradients.tolist(),
-    "gradient_times_input": gradient_times_input.tolist(),
-    "sum_integrated_gradients": integrated_gradients.sum().item(),
-    "sum_gradient_times_input": gradient_times_input.sum().item(),
-    "F_input_minus_F_baseline": f_input - f_baseline,
-    "F_input": f_input, "F_baseline": f_baseline, "n_steps": n_steps,
-}
 
 # ----------------------------------------------------------------------------------------------
 # 1. Logit lens: decode the residual stream after each layer with the final LayerNorm + unembedding.
@@ -261,7 +215,7 @@ results["head_patching"] = {
          float((1 - head_noise[l, h]) * (ld_clean - ld_corrupt))) for l in range(n_layers) for h in range(n_heads)],
     "denoise_all": flat(head_denoise), "noise_all": flat(head_noise), "attribution_all": flat(head_attr),
 }
-(ROOT / "code" / "results.json").write_text(json.dumps(results, indent=1))
+(ROOT / "code" / "results_ioi.json").write_text(json.dumps(results, indent=1))
 
 # ----------------------------------------------------------------------------------------------
 # Figures. Signed quantities use one diverging blue-grey-red map centred at zero.
@@ -351,6 +305,5 @@ fig.savefig(FIG / "fig_attr_vs_act.pdf")
 plt.close(fig)
 
 print(json.dumps({k: v for k, v in results.items() if k not in ("resid_patching", "head_patching")}, indent=1))
-print(json.dumps(results["input_attribution"], indent=1))
 print(json.dumps(results["head_patching"]["top_heads_by_abs_denoising_effect"], indent=1))
 print("pearson r:", results["head_patching"]["pearson_r_attr_vs_denoise"])

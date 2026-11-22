@@ -1,0 +1,57 @@
+{
+ "layer": 6,
+ "n_tokens": 38100,
+ "chosen": [
+  {
+   "neuron": "6.35",
+   "max_activation": 3.24,
+   "documents_among_top": 10,
+   "top_contexts": [
+    " its availability. RPD[s]",
+    " medium secure units (MS[Us]",
+    "asis. Aux[ins]",
+    " positive observation of WIM[Ps]",
+    "our cells (FPTC[s]",
+    "ently cross-linked olig[omers]",
+    "lement Management Messages (EM[Ms]",
+    " memristor, N[Vs]",
+    " used. Such apparat[uses]",
+    ". Both Mariandyn[ians]"
+   ]
+  },
+  {
+   "neuron": "6.0",
+   "max_activation": 1.71,
+   "documents_among_top": 10,
+   "top_contexts": [
+    "  NS_ASS[UME]",
+    " to create a thirty-[man]",
+    " - Philippine security forces on[ Saturday]",
+    " but still only reads COMM[ITT]",
+    " variable LD_ASS[UME]",
+    " domain interactions was extended.[ By]",
+    " Discotek announced on[ Tuesday]",
+    "ham on a four-[year]",
+    "The terrifying 38-[minute]",
+    " !defined(BOO[ST]"
+   ]
+  },
+  {
+   "neuron": "6.26",
+   "max_activation": 4.07,
+   "documents_among_top": 9,
+   "top_contexts": [
+    " the former Mumbai Grill next[ door]",
+    ", a historic home located[ near]",
+    " 1914. She was the[ daughter]",
+    " Judith and Sheldon Wax were[ local]",
+    " from the archive of our[ partner]",
+    " Assurance Corporation, Plaintiff[-]",
+    ". She was the daughter[ of]",
+    " to happen when we come[ face]",
+    " took part in the foot[-]",
+    "raz, and Fisherman['s]"
+   ]
+  }
+ ]
+}

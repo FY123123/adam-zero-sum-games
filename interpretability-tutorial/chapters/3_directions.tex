@@ -1,0 +1,230 @@
+\section{Concepts as directions}
+\label{sec:directions}
+
+\begin{sessioncard}
+\textbf{Session 3.} \emph{Goal:} understand the working hypothesis of the field, that a model represents a concept
+as a direction in its activation space, and the two basic tools that go with it: the probe, which looks for a
+direction, and steering, which tests one.
+\emph{Experiments:} a probe for the gender of a name (\cref{exp:probe}) and steering along the direction that it
+suggests (\cref{exp:steer}), with a result that shows why the two must not be confused (\cref{exp:decodable}).
+\emph{Prerequisites:} sessions 1 and 2.
+\end{sessioncard}
+
+\subsection{From components to concepts}
+
+Session 2 described the model in terms of the parts that its architecture hands us: layers, heads, positions.
+To say what a model \emph{represents} we need a second kind of unit, one that corresponds to a concept. We use
+the word \emph{feature} for a property of the input, or of the model's intermediate reasoning, that the model
+represents internally because it is useful for prediction. Examples are ``the current token is a first name'',
+``this text is French'' or ``this name has occurred before''. The definition is informal on purpose. Making it
+precise is an open problem.
+
+The simplest conceivable design would give each feature its own coordinate of the residual stream. We saw in
+\cref{sec:facts} that the coordinates of the stream have no special role, so there is no reason to expect this.
+The next simplest possibility is that features are \emph{directions}.
+
+\begin{definition}[Linear representation hypothesis, working form]\label{def:lrh}
+For an activation $x\in\R^d$ at a fixed place in the model (say, the stream at the input of a given layer) there
+are unit vectors $v_1,\dots,v_N\in\R^d$, called \emph{feature directions}, and non-negative functions
+$f_1,\dots,f_N$ of the input, called \emph{feature activations}, such that
+\begin{equation}\label{eq:lrh}
+x \;\approx\; \sum_{j=1}^{N}f_j\,v_j
+\end{equation}
+on all inputs of interest, where each $f_j$ measures the presence of one feature and only few of the $f_j$ are
+nonzero on any single input.
+\end{definition}
+
+The hypothesis says that the \emph{presence} of a feature is a direction and its \emph{strength} is the length
+along that direction. There is an architectural reason to expect it. Every component reads the stream through a
+linear map, so a property that is stored along a direction can be read by a single row of such a map. Linear
+storage is the cheapest format for whatever later layers need. The hypothesis is still an empirical claim about
+trained networks, and this session shows how it is tested.
+
+\subsection{Probing: is a concept linearly readable?}
+
+A \emph{linear probe} \citep{alain2017understanding} is the most direct test. We collect pairs $(x,y)$, where
+$x\in\R^d$ is an activation and $y\in\{0,1\}$ labels a property of the input, and train a logistic regression on
+them,
+\begin{equation}\label{eq:probe}
+\Pr(y=1\mid x) \;=\; \frac{1}{1+\exp\!\big(-(w^\top x+b_{\mathrm{probe}})\big)},\qquad w\in\R^d,\ b_{\mathrm{probe}}\in\R .
+\end{equation}
+High accuracy on inputs that were not used for training shows that the property is \emph{linearly decodable}
+from the activation: some direction $w$ separates the two classes.
+
+\begin{experiment}[A probe for the gender of a name]\label{exp:probe} \script{exp\_directions.py}
+We use the prompt \tok{After [name] got home,} with 56 male and 56 female first names. GPT-2 small has to
+continue with a pronoun. For all 112 names the logit of the matching pronoun is the larger one, and the
+difference $\logit(\tok{she})-\logit(\tok{he})$ is $+2.9$ on average for female names and $-3.3$ for male names.
+The model clearly has the concept. Where is it?
+
+We train one probe per layer on the stream at the position of the name, with 36 names of each gender, and test
+it on the remaining 40 names. We do the same at the last position, the comma, where the pronoun has to be
+predicted. \Cref{fig:probe} shows three things.
+\begin{itemize}
+\item At the name, the probe is right on $98\%$ of the held-out names already at $\ell=0$, before any layer has
+run. The gender of a name is linearly readable from its embedding $W_E[t]$.
+\item At the last position the accuracy is $50\%$ at $\ell=0$, as it must be, since the token there is the same
+comma in every prompt. After one layer it is $98\%$. Some head of layer 0 has copied the information.
+\item A probe that is trained on shuffled labels stays near $50\%$ on held-out names. The probes have not simply
+memorised their training set.
+\end{itemize}
+\end{experiment}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.58\textwidth]{figures/fig_probe_layers.pdf}
+\caption{Accuracy of linear probes for the gender of a name on 40 held-out names (\cref{exp:probe}). The
+horizontal axis is the number of layers that have been applied before the stream is read.}
+\label{fig:probe}
+\end{figure}
+
+\paragraph{From a probe to a direction.} A second, simpler estimate of a direction needs no training. The
+\emph{difference of means} is the vector $\E[x\mid y=1]-\E[x\mid y=0]$, estimated by the two sample averages.
+Under \eqref{eq:lrh} taken as an equality we can say exactly what it measures. By linearity of the expectation,
+\begin{equation}\label{eq:diffmeans}
+\E[x\mid y=1]-\E[x\mid y=0] \;=\; \sum_{j=1}^{N}\big(\E[f_j\mid y=1]-\E[f_j\mid y=0]\big)\,v_j .
+\end{equation}
+If the label marks the presence of feature $j$ and all other features have the same average in both classes,
+only one term survives, and the difference of means is a positive multiple of $v_j$. If some other feature is
+more frequent in one class, its direction is mixed in. Equation \eqref{eq:diffmeans} is therefore also a recipe
+for data collection: the two classes should differ in the concept and in nothing else. Our two sets of prompts
+differ in the name only.
+
+\subsection{Steering: is the direction used?}
+
+A probe shows that information is present. It does not show that the model reads it. To test this we have to
+\emph{change} the activation along the direction and observe the output. Let $v\in\R^d$ be a direction and
+$\eta$ a real number. \emph{Steering}, or activation addition, replaces a stream vector $x$ by
+\begin{equation}\label{eq:actadd}
+x+\eta\,v
+\end{equation}
+at a chosen layer and position, and lets the model compute the rest as usual
+\citep{turner2023steering,rimsky2024steering}.
+
+\begin{experiment}[Steering a name from male to female]\label{exp:steer} \script{exp\_directions.py}
+Let $v$ be the difference of means between female and male names, computed from the 72 training names at the
+input of layer 4 at the position of the name. Its norm is $26$, about a third of the norm of a typical stream
+vector there. We add $\eta v$ to the stream of the 20 held-out \emph{male} names and read the pronoun
+(\cref{fig:steer}, left). Without steering the logit difference is $-3.3$. With $\eta=1$, which moves an average
+male name to an average female name, it is $+2.4$, close to the value $+2.9$ of real female names. With
+$\eta=-1$ it becomes more male, $-4.7$. A random direction of the same length, added with the same strengths,
+moves the logit difference by at most $0.6$.
+
+So this direction does not only correlate with gender. Moving along it changes the behaviour in the predicted
+way, and moving along other directions does not. This is causal evidence for \cref{def:lrh} in this instance.
+\end{experiment}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.95\textwidth]{figures/fig_steering.pdf}
+\caption{Steering the gender of a name in GPT-2 small (\cref{exp:steer,exp:decodable}), measured on 20 held-out
+male names. Left: adding $\eta$ times the difference of means at the name, at the input of layer 4, compared
+with random directions of the same length. Right: adding the difference of means of each layer with $\eta=1$, at
+the name and at the last position.}
+\label{fig:steer}
+\end{figure}
+
+\begin{experiment}[Decodable is not the same as used]\label{exp:decodable} \script{exp\_directions.py}
+We repeat the steering with $\eta=1$ at every layer, once at the name and once at the last position, each time
+with the difference of means of that layer and position (\cref{fig:steer}, right).
+
+At the name, steering flips the pronoun when it is applied at the input of layers 0 to 4. The effect shrinks
+from layer 5 on and has vanished at layer 11. The model reads the gender from the position of the name in the
+middle layers, and afterwards changes there come too late.
+
+At the last position the picture is the mirror image, and it contains a surprise. Up to layer 9, steering
+changes the logit difference by at most one logit. It flips the pronoun only at layer 11. Yet \cref{exp:probe} showed that a probe decodes the gender
+at the last position with $95\%$ to $100\%$ accuracy from the first layer on. For nine layers the information is
+present at the last position, a probe finds it, and the prediction of the model hardly depends on it. What the model does use is the
+copy at the name, which it fetches late.
+\end{experiment}
+
+\begin{caution}
+\Cref{exp:decodable} is the most important lesson about probes. A probe establishes a correlation between an
+activation and a label. Whether the model uses the information has to be tested by an intervention. Two further
+cautions apply. A probe with enough capacity can learn a task by itself, whether or not the model has computed
+the property, which is why probes are kept linear and compared with a control \citep{hewitt2019designing}. And
+the direction of the probe need not be the direction of the model: in our experiment the probe direction at
+layer 4 has a cosine of $0.86$ with the difference of means, and steering along it with the same length moves
+the logit difference to $+1.7$ instead of $+2.4$. \citet{marks2024geometry} report the same pattern for
+directions that encode the truth of a statement.
+\end{caution}
+
+\subsection{What has been found this way}
+
+The combination of the two tools, a direction found by observation and a test by steering, has produced some of
+the best-known results of the field. We report three.
+
+\begin{itemize}
+\item \textbf{A model of a board game.} \citet{li2023emergent} trained a transformer to predict legal moves in
+the game Othello from sequences of moves alone. Linear probes for the colour of each square (black, white,
+empty) had an error of more than $20\%$, and probes with one hidden layer had an error below $2\%$. Changing the
+activations along the probe changed the moves that the model predicted. \citet{nanda2023emergent} then found that
+a \emph{linear} probe works well once the question is asked relative to the player whose turn it is: whether a
+square holds ``my'' piece or ``the opponent's''. The information was linear all along, in a variable that the
+first study had not tried.
+\item \textbf{Refusal.} Chat models are trained to refuse harmful requests. \citet{arditi2024refusal} took the
+difference of means between the streams on harmful and on harmless instructions. In 13 open chat models with up
+to 72 billion parameters they found the same two results. When the component along this direction was removed
+from the stream at all layers and positions, the model no longer refused harmful requests. When the direction
+was added, the model refused harmless ones.
+\item \textbf{Not everything is one direction.} \citet{engels2025not} found that GPT-2 and Mistral 7B represent
+the day of the week and the month of the year on a circle inside a two-dimensional subspace. \Cref{def:lrh} is a
+productive first approximation, and it has exceptions.
+\end{itemize}
+
+\begin{takeaways}
+The working hypothesis is that a model represents concepts as directions of its activation space. A linear
+probe tests whether a concept is decodable, and the difference of means estimates a direction without training.
+Only an intervention shows whether the model uses a direction. In GPT-2 small, the gender of a name is decodable
+almost everywhere, and steering shows that the model uses it at the name in the middle layers and at the last
+position only at the very end.
+\end{takeaways}
+
+\subsection*{Questions for the seminar}
+
+\begin{exercise}[A contaminated direction]\label{ex:contaminated}
+Let $x=f_1v_1+f_2v_2$ with orthonormal vectors $v_1,v_2$ and $f_1,f_2\in\{0,1\}$. The label is $y=f_1$. In the data
+set, feature $2$ is present in $80\%$ of the examples with $y=1$ and in $20\%$ of the examples with $y=0$.
+(a) Compute the difference of means with \eqref{eq:diffmeans}. (b) Compute the cosine of the angle between it
+and $v_1$. (c) We steer with this vector in order to switch on the first concept. What else happens? (d) How
+should the data set be changed?
+\end{exercise}
+
+\begin{exercise}[The probe direction is not the difference of means]\label{ex:lda}
+Suppose that $x$ is Gaussian with mean $\mu_1\in\R^d$ if $y=1$ and Gaussian with mean $\mu_0\in\R^d$ if $y=0$, in
+both cases with the same invertible covariance matrix $\Gamma$, and that both classes are equally likely.
+(a) Show that the logarithm of $\Pr(y=1\mid x)/\Pr(y=0\mid x)$ equals $w^\top x+b_{\mathrm{probe}}$ with
+$w=\Gamma^{-1}(\mu_1-\mu_0)$ and a suitable number $b_{\mathrm{probe}}$, so that the probe \eqref{eq:probe} with this
+$w$ is exactly right. (b) Let $d=2$, $\mu_1-\mu_0=(1,0)^\top$ and
+$\Gamma=\begin{pmatrix}1&\rho\\ \rho&1\end{pmatrix}$ with $0<\rho<1$. Compute $w$ up to a positive factor. (c) The
+classes differ only in the first coordinate, and the probe still uses the second. What for? (d) Relate this to
+the numbers $0.86$, $+1.7$ and $+2.4$ of the Caution box.
+\end{exercise}
+
+\begin{exercise}[Reading the two curves]\label{ex:curves}
+In the right panel of \cref{fig:steer}, the two curves cross at layer 10. (a) Which kind of
+component must be responsible for the fact that the information is used at the last position at all? (b) From
+the left curve, in which layers do you expect these components to sit? (c) Design an experiment with the tools
+of session 2 that would find them.
+\end{exercise}
+
+\begin{exercise}[What a failed probe shows]\label{ex:othello}
+In the Othello study, a probe with one hidden layer decoded the colour of each square and a linear probe did
+not. (a) State two different hypotheses about the model that are both consistent with this pair of results.
+(b) Which of them is supported by the later finding about ``my piece or the opponent's piece''? (c) What does
+the episode teach about negative probing results?
+\end{exercise}
+
+\begin{readinglist}
+\item \citet{park2024linear}, \emph{ICML}. Makes the linear representation hypothesis precise and separates
+several meanings of ``linear''.
+\item \citet{hewitt2019designing}, \emph{EMNLP}. Control tasks for probes, the standard guard against a probe that
+does the work itself.
+\item \citet{li2023emergent}, \emph{ICLR}. The Othello study. It is short and a good model of a probing paper that
+checks its probe by an intervention.
+\item \citet{arditi2024refusal}, \emph{NeurIPS}. The refusal direction. The clearest example of a behaviour of
+large models that is controlled by one direction.
+\item \citet{marks2024geometry}, \emph{COLM}. Directions for the truth of a statement, with a careful comparison of
+the difference of means and logistic regression.
+\end{readinglist}

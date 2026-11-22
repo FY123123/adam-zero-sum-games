@@ -1,0 +1,876 @@
+{
+ "layer": 8,
+ "n_latents": 24576,
+ "n_tokens": 38100,
+ "explained_variance": 0.8222028107584554,
+ "mean_active_latents_per_token": 72.10367454068242,
+ "mean_ratio_of_reconstruction_norm_to_activation_norm": 0.8420642506356627,
+ "loss": {
+  "clean": 3.5492807626724243,
+  "spliced": 3.7856316765149436,
+  "zero": 11.573665777842203
+ },
+ "loss_recovered": 0.9705459155566803,
+ "share_of_latents_that_never_fired": 0.0010579427471384406,
+ "share_of_latents_firing_on_more_than_1_percent": 0.067138671875,
+ "median_share_of_tokens_on_which_a_latent_fires": 0.001128608942963183,
+ "candidates_single_token": [
+  {
+   "latent": 1592,
+   "frequency": 0.00039,
+   "max_activation": 78.24,
+   "top_contexts": [
+    " Patriot Act's co[-]",
+    "). A recent c[-]",
+    " the context of socio[-]",
+    " covalently cross[-]",
+    "idate to induce cross[-]",
+    ", Plaintiff, Cross[-]",
+    ", preferably the cross[-]",
+    " covalently cross[-]"
+   ],
+   "promoted_tokens": [
+    "founder",
+    "ordinate",
+    "operative",
+    "branded",
+    "authored",
+    "operation"
+   ]
+  },
+  {
+   "latent": 5238,
+   "frequency": 0.00108,
+   "max_activation": 72.14,
+   "top_contexts": [
+    " population-based cross[-]",
+    " covalently cross[-]",
+    ", preferably the cross[-]",
+    ", Plaintiff, Cross[-]",
+    " population-based cross[-]",
+    "idate to induce cross[-]",
+    " covalently cross[-]",
+    ", Defendant, Cross[-]"
+   ],
+   "promoted_tokens": [
+    "sectional",
+    "examination",
+    "disciplinary",
+    "border",
+    "country",
+    "cultural"
+   ]
+  },
+  {
+   "latent": 769,
+   "frequency": 0.0011,
+   "max_activation": 67.78,
+   "top_contexts": [
+    "!!!!!!  [G]",
+    " developments.  [G]",
+    "ry.  [G]",
+    "dir__) [G]",
+    " 1927 [G]",
+    "M REVIEW;[G]",
+    " joint pain. [G]",
+    "p-38----[G]"
+   ],
+   "promoted_tokens": [
+    "roups",
+    "raphic",
+    "reetings",
+    "ourmet",
+    "ossip",
+    "reens"
+   ]
+  },
+  {
+   "latent": 4625,
+   "frequency": 0.00108,
+   "max_activation": 66.6,
+   "top_contexts": [
+    "Failure of[ c]",
+    " folder (under the[ c]",
+    " one of the busiest[ c]",
+    " position, and the[ c]",
+    "OP). A recent[ c]",
+    " menu with a simpler[ c]",
+    " Of these 11,[ c]",
+    " leukocytes using[ c]"
+   ],
+   "promoted_tokens": [
+    "rosso",
+    "ologne",
+    "rescent",
+    "auldron",
+    "elsius",
+    "aucas"
+   ]
+  },
+  {
+   "latent": 2102,
+   "frequency": 0.00068,
+   "max_activation": 65.96,
+   "top_contexts": [
+    "filled composite resin and[ g]",
+    "Progress) and a[ g]",
+    "amination of factors affecting[ g]",
+    " knee joint pain on[ g]",
+    "iliocolobus[ g]",
+    "  Comment by[ g]",
+    " ba\u015f\u0131na[ g]",
+    "t algemene[ g]"
+   ],
+   "promoted_tokens": [
+    "ourmet",
+    "ulp",
+    "oliath",
+    "remlin",
+    "rosso",
+    "rafted"
+   ]
+  },
+  {
+   "latent": 4610,
+   "frequency": 0.00173,
+   "max_activation": 65.79,
+   "top_contexts": [
+    "Q:  [D]",
+    "ellant. [D]",
+    " 2012.  [D]",
+    " Stat  [D]",
+    " Araki's \"[D]",
+    "[D]",
+    "[D]",
+    "[D]"
+   ],
+   "promoted_tokens": [
+    "iscovery",
+    "ynam",
+    "etermin",
+    "etermination",
+    "REAM",
+    "owntown"
+   ]
+  }
+ ],
+ "candidates_many_tokens": [
+  {
+   "latent": 614,
+   "frequency": 0.00034,
+   "max_activation": 60.89,
+   "top_contexts": [
+    " internal Syrian government emails[ WikiLeaks]",
+    " the collaborators list on[ WikiLeaks]",
+    " .  Wiki[Leaks]",
+    " partner .  [Wiki]",
+    "  WikiLeaks[ has]",
+    " interact with my Post[greSQL]",
+    " Syrian government emails WikiLeaks[ released]",
+    "Confeder[aci]"
+   ],
+   "promoted_tokens": [
+    "Leaks",
+    "ileaks",
+    " founder",
+    " cables",
+    " WikiLeaks",
+    " dumps"
+   ]
+  },
+  {
+   "latent": 238,
+   "frequency": 0.00063,
+   "max_activation": 60.61,
+   "top_contexts": [
+    "ptidases in[ Esc]",
+    "idase content of[ Esc]",
+    "  Para[ esc]",
+    " React typ[esc]",
+    " been sent to the[ Greene]",
+    " Christmas Carol,when[ Eb]",
+    " and how to move[ hamb]",
+    ", dispersions ([susp]"
+   ],
+   "promoted_tokens": [
+    "apist",
+    "ribed",
+    "adr",
+    "aped",
+    "orts",
+    "ounters"
+   ]
+  },
+  {
+   "latent": 577,
+   "frequency": 0.00034,
+   "max_activation": 57.93,
+   "top_contexts": [
+    "Mai\" include[ armed]",
+    " local territory against other[ armed]",
+    "AR[MED]",
+    " of community-based[ militia]",
+    " like Porsche, Lam[borgh]",
+    ". Fourteen un[med]",
+    "\ufffd\u3046\u306b\u30b0[\u30e9]",
+    " font-style:[ ital]"
+   ],
+   "promoted_tokens": [
+    " robbery",
+    " insurrection",
+    " robberies",
+    " conflict",
+    " Forces",
+    " takeover"
+   ]
+  },
+  {
+   "latent": 972,
+   "frequency": 0.00021,
+   "max_activation": 50.73,
+   "top_contexts": [
+    " marketed for luting[ gold]",
+    "\u308b\u304c\u3001\ufffd[\ufffd]",
+    "icional if (![+]",
+    "trunk/of[l]",
+    ". Peritoneal[ lav]",
+    "ventional methods for producing[ metal]",
+    " method, which provides[ metal]",
+    " for Paladin PvE[ Gems]"
+   ],
+   "promoted_tokens": [
+    "vertisement",
+    "smith",
+    " medal",
+    "sch",
+    " coins",
+    "fish"
+   ]
+  },
+  {
+   "latent": 69,
+   "frequency": 0.00031,
+   "max_activation": 50.46,
+   "top_contexts": [
+    " Florida. | Mike[ Stock]",
+    " 1. A[ stock]",
+    "\u2019s current[ stock]",
+    " run a pretty basic[ assembly]",
+    "http://aws.[amazon]",
+    " enabling Microsoft Macro As[semb]",
+    " pain on gait[ properties]",
+    " to ask questions on[ Stack]"
+   ],
+   "promoted_tokens": [
+    "holders",
+    "holder",
+    "holm",
+    "yards",
+    "ings",
+    "still"
+   ]
+  },
+  {
+   "latent": 765,
+   "frequency": 0.00029,
+   "max_activation": 50.38,
+   "top_contexts": [
+    " approximately  north of[ Tampa]",
+    "lin, studied in[ Hamburg]",
+    " Future and Scooby[-]",
+    " Tana Jones/[HOU]",
+    " Services  As[ Charleston]",
+    "Peter Co[oley]",
+    " Tallahas[see]",
+    "DMNL) or[ sham]"
+   ],
+   "promoted_tokens": [
+    " Bay",
+    "ignt",
+    "Bay",
+    "pole",
+    " Tribune",
+    " bay"
+   ]
+  },
+  {
+   "latent": 1088,
+   "frequency": 0.0006,
+   "max_activation": 50.1,
+   "top_contexts": [
+    " the problem of finding[ sharp]",
+    " the birds sing a[ loud]",
+    " to be effective and[ precise]",
+    " range of \"V[ivid]",
+    ".  [[np]",
+    " to a metal-[cutting]",
+    ". I have a[ Nikon]",
+    "as measured by the[ standard]"
+   ],
+   "promoted_tokens": [
+    "ened",
+    "ening",
+    "est",
+    "ness",
+    "ener",
+    "eners"
+   ]
+  },
+  {
+   "latent": 1107,
+   "frequency": 0.00047,
+   "max_activation": 48.38,
+   "top_contexts": [
+    " warlords, traditional[ tribal]",
+    "lords, traditional tribal[ elders]",
+    " can play \u201c[Surv]",
+    " GEORGE T[OWN]",
+    " and presenter of Ukrainian[ ancestry]",
+    " celebration later spread to[ warriors]",
+    "\ufffdC\u00f3mo[ func]",
+    " to read the SQL[ adapters]"
+   ],
+   "promoted_tokens": [
+    "folk",
+    " chiefs",
+    " elders",
+    " tribes",
+    " tribal",
+    " tribe"
+   ]
+  },
+  {
+   "latent": 824,
+   "frequency": 0.00029,
+   "max_activation": 47.74,
+   "top_contexts": [
+    " advantage by looting,[ cattle]",
+    " crime scene at a[ poultry]",
+    " morning incident at a[ poultry]",
+    "kan\u0131 ve 600[ mil]",
+    " to enabling transferable[ entitle]",
+    " entrance and exit for[ carriage]",
+    " and several other related[ animal]",
+    "ling or bandit[ry]"
+   ],
+   "promoted_tokens": [
+    " grazing",
+    " herds",
+    " ranch",
+    "yards",
+    "yard",
+    "meat"
+   ]
+  },
+  {
+   "latent": 7,
+   "frequency": 0.00094,
+   "max_activation": 47.48,
+   "top_contexts": [
+    " some changes (see[ recipe]",
+    "Anyone knows if this[ schematic]",
+    " to layer color,[ pattern]",
+    " can I create a[ schema]",
+    " Sprouts Veggie[ Soup]",
+    " Released Songs Re[becca]",
+    ": Top Design Dest[inations]",
+    " correctly in the blue[prints]"
+   ],
+   "promoted_tokens": [
+    " recipes",
+    "Recipe",
+    " recipe",
+    "Ingredients",
+    " Recipes",
+    " recip"
+   ]
+  },
+  {
+   "latent": 435,
+   "frequency": 0.0011,
+   "max_activation": 45.74,
+   "top_contexts": [
+    " priority for Can[ad]",
+    "  I can[\u00b4]",
+    "icient amino acid aux[ot]",
+    "\ufffd\u306e\u30b7\ufffd[\ufffd]",
+    "[Plant[ar]",
+    "0 license that can[ be]",
+    "valence of var[ic]",
+    " / 2, 0[x]"
+   ],
+   "promoted_tokens": [
+    "adian",
+    "cially",
+    " afford",
+    "ildo",
+    "obos",
+    "nels"
+   ]
+  },
+  {
+   "latent": 197,
+   "frequency": 0.00045,
+   "max_activation": 45.64,
+   "top_contexts": [
+    " \"Totally F[***]",
+    " your indoor \"wh[oo]",
+    "me. Fem \ufffd[\ufffd]",
+    " for Toys \"R[\"]",
+    "Totally F***[ed]",
+    " highlights Toys \"R[\"]",
+    " of God is ho[-]",
+    " savoir que s[\ufffd]"
+   ],
+   "promoted_tokens": [
+    "hole",
+    "holes",
+    "tty",
+    "cking",
+    "gger",
+    "shit"
+   ]
+  },
+  {
+   "latent": 834,
+   "frequency": 0.00039,
+   "max_activation": 45.12,
+   "top_contexts": [
+    " change to our ger[rit]",
+    "/Development/ger[rit]",
+    "roidism (PH[PT]",
+    " ble p\u00e5gre[pet]",
+    "irektor,[ Gret]",
+    " Nanost[ruct]",
+    " structures of H-[ras]",
+    " cooler, the CN[PS]"
+   ],
+   "promoted_tokens": [
+    "chard",
+    "ual",
+    "tered",
+    "ters",
+    "sis",
+    "sch"
+   ]
+  },
+  {
+   "latent": 847,
+   "frequency": 0.00176,
+   "max_activation": 44.5,
+   "top_contexts": [
+    " by Miller as p[ep]",
+    " devotee, P[rah]",
+    " Primer p[her]",
+    " football player P[au]",
+    "17) and p[ep]",
+    " \u00bfP[or]",
+    "P[OV]",
+    " KORTENE P[\ufffd]"
+   ],
+   "promoted_tokens": [
+    "ongyang",
+    "sylvania",
+    "merga",
+    "asus",
+    "haps",
+    "Cola"
+   ]
+  }
+ ],
+ "ioi_latents_on_indirect_object": [
+  {
+   "latent": 658,
+   "frequency": 0.00281,
+   "max_activation": 23.04,
+   "top_contexts": [
+    "[[Justin]",
+    "[Jake]",
+    "[Peter]",
+    "Ben[jamin]",
+    "POV:[ Henry]",
+    "[Bob]",
+    "[Jean]",
+    "Deb[bie]"
+   ],
+   "promoted_tokens": [
+    " Roberts",
+    " Matthews",
+    " Davis",
+    " Reed",
+    " Miller",
+    " Johnson"
+   ],
+   "mean_activation": 13.36,
+   "active_on_prompts": 12
+  },
+  {
+   "latent": 6465,
+   "frequency": 0.00231,
+   "max_activation": 9.27,
+   "top_contexts": [
+    "  As the[ plane]",
+    ".\u2026When your[ recording]",
+    " states, when a[ neuron]",
+    " the Phoenix while the[ trio]",
+    " art, after the[ motor]",
+    " as soon as your[ child]",
+    " page, if the[ user]",
+    " display. When the[ image]"
+   ],
+   "promoted_tokens": [
+    " arrived",
+    " arrives",
+    " enters",
+    " came",
+    " finally",
+    " debuted"
+   ],
+   "mean_activation": 8.04,
+   "active_on_prompts": 12
+  },
+  {
+   "latent": 13484,
+   "frequency": 0.00026,
+   "max_activation": 44.71,
+   "top_contexts": [
+    " Community Psychiatry at Queen[ Mary]",
+    "M[olly]",
+    "M[iche]",
+    " In A Christmas[ Carol]",
+    " I liked it.[ Lily]",
+    "cultured cells of[ Cath]",
+    ":  Bar[bara]",
+    " Henderson  M[olly]"
+   ],
+   "promoted_tokens": [
+    "lene",
+    " Jane",
+    "mount",
+    "anne",
+    " Beth",
+    "Kay"
+   ],
+   "mean_activation": 5.89,
+   "active_on_prompts": 1
+  },
+  {
+   "latent": 22194,
+   "frequency": 0.00029,
+   "max_activation": 61.98,
+   "top_contexts": [
+    "[Mark]",
+    " for this conference are[ Mark]",
+    "y Lt Col[ Mark]",
+    " established by constructing explicit[ Mark]",
+    ":28:43[ mark]",
+    "#pragma[ mark]",
+    "otfload/[mk]",
+    " of the works of[ Franz]"
+   ],
+   "promoted_tokens": [
+    " Twain",
+    "eting",
+    " Zuckerberg",
+    "eters",
+    "ipl",
+    "edly"
+   ],
+   "mean_activation": 5.65,
+   "active_on_prompts": 1
+  }
+ ],
+ "ioi_active_latents_per_position": 52.23214340209961,
+ "showcase": [
+  {
+   "latent": 5238,
+   "frequency": 0.00108,
+   "max_activation": 72.14,
+   "top_contexts": [
+    " population-based cross[-]",
+    " covalently cross[-]",
+    ", preferably the cross[-]",
+    ", Plaintiff, Cross[-]",
+    " population-based cross[-]",
+    "idate to induce cross[-]",
+    " covalently cross[-]",
+    ", Defendant, Cross[-]"
+   ],
+   "promoted_tokens": [
+    "sectional",
+    "examination",
+    "disciplinary",
+    "border",
+    "country",
+    "cultural"
+   ],
+   "label": "after the prefix cross-"
+  },
+  {
+   "latent": 614,
+   "frequency": 0.00034,
+   "max_activation": 60.89,
+   "top_contexts": [
+    " internal Syrian government emails[ WikiLeaks]",
+    " the collaborators list on[ WikiLeaks]",
+    " .  Wiki[Leaks]",
+    " partner .  [Wiki]",
+    "  WikiLeaks[ has]",
+    " interact with my Post[greSQL]",
+    " Syrian government emails WikiLeaks[ released]",
+    "Confeder[aci]"
+   ],
+   "promoted_tokens": [
+    "Leaks",
+    "ileaks",
+    " founder",
+    " cables",
+    " WikiLeaks",
+    " dumps"
+   ],
+   "label": "WikiLeaks"
+  },
+  {
+   "latent": 824,
+   "frequency": 0.00029,
+   "max_activation": 47.74,
+   "top_contexts": [
+    " advantage by looting,[ cattle]",
+    " crime scene at a[ poultry]",
+    " morning incident at a[ poultry]",
+    "kan\u0131 ve 600[ mil]",
+    " to enabling transferable[ entitle]",
+    " entrance and exit for[ carriage]",
+    " and several other related[ animal]",
+    "ling or bandit[ry]"
+   ],
+   "promoted_tokens": [
+    " grazing",
+    " herds",
+    " ranch",
+    "yards",
+    "yard",
+    "meat"
+   ],
+   "label": "livestock"
+  },
+  {
+   "latent": 1088,
+   "frequency": 0.0006,
+   "max_activation": 50.1,
+   "top_contexts": [
+    " the problem of finding[ sharp]",
+    " the birds sing a[ loud]",
+    " to be effective and[ precise]",
+    " range of \"V[ivid]",
+    ".  [[np]",
+    " to a metal-[cutting]",
+    ". I have a[ Nikon]",
+    "as measured by the[ standard]"
+   ],
+   "promoted_tokens": [
+    "ened",
+    "ening",
+    "est",
+    "ness",
+    "ener",
+    "eners"
+   ],
+   "label": "adjectives that take a suffix"
+  },
+  {
+   "latent": 658,
+   "frequency": 0.00281,
+   "max_activation": 23.04,
+   "top_contexts": [
+    "[[Justin]",
+    "[Jake]",
+    "[Peter]",
+    "Ben[jamin]",
+    "POV:[ Henry]",
+    "[Bob]",
+    "[Jean]",
+    "Deb[bie]"
+   ],
+   "promoted_tokens": [
+    " Roberts",
+    " Matthews",
+    " Davis",
+    " Reed",
+    " Miller",
+    " Johnson"
+   ],
+   "label": "first names"
+  },
+  {
+   "latent": 18206,
+   "frequency": 0.00252,
+   "max_activation": 22.89,
+   "top_contexts": [
+    " DNAinfo/Kat[ie]",
+    "!  And[rea]",
+    "1959) Jul[ie]",
+    "v. Re[becca]",
+    "M[olly]",
+    "Deb[bie]",
+    "Jean[ette]",
+    ":  Bar[bara]"
+   ],
+   "promoted_tokens": [
+    " Marie",
+    " Lynn",
+    " Mae",
+    " Louise",
+    " Anne",
+    "Anne"
+   ],
+   "label": "female first names"
+  }
+ ],
+ "gender_and_latents": {
+  "candidates": {
+   "first_names": {
+    "latent": 658,
+    "frequency": 0.00281,
+    "max_activation": 23.04,
+    "top_contexts": [
+     "[[Justin]",
+     "[Jake]",
+     "[Peter]",
+     "Ben[jamin]",
+     "POV:[ Henry]",
+     "[Bob]",
+     "[Jean]",
+     "Deb[bie]"
+    ],
+    "promoted_tokens": [
+     " Roberts",
+     " Matthews",
+     " Davis",
+     " Reed",
+     " Miller",
+     " Johnson"
+    ],
+    "fires_on_female_names": 1.0,
+    "fires_on_male_names": 1.0,
+    "mean_activation_on_female_names": 12.283270835876465,
+    "mean_activation_on_male_names": 14.285477638244629,
+    "cosine_with_gender_direction": -0.03597394376993179
+   },
+   "female_first_names": {
+    "latent": 18206,
+    "frequency": 0.00252,
+    "max_activation": 22.89,
+    "top_contexts": [
+     " DNAinfo/Kat[ie]",
+     "!  And[rea]",
+     "1959) Jul[ie]",
+     "v. Re[becca]",
+     "M[olly]",
+     "Deb[bie]",
+     "Jean[ette]",
+     ":  Bar[bara]"
+    ],
+    "promoted_tokens": [
+     " Marie",
+     " Lynn",
+     " Mae",
+     " Louise",
+     " Anne",
+     "Anne"
+    ],
+    "fires_on_female_names": 1.0,
+    "fires_on_male_names": 0.0,
+    "mean_activation_on_female_names": 9.729072570800781,
+    "mean_activation_on_male_names": 0.0,
+    "cosine_with_gender_direction": 0.6841423511505127
+   },
+   "lookalike_from_top_examples": {
+    "latent": 13484,
+    "frequency": 0.00026,
+    "max_activation": 44.71,
+    "top_contexts": [
+     " Community Psychiatry at Queen[ Mary]",
+     "M[olly]",
+     "M[iche]",
+     " In A Christmas[ Carol]",
+     " I liked it.[ Lily]",
+     "cultured cells of[ Cath]",
+     ":  Bar[bara]",
+     " Henderson  M[olly]"
+    ],
+    "promoted_tokens": [
+     "lene",
+     " Jane",
+     "mount",
+     "anne",
+     " Beth",
+     "Kay"
+    ],
+    "fires_on_female_names": 0.1071428582072258,
+    "fires_on_male_names": 0.0,
+    "mean_activation_on_female_names": 1.727100133895874,
+    "mean_activation_on_male_names": 0.0,
+    "cosine_with_gender_direction": 0.32010418176651
+   },
+   "most_aligned_direction": {
+    "latent": 11952,
+    "frequency": 0.00126,
+    "max_activation": 16.13,
+    "top_contexts": [
+     ") was a Danish[ actress]",
+     "McLeod's D[aughters]",
+     " in metastasis of[ breast]",
+     " Assurance Corporation,[ Plaintiff]",
+     "E ALLARD,[ Plaintiff]",
+     " McLeod's D[aughters]",
+     "\u011f\u0131 sist[emin]",
+     " with a singleton[ gestation]"
+    ],
+    "promoted_tokens": [
+     " Anne",
+     " Louise",
+     " Marie",
+     " Isabel",
+     " herself",
+     " Elizabeth"
+    ],
+    "fires_on_female_names": 0.01785714365541935,
+    "fires_on_male_names": 0.0,
+    "mean_activation_on_female_names": 0.013347930274903774,
+    "mean_activation_on_male_names": 0.0,
+    "cosine_with_gender_direction": 0.7629406452178955
+   }
+  },
+  "three_latents_with_largest_female_minus_male_activation": [
+   18206,
+   1035,
+   5926
+  ],
+  "norm_of_gender_direction": 42.332794189453125,
+  "norm_of_female_latent_at_usual_strength": 9.729654312133789,
+  "logit_diff_male_names": -3.277099609375,
+  "logit_diff_female_names": 3.0084991455078125,
+  "male_names_plus_female_latent": -2.379258871078491,
+  "male_names_plus_three_latents": -1.9807714223861694,
+  "male_names_plus_difference_of_means": 0.3006305396556854,
+  "male_names_plus_random_latent": -3.248789381980896
+ },
+ "steered_text": {
+  "prompt": "I went for a walk and",
+  "max_activation_of_wikileaks_latent": 60.893943786621094,
+  "no_steering": "I went for a walk and saw a lot of people. I was surprised to see that there were people who were very nice and kind. I was",
+  "wikileaks_latent_strength_30": "I went for a walk and found this book. I have been reading it for a while now and I am so glad I did. I have been",
+  "wikileaks_latent_strength_60": "I went for a walk and found this document. It is a bit of a surprise that it is so important.\n\nThe document is a bit",
+  "wikileaks_latent_strength_80": "I went for a walk and found a document that was a bit of a hit.\n\nThe founder of the organization, Julian Assange, has been",
+  "wikileaks_latent_strength_120": "I went for a walk and founder founder founder founder founder founder\n\nThe founder founder founder founder\n\nThe founder founder founder founder\n\nThe founder",
+  "livestock_latent_strength_100": "I went for a walk and came to the market that were not in the pasture. I had not been in the pasture for a while. The r"
+ },
+ "dictionary_cosines": {
+  "std": 0.05364181846380234,
+  "max_abs": 0.8472073078155518,
+  "share_above_0.1": 0.05707453726863432,
+  "share_above_0.3": 0.0017063531765882942,
+  "decoder_norm_mean": 1.0000454187393188
+ }
+}

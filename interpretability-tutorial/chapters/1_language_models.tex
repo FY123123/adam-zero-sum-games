@@ -1,0 +1,228 @@
+\section{Language models from the ground up}
+\label{sec:lm}
+
+\begin{sessioncard}
+\textbf{Session 1.} \emph{Goal:} everyone in the room knows what a language model takes in, what it puts out, what
+its weights are and how they were found, and what question interpretability asks.
+\emph{Experiments:} how GPT-2 small cuts text into tokens (\cref{exp:tokens}), what it predicts
+(\cref{exp:predictions}), and the task that serves as running example in all later sessions (\cref{exp:ioi}).
+\emph{Prerequisites:} vectors, matrices, probabilities.
+\end{sessioncard}
+
+\subsection{What a language model does}
+
+A language model is a function. Its input is a piece of text. Its output is a probability distribution over what
+comes next. Everything else that such a model appears to do, from answering questions to writing programs, is
+obtained by applying this one function again and again: the model predicts the next piece of text, one piece is
+drawn from the prediction and appended to the input, and the function is applied to the longer text.
+
+The pieces are called \emph{tokens}. A fixed procedure, the \emph{tokenizer}, cuts every text into tokens and
+replaces each token by its number in a fixed list, the \emph{vocabulary}. A token is a frequent word or a
+fragment of a word, usually together with the space in front of it.
+
+\begin{experiment}[Tokens]\label{exp:tokens} \script{exp\_basics.py}
+The vocabulary of GPT-2 has $50{,}257$ tokens. Its tokenizer cuts the sentence \tok{Interpretability is fun.}
+into the six tokens
+\begin{center}
+\fbox{\tok{Inter}}\,\fbox{\tok{pret}}\,\fbox{\tok{ability}}\,\fbox{\tok{\textvisiblespace is}}\,\fbox{\tok{\textvisiblespace fun}}\,\fbox{\tok{.}}
+\end{center}
+where \tok{\textvisiblespace} marks a space. A rare word is split into fragments, and a common word such as
+\tok{\textvisiblespace is} is a single token. The software also puts a special start token in front of every
+text. We call it BOS.
+\end{experiment}
+
+For every position of the input, the model returns one probability for each of the $50{,}257$ tokens. We will
+almost always look at the last position, where the model predicts the token that follows the whole input.
+
+\begin{experiment}[What a small model predicts]\label{exp:predictions} \script{exp\_basics.py}
+Our model throughout these notes is GPT-2 small \citep{radford2019language}, a public model from 2019 that runs
+on a laptop. \Cref{tab:predictions} shows its five most likely next tokens for three inputs. The model continues
+a counting sequence correctly and with confidence. It completes a sentence about two people with the right name.
+On a question of general knowledge it hesitates between London and Paris. The last row matters for everything
+that follows. A model can only be asked \emph{how} it does something that it actually does, so every study of
+a mechanism starts by checking the behaviour.
+\end{experiment}
+
+\begin{table}[t]
+\centering\small
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{0.4\textwidth}>{\raggedright\arraybackslash}p{0.54\textwidth}@{}}
+\toprule
+Input & Most likely next tokens, with probability \\
+\midrule
+\tok{One, two, three, four,} & \tok{five} $0.85$, \tok{ten} $0.02$, \tok{Five} $0.01$, \tok{six} $0.01$, \tok{four} $0.01$ \\
+\tok{When Mary and John went to the store, John gave a drink to} & \tok{Mary} $0.68$, \tok{them} $0.13$, \tok{the} $0.05$, \tok{John} $0.02$, \tok{her} $0.01$ \\
+\tok{The Eiffel Tower is located in the city of} & \tok{London} $0.07$, \tok{Paris} $0.07$, \tok{Amsterdam} $0.04$, \tok{Berlin} $0.03$, \tok{New} $0.03$ \\
+\bottomrule
+\end{tabular}
+\caption{Predictions of GPT-2 small for the token that follows three inputs (\cref{exp:predictions}).}
+\label{tab:predictions}
+\end{table}
+
+\subsection{The building blocks of a neural network}
+
+The function that turns tokens into probabilities is a \emph{neural network}. We need only three notions to
+describe one.
+
+\paragraph{Vectors.} All intermediate results of the network are vectors, which are lists of real numbers. For
+two vectors $x,w\in\R^d$, the inner product $w^\top x$ is the sum of the products of corresponding entries. It
+measures how much $x$ points in the direction of $w$. A matrix $W$ with $k$ rows and $d$ columns turns a vector $x\in\R^d$ into the vector
+$Wx\in\R^k$, whose entries are the inner products of $x$ with the rows of $W$.
+
+\paragraph{Layers.} A \emph{layer} is a map of the form
+\begin{equation}\label{eq:layer}
+x \;\longmapsto\; \relu(Wx+b),
+\end{equation}
+with a matrix $W$, a vector $b$ called the bias, and the function $\relu(s)=\max(0,s)$ applied to every entry.
+Each entry of the result is called a \emph{neuron}, and its value on a given input is called its
+\emph{activation}. A neuron computes an inner product of its input with one row of $W$, adds a number, and
+outputs the result if it is positive and zero otherwise. The function $\relu$ is essential. Without it, several
+layers in a row would amount to a single multiplication by a matrix.
+
+\paragraph{Weights.} A network is a composition of many such maps, with some variations that
+\cref{sec:transformer} describes. The entries of all matrices and biases are the \emph{weights} or
+\emph{parameters} of the network. GPT-2 small has about $124$ million of them. Current large models have the same
+construction and are larger by two to three orders of magnitude.
+
+\subsection{From scores to probabilities}
+
+The last step of the network produces one real number for every token of the vocabulary. These numbers are
+called \emph{logits}. We write $\logit(t)$ for the logit of token $t$ at the position under consideration. The
+probabilities are obtained from the logits by the \emph{softmax} function,
+\begin{equation}\label{eq:softmax}
+\Pr(\text{next token is }t) \;=\; \frac{\exp(\logit(t))}{\sum_{t'}\exp(\logit(t'))},
+\end{equation}
+where the sum runs over the whole vocabulary. For example, three tokens with the logits $2$, $1$ and $0$ receive
+the probabilities $0.67$, $0.24$ and $0.09$.
+
+Two properties of \eqref{eq:softmax} will be used constantly. First, adding the same number to all logits changes
+nothing. Second, the ratio of the probabilities of two tokens $t$ and $t'$ is $\exp(\logit(t)-\logit(t'))$. A
+single logit therefore has no meaning, and a \emph{difference} of two logits has a direct one: it is the
+logarithm of how much more likely one token is than the other. \Cref{ex:softmax} asks for the proofs.
+
+\subsection{How the weights are found}
+
+Nobody writes the weights of a language model. They are found by \emph{training}. For a text from a large
+collection and a position in it, the \emph{loss} is $-\log$ of the probability that the model gives to the token
+that really comes next. The loss is zero if the model is certain and right, and large if the model gives the true
+token a small probability. Training starts from random weights and repeats one step many times: compute the
+average loss on a batch of texts, compute its gradient with respect to all weights, and move the weights a small
+step against the gradient. After training the weights are fixed, and the model is a deterministic function from
+tokens to logits.
+
+This is the origin of the problem that these notes are about. The training procedure is simple and fully
+understood. Its result is a list of $124$ million numbers that implements \emph{some} algorithm for predicting
+text, and no person chose that algorithm. The situation resembles holding the compiled binary of a program
+without its source code. Every instruction is visible, and the logic is not.
+
+\subsection{The question of interpretability}
+
+\begin{definition}[Interpretability]\label{def:interp}
+An \emph{interpretation} of a model is a description of its internal computation that is (i) understandable by
+a human and (ii) \emph{faithful}, which means that the description correctly predicts what the model computes,
+including what it computes when we change its internals.
+\emph{Mechanistic interpretability} aims at descriptions on the level of algorithms: which quantities the model
+represents, where, and through which operations they are combined.
+\end{definition}
+
+The two requirements pull in opposite directions. The full list of weights is perfectly faithful and not
+understandable. A one-sentence story is understandable and may be false.
+
+\paragraph{Why not ask the model?} A modern model will explain its own answers when asked. These explanations
+are text generated by the same model, and nothing forces them to describe the computation that produced the
+answer. \citet{turpin2023language} biased multiple-choice questions, for instance by arranging the examples in
+the prompt so that the correct answer was always option (A). The models then often chose (A) and wrote a
+step-by-step justification that never mentioned the pattern which had caused the choice. An explanation of this
+kind is \emph{plausible}, and it is not faithful \citep{jacovi2020towards}. To obtain faithfulness we have to
+look inside.
+
+\paragraph{Three kinds of evidence.} Methods differ in the kind of evidence that they give, and it pays to keep
+the kinds apart from the first day.
+\begin{itemize}
+\item \emph{Observational} methods record activations on some inputs and look for structure. They are cheap,
+and they establish correlations only. Sessions 2 to 5 contain several.
+\item \emph{Interventional} methods change an activation and measure the effect on the output. They establish
+causal claims, relative to the intervention that was made. They enter in session 3 and are the subject of
+session 6.
+\item \emph{Mechanistic} explanations derive the behaviour from the weights, so that the explanation also covers
+inputs that were never tried. Session 8 shows a case in which this was achieved.
+\end{itemize}
+A claim should never be stronger than the kind of evidence behind it.
+
+\subsection{The running example}
+\label{sec:running}
+
+Abstract descriptions of methods are hard to digest, so we apply the methods to one small task wherever this is
+possible. The task is \emph{indirect object identification} (IOI), introduced by
+\citet{wang2023interpretability}. Consider the second input of \cref{tab:predictions}:
+\begin{center}
+\tok{When Mary and John went to the store, John gave a drink to}
+\end{center}
+A fluent reader continues with \tok{Mary}. To do so, the reader has to notice that two names were introduced,
+that \tok{John} appears a second time, and that the remaining name is the recipient. The name that should be
+predicted is called the indirect object (IO), and the repeated name is called the subject (S).
+
+\begin{experiment}[GPT-2 small solves the task]\label{exp:ioi} \script{exp\_ioi.py}
+We use 12 prompts that follow the template above, with six pairs of names in both orders. On all 12 prompts the
+most likely next token is the correct name. Its average probability is $0.48$, against $0.014$ for the repeated
+name. We measure the performance on a prompt by the \emph{logit difference}
+$\logit(\mathrm{IO})-\logit(\mathrm{S})$ at the last position. It is $3.70$ on average and lies between $2.06$
+and $5.53$. A logit difference of $3.70$ means that the correct name is $e^{3.70}\approx40$ times as likely as
+the repeated one.
+\end{experiment}
+
+How does a network that was only trained to predict the next token find the right name? The following sessions
+answer this question step by step, and session 7 assembles the answer.
+
+\begin{caution}
+All numbers and data figures about GPT-2 small in these notes were produced by the scripts in the folder
+\texttt{code/}. They are illustrations on small sets of prompts. Where they repeat an experiment from the
+literature they agree with it qualitatively, and they should not be read as new findings.
+\end{caution}
+
+\begin{takeaways}
+A language model maps a sequence of tokens to logits, and the softmax turns logits into probabilities for the
+next token. Only differences of logits matter. The weights are found by gradient descent on a prediction loss,
+so the algorithm that they implement is unknown even to the people who trained the model. An interpretation has
+to be understandable and faithful. Evidence about the internals is observational, interventional or
+mechanistic.
+\end{takeaways}
+
+\subsection*{Questions for the seminar}
+
+\begin{exercise}[Softmax sees only differences]\label{ex:softmax}
+(a) Show that adding the same number to all logits does not change the probabilities \eqref{eq:softmax}.
+(b) Show that the ratio of the probabilities of two tokens $t$ and $t'$ equals $\exp(\logit(t)-\logit(t'))$.
+(c) Let $t^\star$ be the true next token. Show that the derivative of the loss $-\log\Pr(\text{next token is }t^\star)$
+with respect to $\logit(t)$ is $\Pr(\text{next token is }t)-1$ for $t=t^\star$ and $\Pr(\text{next token is }t)$
+for every other $t$. What does training therefore do to the logits?
+\end{exercise}
+
+\begin{exercise}[Plausible or faithful]\label{ex:plausible}
+A model is asked whether $3599$ is a prime number. It answers ``no'' and, asked for its reason, writes ``because
+$3599=59\times61$''. (a) Is this explanation plausible? (b) Describe an experiment that uses only inputs and
+outputs and that could show the explanation to be unfaithful. (c) Why can no experiment of this kind show it to
+be faithful?
+\end{exercise}
+
+\begin{exercise}[Three kinds of evidence]\label{ex:evidence}
+Consider three statements about one neuron of a language model. (a) It is active on $93\%$ of all French tokens
+and on $2\%$ of all other tokens. (b) When it is set to zero, the loss on French text rises and the loss on English
+text stays the same. (c) Its outgoing weights directly raise the logits of common French words. Classify each
+statement as observational, interventional or mechanistic. Then take the claim ``this neuron is how the model
+recognises French'' and say, for each statement, what it leaves open.
+\end{exercise}
+
+\begin{exercise}[A behaviour before a mechanism]\label{ex:behaviour}
+In \cref{tab:predictions}, GPT-2 small gives \tok{Paris} a probability of $0.07$. Suppose that somebody presents
+a detailed account of ``how GPT-2 small recalls that the Eiffel Tower is in Paris''. Which questions should the
+audience ask first?
+\end{exercise}
+
+\begin{readinglist}
+\item \citet{jacovi2020towards}, \emph{ACL}. The source of the distinction between plausible and faithful
+explanations.
+\item \citet{turpin2023language}, \emph{NeurIPS}. The experiments on explanations that leave out the true cause
+of an answer.
+\item \citet{bereska2024mechanistic}, \emph{TMLR}. A review of the concepts and methods of the field, useful as a
+map for all eight sessions.
+\end{readinglist}

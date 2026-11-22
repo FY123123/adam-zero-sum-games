@@ -1,13 +1,14 @@
-# Opening the Black Box: a first course in LLM interpretability
+# Opening the Black Box: eight seminar sessions on mechanistic interpretability
 
-A tutorial that opens with its expected learning outcomes, has exercises placed after the material they use,
-and ends every section with an annotated list of peer-reviewed reading. The compiled text is
+Lecture notes for a reading seminar of eight two-hour sessions. They start from what a language model is and
+cover the core of mechanistic interpretability, with an experiment for every idea. The compiled text is
 `llm-interpretability-tutorial.pdf`.
 
 - Build the PDF: `latexmk -pdf -jobname=llm-interpretability-tutorial main.tex`
-- Regenerate the GPT-2 small figures and numbers (about 4 minutes on a laptop CPU):
-  `pip install torch transformer_lens matplotlib && python code/gpt2_examples.py`.
-  The numbers quoted in the text are stored in `code/results.json`.
-- `code/minimal_patching.py` is the listing printed in Section 9.
+- Run the experiments (no GPU needed): `pip install torch transformer_lens datasets matplotlib`, then for example
+  `python code/exp_ioi.py`. Each script writes `code/results_*.json` and the figures in `figures/`.
+  The table in Appendix A of the notes lists all scripts with their running times.
+- `python code/exp_modadd.py --replot` repeats the analysis of the last session without retraining, if a
+  finished run is present.
 
 Tested with TransformerLens 4.4, PyTorch 2.15 and Python 3.13.

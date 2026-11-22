@@ -7,3 +7,5 @@
 *.out
 *.toc
 main.pdf
+code/modadd_checkpoint.pt
+code/sae_cache.pt

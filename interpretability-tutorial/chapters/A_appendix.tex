@@ -1,0 +1,87 @@
+\section{Running the experiments}
+\label{app:scripts}
+
+All experiments of these notes are in the folder \texttt{code/}. They need Python with the packages
+\texttt{torch}, \texttt{transformer\_lens}, \texttt{datasets} and \texttt{matplotlib}, and no GPU. Each script
+writes its numbers to a file \texttt{code/results\_*.json} and its figures to \texttt{figures/}.
+\Cref{tab:scripts} lists them with their running time on a laptop with four CPU cores.
+
+\begin{table}[h]
+\centering\small
+\begin{tabular}{@{}llp{0.48\textwidth}r@{}}
+\toprule
+Script & Sessions & What it does & Minutes \\
+\midrule
+\texttt{exp\_basics.py} & 1, 2 & tokens, predictions, attention patterns & 1 \\
+\texttt{exp\_ioi.py} & 2, 6 & logit lens, direct logit attribution, patching of the stream and of all heads & 2 \\
+\texttt{exp\_directions.py} & 3 & probes for the gender of a name, steering & 2 \\
+\texttt{exp\_neurons.py} & 4 & strongest activations of single neurons & 1 \\
+\texttt{exp\_superposition.py} & 4 & trains the toy model, random directions & 5 \\
+\texttt{exp\_sae.py} & 5 & downloads a public sparse autoencoder and evaluates it & 3 \\
+\texttt{exp\_induction.py} & 7 & repeated random tokens, induction scores, ablation & 1 \\
+\texttt{exp\_modadd.py} & 8 & trains a network on addition modulo 113 and analyses it & 15 \\
+\bottomrule
+\end{tabular}
+\caption{The scripts that produce all numbers and data figures of these notes.}
+\label{tab:scripts}
+\end{table}
+
+The scripts use the library TransformerLens \citep{nanda2022transformerlens}, which gives access to every
+intermediate activation of a model through named \emph{hooks}. The listing below is a complete patching
+experiment in thirty lines, the one of \cref{exp:residpatch} on a single pair of prompts. It is a good starting
+point for a presenter who wants to try a variation. Related tools are nnsight
+\citep{fiottokaufman2025nnsight}, for models that are too large for a laptop, and the website Neuronpedia
+\citep{lin2023neuronpedia}, on which the latents of published sparse autoencoders can be browsed.
+
+\lstinputlisting[style=tutpython]{code/minimal_patching.py}
+
+The listing was tested with version 4.4 of the library. Older tutorials use a class called
+\texttt{HookedTransformer}, which was removed in version 4.0. They run unchanged with an older version, which is
+installed by \texttt{pip install "transformer-lens<4"}.
+
+\section{Glossary}
+\label{app:glossary}
+
+{\small \setlength{\columnsep}{20pt}
+\begin{multicols}{2}
+\begin{description}[style=sameline, leftmargin=0pt, itemsep=1.5pt, font=\normalfont\bfseries]
+\item[Ablation.] Replacing the value of a node by zero, by its mean or by its value on another prompt, and
+measuring the change of the output.
+\item[Activation.] Any intermediate value that the model computes on a given input.
+\item[Activation patching.] Running the model on one prompt while overwriting one node with its value from a
+second, minimally different prompt.
+\item[Attention head.] The component that moves information between positions.
+\item[Attention pattern.] The weights with which a head at a destination reads from the sources.
+\item[Circuit.] A subgraph of the model's components together with a description of what each one computes on
+a task.
+\item[Clean and corrupted prompt.] The two prompts of a patching experiment. They differ only in the aspect
+under study.
+\item[Dictionary direction.] A column of the decoder of a sparse autoencoder.
+\item[Difference of means.] The average activation on inputs with a concept minus the average on inputs
+without it.
+\item[Direct logit attribution.] The term that one component contributes to a logit through its own addition
+to the residual stream.
+\item[Embedding.] The vector with which a token enters the model.
+\item[Faithful.] Said of an explanation that correctly describes what the model computes. Opposed to merely
+plausible.
+\item[Feature.] A property of the input or of the intermediate computation that the model represents.
+\item[Grokking.] Generalisation that sets in long after the training data have been fitted.
+\item[Induction head.] A head that attends to the token after an earlier occurrence of the current token.
+\item[Latent.] One unit of a sparse autoencoder. A candidate for a feature.
+\item[Linear probe.] A logistic regression that predicts a label from an activation.
+\item[Logit.] The score of a token before the softmax.
+\item[Logit difference.] The logit of the correct token minus that of a chosen alternative.
+\item[Logit lens.] Applying the final read-out to an intermediate residual stream.
+\item[Neuron.] One coordinate of the hidden layer of an MLP.
+\item[Polysemantic.] Said of a neuron that responds to several unrelated features.
+\item[Residual stream.] The vector that is kept for each position and to which all components add their
+output.
+\item[Sparse autoencoder.] A wide one-layer autoencoder trained to reconstruct activations with few active
+latents.
+\item[Steering.] Adding a direction to the residual stream to change a behaviour.
+\item[Superposition.] The storage of more features than dimensions along almost orthogonal directions.
+\item[Token.] A word or word fragment. The unit in which the model reads and writes text.
+\item[Unembedding.] The vectors that turn the final residual stream into logits.
+\end{description}
+\end{multicols}
+}
