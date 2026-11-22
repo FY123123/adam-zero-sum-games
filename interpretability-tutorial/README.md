@@ -1,7 +1,7 @@
 # Opening the Black Box: a first course in LLM interpretability
 
-A tutorial with exercises (placed after the material they use, with full solutions in an appendix) and an
-annotated list of peer-reviewed reading at the end of every section. The compiled text is
+A tutorial that opens with its expected learning outcomes, has exercises placed after the material they use,
+and ends every section with an annotated list of peer-reviewed reading. The compiled text is
 `llm-interpretability-tutorial.pdf`.
 
 - Build the PDF: `latexmk -pdf -jobname=llm-interpretability-tutorial main.tex`

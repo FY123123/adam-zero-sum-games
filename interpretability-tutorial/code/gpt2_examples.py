@@ -83,7 +83,8 @@ def normalise(metric_value):
 
 
 # ----------------------------------------------------------------------------------------------
-# 0. A check quoted in an exercise: GPT-2 small does not reliably know where the Eiffel Tower is.
+# 0. A check for the exercise on designing a patching experiment: does GPT-2 small know where the
+#    Eiffel Tower is? (It gives Paris and London about the same probability.)
 # ----------------------------------------------------------------------------------------------
 with torch.no_grad():
     fact_logits = model(model.to_tokens("The Eiffel Tower is located in the city of"))

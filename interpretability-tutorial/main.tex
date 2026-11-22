@@ -112,10 +112,43 @@ can be proved is proved in full, with each line justified. The main methods are 
 indirect object identification task in GPT-2 small, with numbers and figures produced by a short script that
 accompanies the text. Equal space is given to the limits of each method, because the main skill in this field is
 knowing what a result does not show. More than fifty exercises, derivations as well as questions for reflection,
-are placed directly after the material that they use, and an appendix gives full solutions. Every section closes
-with an annotated list of recommended reading from the peer-reviewed literature.
+are placed directly after the material that they use. Every section closes with an annotated list of recommended
+reading from the peer-reviewed literature.
 \end{abstract}
 
+\section*{Expected learning outcomes}
+
+After working through this tutorial and its exercises, the reader will be able to do the following.
+\begin{enumerate}[leftmargin=2em, itemsep=3pt]
+\item \textbf{Describe the model.} Write the computation of a transformer of the GPT type as a sequence of
+additions to a residual stream, and decompose a logit into the direct contributions of all components
+(\cref{sec:transformer}).
+\item \textbf{Classify evidence.} Tell observational, interventional and mechanistic evidence apart, and say
+which kind a given claim about a model requires (\cref{sec:intro,sec:pitfalls}).
+\item \textbf{Read activations.} Use attention patterns, integrated gradients, the logit lens, direct logit
+attribution and linear probes, prove the completeness of integrated gradients, and state what each of these
+methods cannot show (\cref{sec:observation}).
+\item \textbf{Reason about representations.} State the linear representation hypothesis and the superposition
+hypothesis, prove that a high-dimensional space holds exponentially many almost orthogonal directions, and solve
+a small model of superposition by hand (\cref{sec:features}).
+\item \textbf{Work with sparse autoencoders.} Define a sparse autoencoder, derive the shrinkage that its sparsity
+penalty causes, judge a dictionary by several criteria at once, and test whether a latent deserves its label
+(\cref{sec:sae}).
+\item \textbf{Intervene.} Design an activation patching experiment by choosing the two prompts, the metric and
+the nodes, distinguish sufficiency from necessity and direct effects from total effects, and derive attribution
+patching as a first-order approximation (\cref{sec:interventions}).
+\item \textbf{Steer.} Estimate a direction from contrasting prompts, and use activation addition and directional
+ablation to test whether the direction controls a behaviour (\cref{sec:lrh,sec:steering}).
+\item \textbf{Explain circuits.} Define a circuit and the criteria by which it is validated, read a one-layer
+attention-only model from its weights, and reconstruct the arguments behind three case studies: induction heads,
+indirect object identification and modular addition (\cref{sec:circuits}).
+\item \textbf{Doubt.} Recognise the common ways in which an interpretability result can mislead, and name the
+control experiment that guards against each of them (\cref{sec:pitfalls}).
+\item \textbf{Continue alone.} Run a patching experiment on GPT-2 small with open-source tools, and find the
+peer-reviewed literature on each topic through the reading lists (\cref{sec:practice}).
+\end{enumerate}
+
+\section*{Contents}
 \vspace{-0.5em}
 {\small \setlength{\parskip}{0pt} \setlength{\columnsep}{22pt}
 \begin{multicols}{2}
@@ -134,7 +167,6 @@ with an annotated list of recommended reading from the peer-reviewed literature.
 
 \appendix
 \input{sections/A_appendix}
-\input{sections/B_solutions}
 
 {\footnotesize \setlength{\bibsep}{2.5pt plus 1pt}
 \bibliographystyle{plainnat}
