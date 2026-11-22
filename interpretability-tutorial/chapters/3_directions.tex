@@ -48,25 +48,29 @@ them,
 \begin{equation}\label{eq:probe}
 \Pr(y=1\mid x) \;=\; \frac{1}{1+\exp\!\big(-(w^\top x+b_{\mathrm{probe}})\big)},\qquad w\in\R^d,\ b_{\mathrm{probe}}\in\R .
 \end{equation}
-High accuracy on inputs that were not used for training shows that the property is \emph{linearly decodable}
-from the activation: some direction $w$ separates the two classes.
+Training chooses $w$ and $b_{\mathrm{probe}}$ so that the labels of the training pairs become as probable as
+possible under \eqref{eq:probe}. High accuracy on inputs that were not used for training shows that the property
+is \emph{linearly decodable} from the activation: some direction $w$ separates the two classes.
 
 \begin{experiment}[A probe for the gender of a name]\label{exp:probe} \script{exp\_directions.py}
 We use the prompt \tok{After [name] got home,} with 56 male and 56 female first names. GPT-2 small has to
 continue with a pronoun. For all 112 names the logit of the matching pronoun is the larger one, and the
-difference $\logit(\tok{she})-\logit(\tok{he})$ is $+2.9$ on average for female names and $-3.3$ for male names.
+difference $\logit(\tok{she})-\logit(\tok{he})$ is $+3.0$ on average for female names and $-3.3$ for male names.
 The model clearly has the concept. Where is it?
 
 We train one probe per layer on the stream at the position of the name, with 36 names of each gender, and test
-it on the remaining 40 names. We do the same at the last position, the comma, where the pronoun has to be
+it on the remaining 40 names. The coordinates of the stream are rescaled to mean zero and variance one before
+training, and the penalty $0.01\,\|w\|^2$ is added to the training objective. We do the same at the last position, the comma, where the pronoun has to be
 predicted. \Cref{fig:probe} shows three things.
 \begin{itemize}
 \item At the name, the probe is right on $98\%$ of the held-out names already at $\ell=0$, before any layer has
 run. The gender of a name is linearly readable from its embedding $W_E[t]$.
 \item At the last position the accuracy is $50\%$ at $\ell=0$, as it must be, since the token there is the same
 comma in every prompt. After one layer it is $98\%$. Some head of layer 0 has copied the information.
-\item A probe that is trained on shuffled labels stays near $50\%$ on held-out names. The probes have not simply
-memorised their training set.
+\item The accuracy is measured on names that the probe has not seen, and this is essential. Any labelling of 72
+points in general position in 768 dimensions can be separated by a hyperplane, so a perfect fit of the training
+names would mean nothing. To see what chance looks like with only 40 test names, we also train probes on
+shuffled labels. They reach between $50\%$ and $60\%$ on the held-out names.
 \end{itemize}
 \end{experiment}
 
@@ -106,9 +110,9 @@ Let $v$ be the difference of means between female and male names, computed from 
 input of layer 4 at the position of the name. Its norm is $26$, about a third of the norm of a typical stream
 vector there. We add $\eta v$ to the stream of the 20 held-out \emph{male} names and read the pronoun
 (\cref{fig:steer}, left). Without steering the logit difference is $-3.3$. With $\eta=1$, which moves an average
-male name to an average female name, it is $+2.4$, close to the value $+2.9$ of real female names. With
-$\eta=-1$ it becomes more male, $-4.7$. A random direction of the same length, added with the same strengths,
-moves the logit difference by at most $0.6$.
+male name to an average female name, it is $+2.4$, close to the value $+2.9$ of the held-out female names.
+With $\eta=-1$ it becomes more male, $-4.7$. Random directions of the same length, added with the same
+strengths, move the logit difference by at most $0.6$, on average over five random directions.
 
 So this direction does not only correlate with gender. Moving along it changes the behaviour in the predicted
 way, and moving along other directions does not. This is causal evidence for \cref{def:lrh} in this instance.
@@ -128,15 +132,19 @@ the name and at the last position.}
 We repeat the steering with $\eta=1$ at every layer, once at the name and once at the last position, each time
 with the difference of means of that layer and position (\cref{fig:steer}, right).
 
-At the name, steering flips the pronoun when it is applied at the input of layers 0 to 4. The effect shrinks
-from layer 5 on and has vanished at layer 11. The model reads the gender from the position of the name in the
-middle layers, and afterwards changes there come too late.
+At the name, steering at the input of layers 0 to 4 moves the logit difference from $-3.3$ to between $+2.4$
+and $+2.8$. The effect then shrinks in steps: $+1.1$ at layers 5 and 6, between $+0.2$ and $+0.4$ at layers 7 to
+9, $-0.5$ at layer 10, and $-3.0$ at layer 11, which is no effect at all. A change at the input of layer $\ell$
+can only reach the heads of layer $\ell$ and of later layers. Each step of the curve therefore marks a layer
+whose heads read the gender from the name: layers 4, 6 and 9, and above all layer 10, where the largest step
+lies. After layer 10, changes at the name come too late.
 
 At the last position the picture is the mirror image, and it contains a surprise. Up to layer 9, steering
-changes the logit difference by at most one logit. It flips the pronoun only at layer 11. Yet \cref{exp:probe} showed that a probe decodes the gender
-at the last position with $95\%$ to $100\%$ accuracy from the first layer on. For nine layers the information is
-present at the last position, a probe finds it, and the prediction of the model hardly depends on it. What the model does use is the
-copy at the name, which it fetches late.
+changes the logit difference by about one logit at most. At layer 10 it moves it to $-0.5$, and only at layer 11
+does it flip the pronoun. Yet \cref{exp:probe} showed that a probe decodes the gender at the last position with
+$95\%$ to $100\%$ accuracy from the first layer on. For nine layers the information is present at the last
+position, a probe finds it, and the prediction of the model hardly depends on it. What the model does use is the
+copy at the name, most of which it fetches as late as layer 10.
 \end{experiment}
 
 \begin{caution}
@@ -177,8 +185,8 @@ productive first approximation, and it has exceptions.
 The working hypothesis is that a model represents concepts as directions of its activation space. A linear
 probe tests whether a concept is decodable, and the difference of means estimates a direction without training.
 Only an intervention shows whether the model uses a direction. In GPT-2 small, the gender of a name is decodable
-almost everywhere, and steering shows that the model uses it at the name in the middle layers and at the last
-position only at the very end.
+almost everywhere. Steering shows that the model reads it from the position of the name, mostly as late as
+layer 10, and that the copy at the last position matters only at the very end.
 \end{takeaways}
 
 \subsection*{Questions for the seminar}
@@ -203,10 +211,11 @@ the numbers $0.86$, $+1.7$ and $+2.4$ of the Caution box.
 \end{exercise}
 
 \begin{exercise}[Reading the two curves]\label{ex:curves}
-In the right panel of \cref{fig:steer}, the two curves cross at layer 10. (a) Which kind of
-component must be responsible for the fact that the information is used at the last position at all? (b) From
-the left curve, in which layers do you expect these components to sit? (c) Design an experiment with the tools
-of session 2 that would find them.
+In the right panel of \cref{fig:steer}, the two curves cross at layer 10. (a) Which kind of component must be
+responsible for the fact that the gender of the name reaches the last position at all? (b) Steering at the
+input of layer 10 gives about $-0.5$ at both positions. Steering at the input of layer 11 gives $-3.0$ at the
+name and $+2.5$ at the last position. Explain how these four numbers fit together. (c) Design an experiment with
+the tools of session 2 that would find the components of (a).
 \end{exercise}
 
 \begin{exercise}[What a failed probe shows]\label{ex:othello}

@@ -14,15 +14,17 @@ its features become sparse (\cref{exp:pentagon,exp:toytwo}).
 
 If features are directions, the most convenient directions would be the coordinate axes of some layer. In the
 residual stream the coordinates have no special role. The neurons of an MLP do, because the nonlinearity acts on
-each of them separately. So one might hope that each neuron stands for one feature.
+each of them separately. So we might hope that each neuron stands for one feature.
 
 \begin{experiment}[Three neurons of GPT-2 small]\label{exp:neurons} \script{exp\_neurons.py}
 We record the $3072$ neurons of the MLP of layer 6 on $38{,}100$ tokens of text and look, for single neurons, at
 the ten tokens on which they are most active. \Cref{tab:neurons} shows three neurons. Neuron 35 is a pleasure
 to read: it fires on the plural ending of abbreviations and technical terms. Neuron 0 fires on fragments of
 capitalised identifiers in program code, on the names of weekdays, and on the second half of compounds like
-\tok{four-year}. Neuron 26 fires on an assortment of words with no visible connection. By our reading, most
-of the first forty neurons of the layer resemble the second and third example more than the first.
+\tok{four-year}. Neuron 26 fires on an assortment of words with no visible connection. With the option
+\texttt{--explore} the script prints the same list for the first forty neurons of the layer, so that the
+seminar can judge how typical each of the three kinds is. In our reading, neurons like the first are the
+exception.
 \end{experiment}
 
 \begin{table}[t]
@@ -81,7 +83,8 @@ use it for the sum $d\,v_i^\top v_j$ and for its negative:
 \Pr\big(\text{some pair has }|v_i^\top v_j|>\varepsilon\big)
 &\le \frac{N(N-1)}{2}\cdot 2\exp\!\big(-\varepsilon^2d/2\big) && \by{union bound and \eqref{eq:onepair}}\\
 &< N^2\exp\!\big(-\varepsilon^2d/2\big) && \by{since $N(N-1)<N^2$}\\
-&\le \exp\!\big(\varepsilon^2d/2\big)\exp\!\big(-\varepsilon^2d/2\big) \;=\; 1. && \by{since $N\le\exp(\varepsilon^2d/4)$}
+&\le \exp\!\big(\varepsilon^2d/2\big)\exp\!\big(-\varepsilon^2d/2\big) && \by{since $N\le\exp(\varepsilon^2d/4)$}\\
+&= 1. && \by{the two exponents cancel}
 \end{align*}
 The probability that some pair violates the bound is strictly smaller than one. So there is an outcome in
 which no pair violates it, and this outcome is the required family of vectors.
@@ -187,7 +190,8 @@ $\E f_2=\delta/2$ and $\E f_2^2=\delta/3$.
 \begin{align*}
 \text{loss} &= \E\big(f_1-f_1\big)^2+\E\big(f_2-\delta/2\big)^2 && \by{inserting $\hat f_1$ and $\hat f_2$}\\
 &= \E f_2^2-\delta\,\E f_2+\delta^2/4 && \by{expanding the square}\\
-&= \delta/3-\delta^2/2+\delta^2/4 \;=\; \delta/3-\delta^2/4. && \by{since $\E f_2=\delta/2$, $\E f_2^2=\delta/3$}
+&= \delta/3-\delta^2/2+\delta^2/4 && \by{since $\E f_2=\delta/2$, $\E f_2^2=\delta/3$}\\
+&= \delta/3-\delta^2/4. && \by{collecting the terms with $\delta^2$}
 \end{align*}
 
 \textbf{Antipodal solution.} Here $x=f_1-f_2$, so $\hat f_1=\relu(f_1-f_2)$ and $\hat f_2=\relu(f_2-f_1)$. If
@@ -199,7 +203,8 @@ both features are active, $f_1$ and $f_2$ are independent and uniform on $[0,1]$
 $\Pr(\min(f_1,f_2)>u)=(1-u)^2$ and the minimum has density $2(1-u)$ on $[0,1]$.
 \begin{align*}
 \text{loss} &= \delta^2\cdot 2\int_0^1u^2\cdot 2(1-u)\,du && \by{error only if both active}\\
-&= \delta^2\cdot 4\Big(\frac13-\frac14\Big) \;=\; \frac{\delta^2}{3}. && \by{since $\textstyle\int_0^1u^2du=\frac13$, $\int_0^1u^3du=\frac14$}
+&= \delta^2\cdot 4\Big(\frac13-\frac14\Big) && \by{since $\textstyle\int_0^1u^2du=\frac13$, $\int_0^1u^3du=\frac14$}\\
+&= \frac{\delta^2}{3}. && \by{since $\textstyle\frac13-\frac14=\frac1{12}$}
 \end{align*}
 
 \textbf{Comparison.} Dividing by $\delta>0$, we get
@@ -215,15 +220,19 @@ Superposition is a bet on sparsity.
 
 \begin{experiment}[Theory against training]\label{exp:toytwo} \script{exp\_superposition.py}
 Neither of the two solutions needs to be the best possible one, so we train the model with $N=2$, $d=1$ for ten
-values of $\delta$ and compare (\cref{fig:toycapacity}, left). For $\delta\le0.4$ the trained weights are
-$W\approx(1,\ -1)$ and the trained loss agrees with $\delta^2/3$ to within $5\%$: gradient descent finds the
-antipodal solution. For $\delta\ge0.9$ the two weights have the same sign and unequal size, and the loss agrees
-with the dedicated formula. In between the model finds a compromise that is slightly better than both formulas,
-an antipodal pair with a positive bias. The change from one regime to the other happens around the value
-$4/7\approx0.57$ of \cref{prop:toy}.
+values of $\delta$ and compare (\cref{fig:toycapacity}, left). Training can get stuck in a poor solution, so
+every point of the figure is the best of several runs that start from different random weights. For
+$\delta\le0.4$ the trained weights are $W\approx(1,\ -1)$ and the trained loss agrees with $\delta^2/3$ to within
+$5\%$: gradient descent finds the antipodal solution. For $\delta\ge0.9$ the two weights have the same sign and
+unequal size, and the loss agrees with the dedicated formula. In between the model finds compromises that are
+slightly better than both formulas. For $0.5\le\delta\le0.7$ the weights are still an antipodal pair, shorter
+than before and combined with a positive bias, for example $W\approx(0.76,\ -0.76)$ at $\delta=0.7$. At
+$\delta=0.8$ they are $W\approx(0.93,\ -0.44)$. The smaller of the two formulas changes at $4/7\approx0.57$, as
+\cref{prop:toy} says. The trained weights follow with a delay and leave the antipodal arrangement only
+between $\delta=0.7$ and $\delta=0.9$.
 
-The right panel shows the same phenomenon at a larger size. With $N=20$ features in $d=5$ dimensions, the number
-of features that receive a direction grows from $5$, when all features are always active, to all $20$, when each
+The right panel shows the same phenomenon at a larger size. With $N=20$ features in $d=5$ dimensions and
+importances $I_j=0.9^{\,j-1}$, the number of features that receive a direction grows from $5$, when all features are always active, to all $20$, when each
 is active $1\%$ of the time.
 \end{experiment}
 

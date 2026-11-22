@@ -2,7 +2,7 @@
  "layer": 8,
  "n_latents": 24576,
  "n_tokens": 38100,
- "explained_variance": 0.8222028107584554,
+ "explained_variance": 0.8216593826133747,
  "mean_active_latents_per_token": 72.10367454068242,
  "mean_ratio_of_reconstruction_norm_to_activation_norm": 0.8420642506356627,
  "loss": {

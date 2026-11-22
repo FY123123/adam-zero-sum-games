@@ -160,7 +160,8 @@ We now take the output of each attention head, at all positions, as a node. \Cre
 for twelve heads. The first is the direct logit attribution of \cref{exp:dla}. The second is the denoising
 effect \eqref{eq:denoise}. The last two describe the noising experiment in logits. The \emph{total effect} is the
 drop of the metric when the head receives its corrupted output. The \emph{direct effect} is the part of this
-drop that comes from the head's own summand in \eqref{eq:dla-ld}. The names of the classes are those of
+drop that comes from the head's own summand in \eqref{eq:dla-ld}, computed with the final scale
+$\scale(x_n^{(L)})$ of the clean run. The names of the classes are those of
 \citet{wang2023interpretability}. Session 7 explains them, and for the moment they are only labels.
 \end{experiment}
 

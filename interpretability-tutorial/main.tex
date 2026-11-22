@@ -119,7 +119,9 @@ Each section is the material for one session and for one presenter. A section op
 goal and lists its experiments. It then alternates between explanation and numbered \emph{experiments}, and it
 closes with takeaways, a few questions for discussion, and a short list of peer-reviewed reading. A presenter
 with two weeks of preparation should read the section, run its script, and read one or two entries of the
-reading list. \Cref{tab:plan} gives the plan, and \cref{app:scripts} explains how to run the scripts.
+reading list. \Cref{tab:plan} gives the plan, and \cref{app:scripts} explains how to run the scripts. Sessions
+2 and 4 contain the most material. A presenter who runs short of time can state
+\cref{prop:dla,prop:jl,prop:toy} without their proofs and leave the proofs as reading.
 
 \begin{table}[h]
 \centering\small
@@ -127,7 +129,7 @@ reading list. \Cref{tab:plan} gives the plan, and \cref{app:scripts} explains ho
 \toprule
 Session & Topic & Experiments & Script \\
 \midrule
-1 & Language models from the ground up & tokens, next-token predictions, the running example & \texttt{exp\_basics.py} \\
+1 & Language models from the ground up & tokens, next-token predictions, the running example & \texttt{exp\_basics.py}, \texttt{exp\_ioi.py} \\
 2 & Inside the transformer & attention patterns, logit lens, direct logit attribution & \texttt{exp\_basics.py}, \texttt{exp\_ioi.py} \\
 3 & Concepts as directions & a probe for the gender of a name, steering along a direction & \texttt{exp\_directions.py} \\
 4 & Superposition & single neurons, random directions, a toy model trained from scratch & \texttt{exp\_neurons.py}, \texttt{exp\_superposition.py} \\

@@ -8,6 +8,7 @@ cover the core of mechanistic interpretability, with an experiment for every ide
 - Run the experiments (no GPU needed): `pip install torch transformer_lens datasets matplotlib`, then for example
   `python code/exp_ioi.py`. Each script writes `code/results_*.json` and the figures in `figures/`.
   The table in Appendix A of the notes lists all scripts with their running times.
+  `sh code/run_all.sh` runs all of them one after the other (about half an hour).
 - `python code/exp_modadd.py --replot` repeats the analysis of the last session without retraining, if a
   finished run is present.
 

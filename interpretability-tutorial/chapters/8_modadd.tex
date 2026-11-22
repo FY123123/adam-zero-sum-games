@@ -23,9 +23,11 @@ heads, one MLP with $512$ neurons, a stream of width $128$, no $\LN$.
 
 \begin{experiment}[Memorising first, generalising later]\label{exp:grokking} \script{exp\_modadd.py}
 There are $113^2=12{,}769$ pairs $(a,b)$. We train on a random $30\%$ of them and test on the rest
-(\cref{fig:grokking}, left). Each step of training uses all training pairs. After $1000$ steps the loss on the training pairs is below
-$10^{-5}$:
-the network knows them by heart. On the held-out pairs it is right in $4\%$ of the cases, and its loss there is
+(\cref{fig:grokking}, left). Each step of training uses all training pairs. The optimiser is AdamW, a variant
+of gradient descent that adapts the step size of every weight, with learning rate $10^{-3}$ and \emph{weight
+decay} $1$. Weight decay means that every step also shrinks each weight by a small fraction of its value, so
+that weights which the loss does not hold in place drift towards zero. After $1000$ steps the loss on the
+training pairs is below $10^{-5}$: the network knows them by heart. On the held-out pairs it is right in $4\%$ of the cases, and its loss there is
 far above that of a uniform guess. For thousands of steps nothing seems to happen. Then the test accuracy rises
 from $18\%$ at step $4000$ to $68\%$ at step $5000$ and $99\%$ at step $5700$, and soon after the network is
 right on every pair. This delayed generalisation is called \emph{grokking} \citep{power2022grokking}.
@@ -40,7 +42,7 @@ four frequencies which the final network uses (\cref{exp:progress}).}
 \label{fig:grokking}
 \end{figure}
 
-What has the network learned when it finally generalises? One would expect something like a table of sums. It
+What has the network learned when it finally generalises? We might expect something like a table of sums. It
 is something else.
 
 \subsection{Finding the algorithm}
@@ -50,8 +52,8 @@ The embedding assigns a vector $W_E[a]\in\R^{128}$ to each number $a$. We regard
 embedding as a function of $a$ and decompose it into the functions $\cos(2\pi ra/P)$ and $\sin(2\pi ra/P)$ for
 the frequencies $r=1,\dots,56$, which together with the constant function form an orthogonal basis.
 \Cref{fig:fourier} shows how much of the squared norm of $W_E$ belongs to each frequency. Four frequencies,
-$r=5,7,36,49$, carry $93\%$ of it, and the other $52$ frequencies share the remaining $7\%$. The network represents a number $a$
-by where it lies on four circles: it stores $\cos(2\pi ra/P)$ and $\sin(2\pi ra/P)$ for four values of $r$.
+$r=5,7,36,49$, carry $93\%$ of it. The other $52$ frequencies share the remaining $7\%$, of which $4\%$ lies in the single
+frequency $r=15$. The network represents a number $a$ by where it lies on four circles: it stores $\cos(2\pi ra/P)$ and $\sin(2\pi ra/P)$ for four values of $r$.
 \end{experiment}
 
 \begin{figure}[t]
@@ -105,7 +107,8 @@ with $\phi=\pi q/P$ and $\psi=2\pi rq/P$.
 &= \sum_{r=0}^{P-1}\Big[\sin\!\Big(\frac{(2r+1)\pi q}{P}\Big)-\sin\!\Big(\frac{(2r-1)\pi q}{P}\Big)\Big] && \by{by the identity}\\
 &= \sin\!\Big(\frac{(2P-1)\pi q}{P}\Big)-\sin\!\Big(\frac{-\pi q}{P}\Big) && \by{telescoping sum}\\
 &= \sin\!\Big(2\pi q-\frac{\pi q}{P}\Big)+\sin\!\Big(\frac{\pi q}{P}\Big) && \by{since $\sin$ is odd}\\
-&= -\sin\!\Big(\frac{\pi q}{P}\Big)+\sin\!\Big(\frac{\pi q}{P}\Big) \;=\; 0. && \by{period $2\pi$, $q$ an integer}
+&= -\sin\!\Big(\frac{\pi q}{P}\Big)+\sin\!\Big(\frac{\pi q}{P}\Big) && \by{period $2\pi$, $q$ an integer}\\
+&= 0. && \by{the two terms cancel}
 \end{align*}
 Dividing by $2\sin(\pi q/P)\ne0$ gives the claim.
 \end{proof}
@@ -120,7 +123,7 @@ We test \eqref{eq:modadd} on our network. We compute its logits for all $113^3$ 
 each pair $(a,b)$ the mean over $c$, and fit the four weights of \eqref{eq:modadd} for the frequencies
 $5,7,36,49$ by least squares. The fit explains $98\%$ of the variance of the logits. \Cref{fig:modaddlogits}
 shows the logits averaged over all inputs with the same value of $a+b-c$, together with the fit. The fitted
-value is $46$ at the correct answer and at most $27$ at any wrong one. A formula with four numbers describes a
+value is $46.5$ at the correct answer and no more than $27.2$ at any wrong one. A formula with four numbers describes a
 network with about $227{,}000$ weights.
 \end{experiment}
 
@@ -172,7 +175,7 @@ These results are reported from one prompt at a time, with a remainder that is n
 latents that have all the limits of session 5. The distance between \cref{exp:modaddlogits}, where a formula
 accounts for $98\%$ of a network, and the state of the art for large models is the open problem of the field.
 
-\subsection{How not to fool yourself}
+\subsection{How not to fool ourselves}
 \label{sec:pitfalls}
 
 Interpretability has no ground truth. Nobody can open a language model and look up the right answer, so an
@@ -200,7 +203,7 @@ test outside them, report the unexplained remainder \\
 \end{tabular}
 \end{center}
 
-A useful habit is to ask of every claim, including one's own, which kind of evidence it would need. A claim
+A useful habit is to ask of every claim, including our own, which kind of evidence it would need. A claim
 that a property is \emph{represented} needs a probe or a latent with a control. A claim that the model
 \emph{uses} it needs an intervention with a baseline. A claim that a component \emph{matters} needs patching with
 a stated counterfactual. A claim that a circuit \emph{is how the model does it} needs faithfulness,
@@ -246,7 +249,7 @@ with the margin in \cref{exp:modaddlogits} and explain why the network uses seve
 
 \begin{exercise}[Suddenly understood?]\label{ex:sudden}
 A colleague looks at the left panel of \cref{fig:grokking} and says: ``At step 5000 the network suddenly
-understood addition.'' (a) Use the right panel to respond. (b) Which measurement would you make to test the
+understood addition.'' (a) Use the right panel to respond. (b) Which measurement would test the
 claim that weight decay is responsible for the last phase? (c) What would be the analogue of the right panel for
 a large language model, and why is it hard to obtain?
 \end{exercise}

@@ -2,6 +2,11 @@
  "template": "After {} got home,",
  "n_names_per_gender": 56,
  "n_train_per_gender": 36,
+ "all_names": {
+  "logit_diff_male": -3.277100086212158,
+  "logit_diff_female": 3.0084991455078125,
+  "pronoun_matches_gender": 1.0
+ },
  "baseline_logit_diff": {
   "male_train": -3.2462399005889893,
   "male_test": -3.3326480388641357,

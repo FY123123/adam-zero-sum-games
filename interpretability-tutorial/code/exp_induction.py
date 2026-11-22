@@ -69,7 +69,7 @@ def ablated_loss(heads):
 
 
 ranked = [divmod(i.item(), n_heads) for i in induction.flatten().argsort(descending=True)]
-counts = [0, 1, 2, 3, 5, 8]
+counts = [0, 1, 2, 3, 4, 5, 8]
 ablate_induction = [ablated_loss(ranked[:k]) for k in counts]
 generator = torch.Generator().manual_seed(1)
 ablate_random = []
@@ -100,7 +100,7 @@ fig, axes = plt.subplots(1, 2, figsize=(6.8, 3.0), gridspec_kw={"width_ratios": 
 ax = axes[0]
 heatmap(ax, induction.numpy(), "induction score", signed=False, limit=1.0)
 ax.set_xlabel("head"); ax.set_ylabel("layer"); ax.set_xticks(range(n_heads)); ax.set_yticks(range(n_layers))
-for layer, head in ranked[:4]:
+for layer, head in ranked[:5]:
     ax.text(head, layer, f"{layer}.{head}", ha="center", va="center", fontsize=6, color="white")
 ax = axes[1]
 layer, head = ranked[0]

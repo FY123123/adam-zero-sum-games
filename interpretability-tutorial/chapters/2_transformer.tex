@@ -98,7 +98,8 @@ The numbers $A^{\ell,h}_{ij}\ge0$ sum to one over $j$ and are called the \emph{a
 The two matrices have separate jobs. $W_{QK}$ decides \emph{from where} position $i$ reads: a source receives a
 large weight if its stream matches what the destination asks for. $W_{OV}$ decides \emph{what} is written to
 position $i$ once a source has been chosen. The restriction $j\le i$ ensures that a position never sees later
-tokens. In GPT-2 small each layer has $H=12$ heads, and each of the two matrices has rank at most $64$. It is
+tokens. In GPT-2 small each layer has $H=12$ heads. Each of the two matrices is stored as a product of a matrix with
+$64$ columns and a matrix with $64$ rows, so its rank is at most $64$. It is
 customary to name a head by layer and index, so that ``head 9.6'' is head $h=6$ of layer $\ell=9$.
 
 \paragraph{MLP.} After the heads, the layer applies two layers of the form \eqref{eq:layer} to every position
@@ -107,8 +108,9 @@ separately. With $\tilde x_i^{(\ell)}$ denoting the stream after the heads of la
 \mlp_i^{\ell} \;=\; W_{\mathrm{out}}\,\mathrm{GELU}\big(W_{\mathrm{in}}\,\LN(\tilde x_i^{(\ell)})+b_{\mathrm{in}}\big)+b_{\mathrm{out}} \;\in\R^d,
 \end{equation}
 with weight matrices $W_{\mathrm{in}}$, $W_{\mathrm{out}}$ and bias vectors $b_{\mathrm{in}}$, $b_{\mathrm{out}}$ that
-belong to the layer. $\mathrm{GELU}$ is a smooth variant of $\relu$. The entries of the vector inside
-$\mathrm{GELU}$ are the \emph{neurons} of the layer, $3072$ per layer in GPT-2 small.
+belong to the layer. $\mathrm{GELU}$ is a smooth variant of $\relu$. The entries of the vector
+$\mathrm{GELU}(W_{\mathrm{in}}\,\LN(\tilde x_i^{(\ell)})+b_{\mathrm{in}})$ are the \emph{neurons} of the layer, $3072$
+per layer in GPT-2 small.
 
 \paragraph{Update rule.} Both kinds of components add their output to the stream,
 \begin{equation}\label{eq:update}
@@ -116,6 +118,8 @@ $\mathrm{GELU}$ are the \emph{neurons} of the layer, $3072$ per layer in GPT-2 s
 x_i^{(\ell+1)} \;=\; \tilde x_i^{(\ell)}+\mlp_i^{\ell},\qquad \ell=0,\dots,L-1 .
 \end{equation}
 The formulas omit some bias terms and a constant factor in the scores, which change nothing in what follows.
+In GPT-2 the map $\LN$ also multiplies every entry by a learned gain and adds a learned bias. Both can be
+absorbed into the linear map that follows, and our software does this when it loads the model.
 
 \begin{intuition}
 Think of the residual stream as a shared whiteboard with $d$ dimensions of space. Each head and each MLP reads
@@ -130,9 +134,12 @@ for one prompt. Every destination puts almost all its weight on the position dir
 all positions and prompts the weight on the previous position is $1.00$. Such a head is called a
 \emph{previous-token head}. On the right are the patterns of four heads at the last position, where the name has
 to be predicted. Head 9.9 puts a weight of $0.79$ on the indirect object, $0.03$ on the first occurrence of the
-subject and $0.04$ on the second. Heads 9.6 and 10.0 show the same preference. This suggests a hypothesis: these
+subject and $0.04$ on the second. Heads 9.6 and 10.0 also prefer the indirect object to the subject, with
+weights of $0.59$ and $0.31$ against at most $0.12$. This suggests a hypothesis: these
 heads fetch the correct name and write it into the last position. Head 10.7 looks at the indirect object as
-well, with a weight of $0.82$. We will see in \cref{exp:dla} that it does the opposite of the other three.
+well, with a weight of $0.82$. We will see in \cref{exp:dla} that it does the opposite of the other three. The
+figure also shows that head 10.0 puts almost half of its weight on the start token BOS. \Cref{ex:byhand}(c)
+asks what such a weight is good for.
 \end{experiment}
 
 \begin{figure}[t]
@@ -200,8 +207,9 @@ Two further facts follow directly from the definitions and will be used later.
 MLP at position $i$ depends on the stream at position $i$ alone, and the same holds for $\LN$ and for the
 read-out. If the last position ``knows'' something about an earlier token, some head has carried it there.
 \item \textbf{The coordinates of the stream have no special meaning.} Every component reads the stream through
-a linear map after $\LN$ and writes to it through a linear map. One can rotate the stream and compensate in all
-these maps without changing the function that the model computes. Nothing singles out coordinate number $17$ of
+a linear map after $\LN$ and writes to it through a linear map. A rotation of $\R^d$ that leaves the vector
+$\one$ fixed commutes with $\LN$. We can therefore apply such a rotation to the stream and compensate in all
+these linear maps without changing the function that the model computes. Nothing singles out coordinate number $17$ of
 the stream. The neurons of an MLP are different, because $\mathrm{GELU}$ acts on each of them separately.
 \end{itemize}
 

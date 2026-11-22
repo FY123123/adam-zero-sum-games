@@ -4,7 +4,8 @@
 All experiments of these notes are in the folder \texttt{code/}. They need Python with the packages
 \texttt{torch}, \texttt{transformer\_lens}, \texttt{datasets} and \texttt{matplotlib}, and no GPU. Each script
 writes its numbers to a file \texttt{code/results\_*.json} and its figures to \texttt{figures/}.
-\Cref{tab:scripts} lists them with their running time on a laptop with four CPU cores.
+\Cref{tab:scripts} lists them with their running time on a laptop with four CPU cores. The command
+\texttt{sh code/run\_all.sh} runs all of them one after the other.
 
 \begin{table}[h]
 \centering\small
@@ -13,7 +14,7 @@ writes its numbers to a file \texttt{code/results\_*.json} and its figures to \t
 Script & Sessions & What it does & Minutes \\
 \midrule
 \texttt{exp\_basics.py} & 1, 2 & tokens, predictions, attention patterns & 1 \\
-\texttt{exp\_ioi.py} & 2, 6 & logit lens, direct logit attribution, patching of the stream and of all heads & 2 \\
+\texttt{exp\_ioi.py} & 1, 2, 6 & the running example, logit lens, direct logit attribution, patching of the stream and of all heads & 2 \\
 \texttt{exp\_directions.py} & 3 & probes for the gender of a name, steering & 2 \\
 \texttt{exp\_neurons.py} & 4 & strongest activations of single neurons & 1 \\
 \texttt{exp\_superposition.py} & 4 & trains the toy model, random directions & 5 \\
@@ -52,6 +53,8 @@ measuring the change of the output.
 second, minimally different prompt.
 \item[Attention head.] The component that moves information between positions.
 \item[Attention pattern.] The weights with which a head at a destination reads from the sources.
+\item[Autoencoder.] A network that is trained to reproduce its own input after passing it through an
+intermediate representation.
 \item[Circuit.] A subgraph of the model's components together with a description of what each one computes on
 a task.
 \item[Clean and corrupted prompt.] The two prompts of a patching experiment. They differ only in the aspect
@@ -65,6 +68,8 @@ to the residual stream.
 \item[Faithful.] Said of an explanation that correctly describes what the model computes. Opposed to merely
 plausible.
 \item[Feature.] A property of the input or of the intermediate computation that the model represents.
+\item[Forward and backward pass.] Computing the output of the model for an input, and computing the gradient of
+a number at the output with respect to all weights and activations.
 \item[Grokking.] Generalisation that sets in long after the training data have been fitted.
 \item[Induction head.] A head that attends to the token after an earlier occurrence of the current token.
 \item[Latent.] One unit of a sparse autoencoder. A candidate for a feature.
@@ -74,6 +79,7 @@ plausible.
 \item[Logit lens.] Applying the final read-out to an intermediate residual stream.
 \item[Neuron.] One coordinate of the hidden layer of an MLP.
 \item[Polysemantic.] Said of a neuron that responds to several unrelated features.
+\item[Prompt.] The text that is given to the model as input.
 \item[Residual stream.] The vector that is kept for each position and to which all components add their
 output.
 \item[Sparse autoencoder.] A wide one-layer autoencoder trained to reconstruct activations with few active
@@ -82,6 +88,7 @@ latents.
 \item[Superposition.] The storage of more features than dimensions along almost orthogonal directions.
 \item[Token.] A word or word fragment. The unit in which the model reads and writes text.
 \item[Unembedding.] The vectors that turn the final residual stream into logits.
+\item[Weight decay.] A part of the training step that shrinks every weight by a small fraction of its value.
 \end{description}
 \end{multicols}
 }

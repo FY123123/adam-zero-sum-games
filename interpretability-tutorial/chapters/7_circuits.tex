@@ -122,15 +122,16 @@ on one sequence of $81$ tokens. Position $0$ is the start token.}
 \end{figure}
 
 \begin{experiment}[Removing the heads]\label{exp:inductionablate} \script{exp\_induction.py}
-The scores are observations. To test whether these heads are responsible for the behaviour, we replace the
-output of the $k$ heads with the highest induction scores by its mean and measure the loss in the second copy
-(\cref{fig:inductionloss}, right). Without ablation the loss is $0.28$. With the best head ablated it is $0.34$,
-with the best three it is $0.55$, and with the best five it jumps to $5.4$. Ablating five random heads gives
-$0.35$ on average.
+The scores are observations. To test whether these heads are responsible for the behaviour, we take the heads
+with the highest induction scores and replace the output of each by its mean over all positions of the same $20$
+sequences. Then we measure the loss in the second copy (\cref{fig:inductionloss}, right). Without ablation the
+loss is $0.28$. With the best head ablated it is $0.34$, with the best three it is $0.55$, with the best four it
+is $3.5$, and with the best five it is $5.4$. Ablating the same numbers of randomly chosen heads gives at most
+$0.76$, on average over five draws.
 
-Two conclusions follow. These five heads carry the behaviour. And they do so redundantly: any two or three of
-them are nearly enough. An ablation of one head at a time would have concluded that no single head matters,
-which is Lesson 2 of session 6 once more.
+Two conclusions follow. These five heads carry the behaviour. And they do so redundantly: when the best three
+are removed, the remaining two, 5.1 and 7.2, still keep the loss at $0.55$. An ablation of one head at a time
+would have concluded that no single head matters, which is Lesson 2 of session 6 once more.
 \end{experiment}
 
 Induction heads are not a curiosity of one model. \citet{olsson2022context} found them in models of many sizes
@@ -160,8 +161,8 @@ repetition, and we have just met both. The duplicate token heads, among them 3.0
 occurrence S1 of the same token. The induction heads, among them 5.5 and 6.9, attend from S2 to the token
 \emph{after} S1, using the output of the previous-token heads 2.2 and 4.11 exactly as in \cref{sec:induction}.
 Both groups write to the stream at S2 that this token has occurred before, and the S-inhibition heads read it.
-The heads that \cref{exp:inductionheads} found on random tokens are the ones that do this job in an English
-sentence.
+Several of the heads that \cref{exp:inductionheads} found on random tokens, namely 5.5, 6.9, 3.0, 4.11 and 2.2,
+are the ones that do this job in an English sentence.
 
 \begin{figure}[t]
 \centering
@@ -261,8 +262,8 @@ explanation?
 \begin{exercise}[A prediction]\label{ex:prediction}
 The description of the IOI circuit predicts what happens on the prompt \tok{When Mary and John went to the
 store, Mary gave a drink to}. It also suggests what should happen on a prompt with three names, such as
-\tok{When Mary, John and Paul went to the store, John gave a drink to}. Derive both predictions. How would you
-test the second one, and what would you conclude if it failed?
+\tok{When Mary, John and Paul went to the store, John gave a drink to}. Derive both predictions. How would we
+test the second one, and what would we conclude if it failed?
 \end{exercise}
 
 \begin{readinglist}

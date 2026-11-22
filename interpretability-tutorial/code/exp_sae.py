@@ -42,12 +42,12 @@ def next_token_loss(logits, batch):
     return torch.nn.functional.cross_entropy(logits[:, 1:-1].flatten(0, 1), batch[:, 2:].flatten())   # skip the start token
 
 
-sq_err = sq_tot = n_active = n_tokens = norm_ratio = 0.0
+sq_err = sum_sq = n_active = n_tokens = norm_ratio = 0.0
+sum_x = torch.zeros(768)
 losses = {"clean": [], "spliced": [], "zero": []}
 fired = torch.zeros(n_latents)
 top_values = torch.zeros(KEEP, n_latents); top_index = torch.zeros(KEEP, n_latents, dtype=torch.long)
 active_per_token = []
-mean_stream = None
 for start in range(0, N_DOCS, BATCH):
     batch = tokens[start:start + BATCH]
     store = {}
@@ -66,8 +66,7 @@ for start in range(0, N_DOCS, BATCH):
         sq_err += (x - decode(f)).pow(2).sum().item()
         centre = lambda y: y - b_dec                                           # lengths are measured from the decoder bias
         norm_ratio += (centre(decode(f)).norm(dim=-1) / centre(x).norm(dim=-1)).sum().item()
-        mean_stream = x.mean(0) if mean_stream is None else mean_stream
-        sq_tot += (x - mean_stream).pow(2).sum().item()
+        sum_x += x.sum(0); sum_sq += x.pow(2).sum().item()
         active = (f > 0)
         n_active += active.sum().item(); n_tokens += x.shape[0]
         fired += active.sum(0)
@@ -78,6 +77,7 @@ for start in range(0, N_DOCS, BATCH):
         top_values, order = merged_values.topk(KEEP, dim=0)
         top_index = merged_index.gather(0, order)
 frequency = fired / n_tokens
+sq_tot = sum_sq - n_tokens * (sum_x / n_tokens).pow(2).sum().item()        # total variance around the mean activation
 mean_loss = {k: float(np.mean(v)) for k, v in losses.items()}
 results = {
     "layer": LAYER, "n_latents": n_latents, "n_tokens": int(n_tokens),
@@ -132,7 +132,7 @@ SHOWCASE = {5238: "after the prefix cross-", 614: "WikiLeaks", 824: "livestock",
 results["showcase"] = [dict(describe(j), label=label) for j, label in SHOWCASE.items()]
 
 # ---- Latents and the gender of a name: four candidates, tested on the prompts of session 3 -------------
-NAME_LATENT, FEMALE_LATENT, LOOKALIKE, ALIGNED = 658, 18206, 13484, 11952
+NAME_LATENT, FEMALE_LATENT, LOOKALIKE = 658, 18206, 13484
 he, she = model.to_single_token(" he"), model.to_single_token(" she")
 prompt_tokens = lambda names: model.to_tokens([GENDER_TEMPLATE.format(n) for n in names])
 metric = lambda logits: (logits[:, -1, she] - logits[:, -1, he]).mean().item()
@@ -143,6 +143,7 @@ x_m, x_f = cache_m[HOOK][:, NAME_POS], cache_f[HOOK][:, NAME_POS]
 gender = x_f.mean(0) - x_m.mean(0)                                                 # difference of means at layer 8
 f_m, f_f = encode(x_m), encode(x_f)
 cosine = lambda u, w: torch.nn.functional.cosine_similarity(u, w, dim=0).item()
+ALIGNED = int((torch.nn.functional.normalize(W_dec, dim=-1) @ torch.nn.functional.normalize(gender, dim=0)).argmax())
 candidates = {}
 for label, j in (("first_names", NAME_LATENT), ("female_first_names", FEMALE_LATENT),
                  ("lookalike_from_top_examples", LOOKALIKE), ("most_aligned_direction", ALIGNED)):

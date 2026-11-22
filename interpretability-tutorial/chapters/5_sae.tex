@@ -12,8 +12,10 @@ steering text with one latent (\cref{exp:steertext}).
 
 Session 4 ended with a problem: given many activation vectors, find a large set of directions such that every
 vector is a combination of a few of them. Session 3 found one such direction with the help of labels. The
-\emph{sparse autoencoder} (SAE) looks for all of them at once and needs no labels. It was introduced to
-interpretability by \citet{bricken2023monosemanticity} and \citet{cunningham2024sparse}.
+\emph{sparse autoencoder} (SAE) looks for all of them at once and needs no labels. An \emph{autoencoder} is a
+network that is trained to reproduce its own input after passing it through an intermediate representation.
+Here the intermediate representation is required to be sparse. The method was introduced to interpretability
+by \citet{bricken2023monosemanticity} and \citet{cunningham2024sparse}.
 
 \subsection{Definition}
 
@@ -77,21 +79,25 @@ for $\lambda=0.4$) lies below the true activation by $\lambda/2$.}
 
 \begin{experiment}[How good is the reconstruction?]\label{exp:saestats} \script{exp\_sae.py}
 We use a public SAE for the residual stream of GPT-2 small at the input of layer 8 \citep{bloom2024open}. It
-has $m=24{,}576$ latents for $d=768$ dimensions and was trained with the loss \eqref{eq:saeloss} on 300 million
-tokens. We evaluate it on $38{,}100$ tokens of other text.
+has $m=24{,}576$ latents for $d=768$ dimensions and was trained with a loss of the form \eqref{eq:saeloss} on
+300 million tokens. We evaluate it on $38{,}100$ tokens of other text. The start token of every text is left
+out of all statistics and of all interventions of this session, because the stream at this position is very
+different from the stream at all others.
 \begin{itemize}
 \item \textbf{Sparsity.} On average $72$ of the $24{,}576$ latents are active on a token (\cref{fig:saestats},
 left). A typical latent fires on about one token in a thousand (right).
-\item \textbf{Reconstruction.} The reconstruction $\hat x$ explains $82\%$ of the variance of $x$. Measured from
-$\bdec$, it is on average $0.84$ times as long as $x$.
+\item \textbf{Reconstruction.} The reconstruction $\hat x$ explains $82\%$ of the variance of $x$. This means
+that the average of $\|x-\hat x\|^2$ over all tokens is $18\%$ of the average squared distance between $x$ and
+the mean activation. Measured from $\bdec$, the reconstruction is on average $0.84$ times as long as $x$.
 \item \textbf{Effect on the model.} We run GPT-2 small with $x$ replaced by $\hat x$ at every position. The loss
 of the model on the next token rises from $3.55$ to $3.79$. If the stream is replaced by zero instead, the loss
 is $11.57$. So the dictionary preserves $97\%$ of what this place of the model contributes to the prediction,
 and loses $3\%$.
-\item \textbf{Geometry.} The dictionary is itself an instance of \cref{prop:jl}: it consists of $24{,}576$ unit
-vectors in $768$ dimensions. Among $2000$ of them, the inner products of pairs have a standard deviation of
+\item \textbf{Geometry.} The dictionary is close to an instance of \cref{prop:jl}: it consists of $24{,}576$
+unit vectors in $768$ dimensions. Among $2000$ of them, the inner products of pairs have a standard deviation of
 $0.054$, not much more than the $0.036$ of random vectors, and $99.8\%$ of the pairs are below $0.3$ in absolute
-value.
+value. The agreement is not complete. Of the pairs, $5.7\%$ exceed $0.1$, against $0.5\%$ for random vectors,
+and the largest inner product is $0.85$: some latents have almost the same direction.
 \end{itemize}
 \end{experiment}
 
@@ -114,8 +120,8 @@ they are of different kinds. Latent 5238 fires on the hyphen after \tok{cross} a
 \tok{border} and \tok{cultural}: it stores what should come next. Latent 614 is about a topic, WikiLeaks,
 whichever token expresses it. Latent 1088 is grammatical: it fires on adjectives and promotes the endings that
 an adjective can take. The table was selected by us from many candidates, and not every latent is this clean.
-In latent 824 the two strongest examples are about livestock, and further down its list there are tokens that
-are not.
+In latent 824 the three strongest examples are about livestock, and further down its list there are tokens
+that are not.
 \end{experiment}
 
 \begin{table}[t]
@@ -159,18 +165,19 @@ names. Its dictionary direction has a cosine of $0.68$ with the difference of me
 \tok{Mary}, \tok{Molly}, \tok{Lily} and \tok{Carol}. It fires on $11\%$ of the female names. The strongest
 examples suggested a general concept, and the latent covers a small part of it.
 \item \textbf{Latent 11952} has the dictionary direction that is most aligned with the difference of means, with
-a cosine of $0.76$. It fires on $2\%$ of the names. Its strongest examples are words such as \tok{actress} and
+a cosine of $0.76$. It fires on one of the 112 names. Its strongest examples are words such as \tok{actress} and
 \tok{Daughters}. A direction that points the right way is not the same as a latent that is active.
 \end{itemize}
 Then we intervene. For the male names, the logit difference $\logit(\tok{she})-\logit(\tok{he})$ is $-3.3$.
 Adding the direction of latent 18206 at the name, with the strength that it has on female names, moves it to
-$-2.4$. Adding the three latents whose activation differs most between the two groups moves it to $-2.0$. A
-random latent with the same strength leaves it at $-3.3$. Adding the difference of means moves it to $+0.3$.
+$-2.4$. Adding the three latents whose activation differs most between the two groups moves it to $-2.0$.
+Random latents with the same strength leave it at $-3.2$, on average over ten latents. Adding the difference of
+means moves it to $+0.3$.
 \end{experiment}
 
 The experiment shows both sides of the method. Without any labels, the SAE has found a direction that
-separates female from male names perfectly and that the model uses, since steering along it changes the pronoun
-and steering along a random latent does not. And this latent carries only a quarter of the effect of the
+separates female from male names perfectly and that the model uses, since steering along it shifts the logit
+difference by $0.9$ towards \tok{she} and steering along random latents does not. And this latent carries only a quarter of the effect of the
 supervised direction. The concept is spread over several latents, and one latent is a part of it. Its
 contribution to the stream has norm $9.7$, against $42$ for the difference of means.
 
@@ -191,8 +198,8 @@ Strength & Continuation \\
 \bottomrule
 \end{tabular}
 \end{center}
-The walk first leads to a book, then to a document, then to Julian Assange. Beyond the range of activations
-that the model has ever seen, the text collapses.
+The walk first leads to a book, then to a document, then to Julian Assange. At twice the largest activation
+that occurs in our text, the continuation collapses.
 \end{experiment}
 
 The best-known experiment of this kind is from \citet{templeton2024scaling}, who trained SAEs with up to
@@ -228,8 +235,8 @@ the function is increasing and the minimiser is $\hat f=0$.
 A latent that fires for the right reason is still reported too small, and weak features are silenced completely
 (\cref{fig:sae}, right). Newer architectures avoid this by separating the decision \emph{whether} a latent is
 active from the estimate of \emph{how strongly}. TopK autoencoders keep the $k$ largest entries and drop the
-penalty \citep{gao2025scaling}. Others give each latent a threshold and penalise the number of active latents
-directly \citep{rajamanoharan2024improving}.
+penalty \citep{gao2025scaling}. Others give each latent a learned threshold and penalise the number of active
+latents directly \citep{rajamanoharan2024jumping}.
 
 \subsection{What a sparse autoencoder does not give}
 
@@ -249,8 +256,10 @@ tends to split into several more specific ones in a larger SAE, and no size is t
 over \citep{chanin2024absorption}.
 
 \textbf{Readable latents do not prove learned structure.} \citet{heap2025sparse} trained SAEs on transformers
-with random weights and obtained latents with similar automatic interpretability scores. Part of the sparse
-structure comes from the text and not from what the network has learned.
+with random weights and obtained latents with similar automatic interpretability scores. Such a score is
+obtained by letting a language model write a description of each latent from its strongest examples and testing
+how well the description predicts the activations on new text. Part of the sparse structure comes from the text
+and not from what the network has learned.
 
 \textbf{Usefulness has to be shown per task.} With labels available, simple baselines are hard to beat.
 \citet{kantamneni2025sparse} found no consistent advantage of probes on latents over probes on raw activations,
@@ -258,7 +267,7 @@ and \citet{wu2025axbench} found steering with latents weaker than simple alterna
 \cref{exp:genderlatents}.
 \end{caution}
 
-None of this makes SAEs useless. They remain the main tool for discovering concepts that one did not think of
+None of this makes SAEs useless. They remain the main tool for discovering concepts that nobody thought of
 in advance. It does mean that a latent is a hypothesis about the model, to be tested by an intervention.
 
 \begin{takeaways}

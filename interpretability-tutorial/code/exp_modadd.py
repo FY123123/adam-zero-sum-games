@@ -132,10 +132,10 @@ fig, axes = plt.subplots(1, 2, figsize=(6.6, 2.5))
 ax = axes[0]
 ax.semilogy(history["epoch"], history["train_loss"], color=BLUE, lw=1.6, label="training pairs")
 ax.semilogy(history["epoch"], history["test_loss"], color=RED, lw=1.6, label="held-out pairs")
-ax.set_xlabel("training epoch"); ax.set_ylabel("loss"); ax.legend(loc="upper right", fontsize=8); grid(ax)
+ax.set_xlabel("training step"); ax.set_ylabel("loss"); ax.legend(loc="upper right", fontsize=8); grid(ax)
 ax = axes[1]
 ax.plot(history["epoch"], key_share, color=BLUE, lw=1.6)
-ax.set_xlabel("training epoch"); ax.set_ylabel("share of key frequencies in $W_E$"); ax.set_ylim(0, 1.02); grid(ax)
+ax.set_xlabel("training step"); ax.set_ylabel("share of key frequencies in $W_E$"); ax.set_ylim(0, 1.02); grid(ax)
 fig.tight_layout(w_pad=2.0); fig.savefig(FIG / "fig_grokking.pdf"); plt.close(fig)
 
 fig, ax = plt.subplots(figsize=(6.3, 2.1))

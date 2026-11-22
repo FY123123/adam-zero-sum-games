@@ -39,7 +39,13 @@ def streams(names):
 
 acts = {key: streams(names) for key, names in
         {"male_train": male_train, "male_test": male_test, "female_train": female_train, "female_test": female_test}.items()}
+all_male = torch.cat([acts["male_train"][1], acts["male_test"][1]])[:, -1]
+all_female = torch.cat([acts["female_train"][1], acts["female_test"][1]])[:, -1]
 results = {"template": TEMPLATE, "n_names_per_gender": len(MALE), "n_train_per_gender": n_train,
+           "all_names": {"logit_diff_male": (all_male[:, she] - all_male[:, he]).mean().item(),
+                         "logit_diff_female": (all_female[:, she] - all_female[:, he]).mean().item(),
+                         "pronoun_matches_gender": float(torch.cat([all_male[:, she] < all_male[:, he],
+                                                                    all_female[:, she] > all_female[:, he]]).float().mean())},
            "baseline_logit_diff": {k: metric(v[1]) for k, v in acts.items()},
            "accuracy_of_the_model": float(np.mean([(acts["male_test"][1][:, -1, she] < acts["male_test"][1][:, -1, he]).float().mean().item(),
                                                      (acts["female_test"][1][:, -1, she] > acts["female_test"][1][:, -1, he]).float().mean().item()]))}
@@ -124,14 +130,14 @@ ax.plot(layers, results["probe_accuracy_name_position"], color=BLUE, lw=1.8, mar
 ax.plot(layers, results["probe_accuracy_last_position"], color=RED, lw=1.8, marker="o", ms=3.5, label="at the last position")
 ax.plot(layers, results["probe_accuracy_shuffled_labels"], color=MUTED, lw=1.2, ls="--", label="at the name, shuffled labels")
 ax.set_xlabel("number of layers applied"); ax.set_ylabel("accuracy on held-out names"); ax.set_ylim(0.3, 1.03)
-ax.set_xticks(layers[::2]); ax.legend(fontsize=7.5, loc="upper left"); grid(ax)
+ax.set_xticks(layers[::2]); ax.legend(fontsize=7.5, loc=(0.55, 0.5)); grid(ax)
 fig.tight_layout(); fig.savefig(FIG / "fig_probe_layers.pdf"); plt.close(fig)
 
 fig, axes = plt.subplots(1, 2, figsize=(6.8, 2.6))
 ax = axes[0]
 ax.axhline(0, color=MUTED, lw=0.5)
 ax.plot(strengths, sweep, color=BLUE, lw=1.8, marker="o", ms=4, label="difference of means")
-ax.plot(strengths, results["steer_random_direction"], color=MUTED, lw=1.4, ls="--", marker="o", ms=3, label="random direction, same length")
+ax.plot(strengths, results["steer_random_direction"], color=MUTED, lw=1.4, ls="--", marker="o", ms=3, label="random direction")
 ax.set_xlabel("strength $\\eta$ (layer %d, at the name)" % STEER_LAYER); ax.set_ylabel("logit(she) $-$ logit(he)")
 ax.legend(fontsize=7.5, loc="upper left"); grid(ax)
 ax = axes[1]
@@ -139,6 +145,6 @@ ax.axhline(0, color=MUTED, lw=0.5)
 ax.plot(range(n_layers), by_layer_name, color=BLUE, lw=1.8, marker="o", ms=3.5, label="steer at the name")
 ax.plot(range(n_layers), by_layer_last, color=RED, lw=1.8, marker="o", ms=3.5, label="steer at the last position")
 ax.set_xlabel("layer at which the direction is added ($\\eta=1$)"); ax.set_ylabel("logit(she) $-$ logit(he)")
-ax.set_xticks(range(0, n_layers, 2)); ax.legend(fontsize=7.5, loc=(0.30, 0.74)); grid(ax)
+ax.set_xticks(range(0, n_layers, 2)); ax.legend(fontsize=7.5, loc=(0.03, 0.2)); grid(ax)
 fig.tight_layout(w_pad=2.0); fig.savefig(FIG / "fig_steering.pdf"); plt.close(fig)
 print(json.dumps({k: (np.round(v, 2).tolist() if isinstance(v, list) else v) for k, v in results.items()}, indent=0))
