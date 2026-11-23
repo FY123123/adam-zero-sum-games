@@ -2,17 +2,19 @@
 \label{sec:interventions}
 
 \begin{sessioncard}
-\textbf{Session 6.} \emph{Goal:} learn the experimental method on which all claims about mechanisms rest:
-overwrite one internal quantity, recompute the rest, and watch the output.
-\emph{Experiments:} where the decisive information sits in the running example (\cref{exp:residpatch}), which
-heads carry it (\cref{exp:headpatch}), and a fast approximation (\cref{exp:attrpatch}).
+\textbf{Session 6.} \emph{Goal:} learn the experimental method on which all claims about mechanisms are based:
+overwrite one internal value of the model, recompute everything that comes after it, and observe the output.
+\emph{Experiments:} where the model stores the information that decides the running example
+(\cref{exp:residpatch}), which heads carry this information (\cref{exp:headpatch}), and a fast approximation of
+these experiments (\cref{exp:attrpatch}).
 \emph{Prerequisites:} sessions 1 to 3.
 \end{sessioncard}
 
-Sessions 2 to 5 were mostly observation. We recorded activations and found structure in them. Session 3 showed
-that structure in activations only tells us what \emph{could} be used by the model, and that an intervention is
-needed to learn what \emph{is} used. A neural network is an unusually good object for such experiments. We can
-set any internal quantity to any value, rerun the rest of the computation exactly, and repeat as often as we
+Sessions 2 to 5 mostly used observational methods: we recorded activations and found patterns in them. Session
+3 showed that such patterns only tell us which information the model \emph{could} use. To learn which information
+the model actually uses, we need interventions. Neural networks are unusually well suited for such experiments. We
+can set any internal value to any number, recompute the rest of the computation exactly, and repeat this as often
+as we
 like.
 
 \subsection{Interventions and ablations}
@@ -20,15 +22,15 @@ like.
 \begin{definition}[Intervention]\label{def:intervention}
 A \emph{node} $g$ is any intermediate quantity of the model: the residual stream at one layer and position, the
 output of one head, one neuron, one SAE latent. We write $g(\clean)$ for the value of the node when the model
-runs on a prompt called $\clean$, and $M(\clean)$ for a number that measures the output on that prompt, the
+runs on a prompt called $\clean$, and $M(\clean)$ for a number that measures the output on that prompt, called the
 \emph{metric}. For a value of the same shape as $g$, the \emph{intervened run} computes everything before the
 node as usual, overwrites the node with the given value, and recomputes everything after it. We write
 $M(\clean \mid g\leftarrow\text{value})$ for the metric of the intervened run.
 \end{definition}
 
-Throughout this session the metric is the logit difference of the running example. Steering in session 3 was an
-intervention of this kind. The simplest interventions remove a node and are called \emph{ablations}. They differ
-in the value that takes the place of the node.
+Throughout this session, the metric is the logit difference of the running example. The steering experiments of
+session 3 were interventions of this kind. The simplest interventions remove a node. They are called
+\emph{ablations}, and they differ in the value that replaces the node.
 
 \begin{center}\small
 \begin{tabular}{@{}lp{0.42\textwidth}p{0.38\textwidth}@{}}
@@ -43,10 +45,10 @@ resample & value of the node on another, randomly chosen prompt & noisy, has to 
 \end{center}
 
 \begin{caution}
-An ablation compares the model with a counterfactual model, and the replacement value defines the
-counterfactual. Zero ablation of a head that always writes roughly the same large vector destroys that constant
-contribution, on which later layers may rely for reasons unrelated to the task. Every ablation result should be
-reported together with the replacement value that was used.
+An ablation compares the model with a modified model, and the replacement value determines the modified model.
+Consider a head that always writes roughly the same large vector. Zero ablation removes this constant vector, and
+later layers may rely on it for reasons that have nothing to do with the task. Every ablation result should
+therefore be reported together with the replacement value that was used.
 \end{caution}
 
 \subsection{Activation patching}
@@ -86,20 +88,21 @@ $M(\corr)$ towards $M(\clean)$, the node carries information that distinguishes 
 \label{fig:patching-schema}
 \end{figure}
 
-Activation patching refines resample ablation by choosing the other prompt deliberately
-\citep{vig2020investigating,wang2023interpretability}. We prepare two prompts of equal length that differ in
-exactly the aspect we want to study. In the running example,
+\emph{Activation patching} improves on resample ablation by choosing the other prompt deliberately instead of at
+random \citep{vig2020investigating,wang2023interpretability}. We prepare two prompts of the same length that differ
+only in the aspect that we want to study. In the running example, we use the two prompts
 \begin{center}
 \begin{tabular}{@{}ll@{}}
 $\clean$: & \tok{When Mary and John went to the store, John gave a drink to} \\
 $\corr$: & \tok{When Mary and John went to the store, Mary gave a drink to}
 \end{tabular}
 \end{center}
-The corrupted prompt differs in one token, the second occurrence of the subject, and its correct continuation is
-the other name. Averaged over our 12 pairs of prompts, $M(\clean)=3.70$ and $M(\corr)=-4.33$, where the metric is
-always the logit difference in favour of the name that is correct for the clean prompt. The two runs are $8.04$
-logits apart. We now run the model on one prompt and overwrite a single node with its value from the other run
-(\cref{fig:patching-schema}). There are two directions.
+The corrupted prompt differs from the clean prompt in one token, the second occurrence of the subject. As a
+result, the correct continuation of the corrupted prompt is the other name, \tok{John}. For both prompts, the metric
+is the logit difference in favour of the name that is correct for the clean prompt, here \tok{Mary}. Averaged over
+our 12 pairs of prompts, $M(\clean)=3.70$ and $M(\corr)=-4.33$. So the metrics of the two runs differ by $8.04$
+logits. We now run the model on one of the two prompts, and we overwrite a single node with its value from the run
+on the other prompt (\cref{fig:patching-schema}). This can be done in two directions.
 
 \begin{definition}[Denoising and noising]\label{def:patching}
 The \emph{denoising} effect of a node $g$ is the fraction of the gap that is restored when the corrupted run
@@ -117,23 +120,24 @@ Both numbers are $0$ for a node that plays no role and $1$ for a node that carri
 the two prompts.
 
 \begin{experiment}[Where is the information?]\label{exp:residpatch} \script{exp\_ioi.py}
-For a first map we take as nodes the residual stream $x_i^{(\ell)}$ at every layer $\ell$ and position $i$.
-\Cref{fig:residpatch} shows the denoising effect of each of these $12\times15$ nodes. Each part of the picture
-can be explained.
+As a first overview, we take as nodes the residual stream $x_i^{(\ell)}$ at every layer $\ell$ and position $i$.
+\Cref{fig:residpatch} shows the denoising effect of each of these $12\times15$ nodes. Each part of the figure has a
+simple explanation.
 \begin{itemize}
-\item All positions before S2 show exactly zero. The two prompts agree up to there, and a position never sees
-later tokens, so the two runs have identical streams at these positions.
-\item At S2 the effect is $1.00$ in layers $0$ to $3$. Restoring the stream at the one position where the prompts
-differ, early enough, restores the clean run completely. The effect at S2 is still $0.92$ at the input of layer
-$7$, falls to $0.73$ at layer $8$ and to $0.07$ at layer $9$.
-\item At the last position the effect is zero through layer $6$. It is $0.40$ at the input of layer $8$ and
-$0.96$ at the input of layer $9$.
+\item At all positions before S2, the effect is exactly zero. The two prompts are identical up to S2, and a
+position never receives information from later positions. So the two runs have identical streams at these
+positions.
+\item At S2, the effect is $1.00$ in layers $0$ to $3$. If we restore the stream at the only position where the two
+prompts differ, and we do so early enough, we restore the clean run completely. At S2, the effect is still $0.92$ at
+the input of layer $7$. It falls to $0.73$ at layer $8$ and to $0.07$ at layer $9$.
+\item At the last position, the effect is zero up to layer $6$. It is $0.40$ at the input of layer $8$ and $0.96$ at
+the input of layer $9$.
 \end{itemize}
-So the information about which name is repeated sits at S2 until about layer $7$ and is then moved to the last
-position by layers $7$ and $8$. Only attention heads can do this (\cref{sec:facts}). The logit lens of
-\cref{exp:lens} showed the answer appearing one layer later, in layer 9. Together the two pictures suggest an
-order of events: first the information about the repeated name arrives at the last position, then the name
-movers act on it.
+So the information about which name is repeated stays at S2 until about layer $7$. Layers $7$ and $8$ then move
+it to the last position. Only attention heads can move information between positions (\cref{sec:facts}). The logit
+lens of \cref{exp:lens} showed that the answer appears one layer later, in layer 9. Together, the two figures
+suggest an order of events. First, the information about the repeated name arrives at the last position. Then, in
+layer 9, the name mover heads use this information to write the answer.
 \end{experiment}
 
 \begin{figure}[t]
@@ -146,10 +150,11 @@ averaged over 12 pairs of prompts.}
 \end{figure}
 
 \begin{caution}
-The corrupted prompt decides what a patching experiment can find. Ours changes which name is repeated and keeps
-everything else. Components that the task needs and that behave the same on both prompts, for example whatever
-establishes that the next token should be a name at all, stay invisible. A different question requires a
-different pair of prompts \citep{zhang2024towards}.
+The choice of the corrupted prompt determines what a patching experiment can find. Our corrupted prompt changes
+which name is repeated, and it keeps everything else the same. Some components are needed for the task but behave
+in the same way on both prompts, for example the components that decide that the next token should be a name at
+all. These components remain invisible in our experiment. A different question requires a different pair of
+prompts \citep{zhang2024towards}.
 \end{caution}
 
 \subsection{Sufficient, necessary, direct, total}
@@ -157,12 +162,13 @@ different pair of prompts \citep{zhang2024towards}.
 
 \begin{experiment}[Patching every head]\label{exp:headpatch} \script{exp\_ioi.py}
 We now take the output of each attention head, at all positions, as a node. \Cref{tab:heads} lists four numbers
-for twelve heads. The first is the direct logit attribution of \cref{exp:dla}. The second is the denoising
-effect \eqref{eq:denoise}. The last two describe the noising experiment in logits. The \emph{total effect} is the
-drop of the metric when the head receives its corrupted output. The \emph{direct effect} is the part of this
-drop that comes from the head's own summand in \eqref{eq:dla-ld}, computed with the final scale
-$\scale(x_n^{(L)})$ of the clean run. The names of the classes are those of
-\citet{wang2023interpretability}. Session 7 explains them, and for the moment they are only labels.
+for twelve heads. The first number is the direct logit attribution of \cref{exp:dla}. The second number is the
+denoising effect \eqref{eq:denoise}. The last two numbers describe the noising experiment, in logits. In this
+experiment, we replace the output of the head by its output on the corrupted prompt. The \emph{total effect} is the
+resulting drop of the metric. The \emph{direct effect} is the part of this drop that comes from the change of the
+head's own term in \eqref{eq:dla-ld}, computed with the final scale $\scale(x_n^{(L)})$ of the clean run. The class
+names in the table are those of \citet{wang2023interpretability}. Session 7 explains them, and for now they are only
+labels.
 \end{experiment}
 
 \begin{table}[t]
@@ -195,20 +201,21 @@ between the clean and the corrupted run, and the two noising columns are in logi
 \label{tab:heads}
 \end{table}
 
-The table contains three lessons that hold far beyond this example.
+The table illustrates three lessons, which hold far beyond this example.
 
-\paragraph{Lesson 1: direct attribution misses the early part of a mechanism.} Heads 8.6, 5.5, 6.9 and 3.0 have a
-DLA of zero. They write nothing in the direction that separates the two names at the output. Yet corrupting head
-8.6 or head 5.5 alone costs about $1.5$ logits. These heads matter through what later heads do with their
-output. Only an intervention reveals them.
+\paragraph{Lesson 1: direct logit attribution misses the early part of a mechanism.} Heads 8.6, 5.5, 6.9 and 3.0
+have a DLA of zero. They write nothing in the direction that separates the two names at the output. But corrupting
+head 8.6 or head 5.5 alone lowers the metric by about $1.5$ logits. These heads matter because later heads use
+their output. Only an intervention can reveal such heads.
 
 \paragraph{Lesson 2: the total effect can be much smaller than the direct effect.} Corrupting the name mover 9.9
-removes $7.00$ logits of direct contribution, and the metric drops by only $1.40$. Four fifths of the damage is
-undone by the layers after it. For head 9.6 the total effect is even negative: the model does slightly better
-when this helpful head is corrupted. \citet{wang2023interpretability} observed the same and found heads that
-take over when the name movers are removed, which they call backup name movers.
-\citet{mcgrath2023hydra} studied such compensation systematically. The consequence is uncomfortable: removing a
-component and seeing little change does not show that the component is unimportant.
+removes $7.00$ logits of its direct contribution, but the metric drops by only $1.40$. So the layers after head 9.9
+undo four fifths of the damage. For head 9.6, the total effect is even negative: the model does slightly better
+when this head, which normally helps, is corrupted. \citet{wang2023interpretability} observed the same effect. They
+found heads that take over the job of the name movers when the name movers are removed, and they call these heads
+\emph{backup name movers}. \citet{mcgrath2023hydra} studied such compensation systematically. The consequence is
+important: if removing a component changes the output only a little, this does not show that the component is
+unimportant.
 
 \paragraph{Lesson 3: noising and denoising answer different questions.} Denoising asks whether the clean value
 of one node is \emph{sufficient} to move a corrupted run towards the clean behaviour. Noising asks whether the
@@ -216,34 +223,34 @@ clean value of one node is \emph{necessary} for the clean behaviour. If several 
 parallel, each is sufficient and none is necessary. If several components are needed jointly, each is necessary
 and none is sufficient (\cref{ex:andor}).
 
-\paragraph{Paths.} Patching a node changes everything downstream of it. To learn through \emph{which} later
-components a node acts, we patch along selected paths only. For example, to measure the effect of head 8.6 that
-passes through head 9.9, we recompute the input of head 9.9 with the corrupted output of head 8.6 and keep the
-clean value on every other path. This is called \emph{path patching} \citep{wang2023interpretability}.
+\paragraph{Paths.} Patching a node changes everything that is computed after the node. To find out through which
+later components a node acts, we can patch the node only along selected paths. For example, to measure the part of
+the effect of head 8.6 that passes through head 9.9, we recompute the input of head 9.9 with the corrupted output of
+head 8.6, and we keep the clean output of head 8.6 everywhere else. This method is called \emph{path patching} \citep{wang2023interpretability}.
 
 \subsection{A linear shortcut}
 \label{sec:attrpatching}
 
-Patching costs one run of the model per node. For 144 heads this is nothing. For every neuron at every position,
-or for the $24{,}576$ latents of session 5, it is expensive. \emph{Attribution patching}
-\citep{nanda2023attribution,syed2024attribution} estimates all patching effects at once. Fix a node $g$ and
-regard the metric of the corrupted run as a function of the value written to $g$. A first-order Taylor expansion
+Patching needs one run of the model for every node. For 144 heads this is cheap. For every neuron at every
+position, or for the $24{,}576$ latents of session 5, it is expensive. \emph{Attribution patching}
+\citep{nanda2023attribution,syed2024attribution} estimates all patching effects at once. Fix a node $g$, and
+consider the metric of the corrupted run as a function of the value written to $g$. A first-order Taylor expansion
 of this function around the value $g(\corr)$ gives
 \begin{equation}\label{eq:attrpatch}
 M\big(\corr \mid g\leftarrow g(\clean)\big)-M(\corr) \;\approx\;
 \big(g(\clean)-g(\corr)\big)^\top\,\nabla_gM(\corr),
 \end{equation}
-where $\nabla_gM(\corr)$ is the gradient of the metric with respect to the node in the unmodified corrupted run.
-The right-hand side needs the values of all nodes on both prompts, which two runs of the model provide, and the
-gradients with respect to all nodes, which a single backward pass provides.
+where $\nabla_gM(\corr)$ is the gradient of the metric with respect to the node, in the unmodified corrupted run.
+To compute the right-hand side for all nodes, we need the values of all nodes on both prompts, which two forward
+passes provide, and the gradients with respect to all nodes, which one backward pass provides.
 
 \begin{experiment}[How good is the shortcut?]\label{exp:attrpatch} \script{exp\_ioi.py}
 \Cref{fig:attrpatch} compares the estimate \eqref{eq:attrpatch} with the exact denoising effect for all 144
-heads. The correlation is $0.98$. The estimate identifies the same heads. Its largest errors occur for two heads
-with large effects: for head 9.9 it gives $0.43$ where the exact value is $0.29$, and for head 5.5 it gives
-$0.25$ where the exact value is $0.33$. The estimate is a linearisation, and it fails where the model is far
-from linear between the two values. In practice it serves as a fast filter, and the nodes that it selects are
-then patched exactly.
+heads. The correlation between the two is $0.98$, and the estimate finds the same important heads. Its largest
+errors occur for two heads with large effects. For head 9.9 it gives $0.43$ where the exact value is $0.29$, and for
+head 5.5 it gives $0.25$ where the exact value is $0.33$. The estimate is based on a linear approximation, so it is
+inaccurate when the metric is far from linear between the two values of the node. In practice, attribution
+patching is used as a fast first filter, and the nodes that it selects are then patched exactly.
 \end{experiment}
 
 \begin{figure}[t]
@@ -260,11 +267,12 @@ task (\cref{exp:attrpatch}). Each dot is one head. The horizontal axis is the ex
 \end{figure}
 
 \begin{takeaways}
-An intervention overwrites a node and recomputes the rest. The replacement value defines the question.
-Activation patching uses the value from a minimally different prompt and localises the information that
-distinguishes the two prompts. In the running example this information travels from the repeated name to the
-last position in layers 7 and 8. Direct effects, total effects, sufficiency and necessity are four different
-quantities, and compensation by later layers can hide important components.
+An intervention overwrites a node and recomputes everything after it. The replacement value determines which
+question the intervention answers. Activation patching takes the replacement value from a minimally different
+prompt, and it finds where the model stores the information that distinguishes the two prompts. In the running
+example, this information moves from the repeated name to the last position in layers 7 and 8. Direct effects,
+total effects, sufficiency and necessity are four different things, and compensation by later layers can hide
+important components.
 \end{takeaways}
 
 \subsection*{Questions for the seminar}

@@ -27,18 +27,18 @@ Script & Sessions & What it does & Minutes \\
 \label{tab:scripts}
 \end{table}
 
-The scripts use the library TransformerLens \citep{nanda2022transformerlens}, which gives access to every
-intermediate activation of a model through named \emph{hooks}. The listing below is a complete patching
-experiment in thirty lines, the one of \cref{exp:residpatch} on a single pair of prompts. It is a good starting
-point for a presenter who wants to try a variation. Related tools are nnsight
-\citep{fiottokaufman2025nnsight}, for models that are too large for a laptop, and the website Neuronpedia
-\citep{lin2023neuronpedia}, on which the latents of published sparse autoencoders can be browsed.
+The scripts use the library TransformerLens \citep{nanda2022transformerlens}. This library gives access to every
+intermediate activation of a model through named \emph{hooks}. The listing below is a complete patching experiment
+in thirty lines. It repeats \cref{exp:residpatch} for a single pair of prompts, and it is a good starting point for
+a presenter who wants to try a variation. Two related tools are nnsight \citep{fiottokaufman2025nnsight}, which
+works with models that are too large for a laptop, and the website Neuronpedia \citep{lin2023neuronpedia}, which
+shows the latents of published sparse autoencoders.
 
 \lstinputlisting[style=tutpython]{code/minimal_patching.py}
 
 The listing was tested with version 4.4 of the library. Older tutorials use a class called
-\texttt{HookedTransformer}, which was removed in version 4.0. They run unchanged with an older version, which is
-installed by \texttt{pip install "transformer-lens<4"}.
+\texttt{HookedTransformer}, which was removed in version 4.0. These tutorials still run with an older version of
+the library, which can be installed with \texttt{pip install "transformer-lens<4"}.
 
 \section{Glossary}
 \label{app:glossary}

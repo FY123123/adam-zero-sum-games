@@ -103,25 +103,26 @@
 \begin{abstract}
 \noindent
 These notes are written for a reading seminar whose participants know linear algebra and basic probability and
-have little or no background in deep learning. They explain, from the ground up, what a language model computes
-and how researchers try to find out \emph{how} it computes it. The notes are organised in eight sessions of two
-hours each. They cover only the core of the field: the transformer seen as a sum of components, concepts as
-directions, superposition, sparse autoencoders, causal interventions, circuits, and one small network that has
-been understood completely. Every idea is tied to an experiment. Most experiments were run for these notes on
-GPT-2 small or on networks that train in minutes, and the scripts are included, so that a presenter can reproduce
-every figure on a laptop. Results that need larger models are reported from the literature. Statements that can
-be proved are proved in full.
+have little or no background in deep learning. They explain from the beginning what a language model computes, and
+how researchers try to find out \emph{how} it computes it. The notes are organised in eight sessions of two hours
+each. They cover only the core of mechanistic interpretability: the transformer seen as a sum of components,
+concepts as directions, superposition, sparse autoencoders, causal interventions, circuits, and one small network
+that is understood completely. Every idea is illustrated by an experiment. We ran most experiments for these notes,
+on GPT-2 small or on networks that can be trained in a few minutes. The scripts are included, so that a presenter
+can reproduce every figure on a laptop. Results that require larger models are taken from the literature. Every
+statement that can be proved is proved in full.
 \end{abstract}
 
 \section*{How to use these notes in a seminar}
 
-Each section is the material for one session and for one presenter. A section opens with a card that states its
-goal and lists its experiments. It then alternates between explanation and numbered \emph{experiments}, and it
-closes with takeaways, a few questions for discussion, and a short list of peer-reviewed reading. A presenter
-with two weeks of preparation should read the section, run its script, and read one or two entries of the
-reading list. \Cref{tab:plan} gives the plan, and \cref{app:scripts} explains how to run the scripts. Sessions
-2 and 4 contain the most material. A presenter who runs short of time can state
-\cref{prop:dla,prop:jl,prop:toy} without their proofs and leave the proofs as reading.
+Each section contains the material for one session and one presenter. A section begins with a box that states
+the goal of the session and lists its experiments. The main text alternates between explanations and numbered
+\emph{experiments}. Each section ends with a summary of the main points (``Takeaways''), a few questions for
+discussion, and a short list of peer-reviewed papers for further reading. A presenter with two weeks of preparation
+time should read the section, run its script, and read one or two papers from the reading list. \Cref{tab:plan}
+gives the plan, and \cref{app:scripts} explains how to run the scripts. Sessions 2 and 4 contain the most material.
+If time is short, the presenter can state \cref{prop:dla,prop:jl,prop:toy} without proofs and leave the proofs for
+the participants to read.
 
 \begin{table}[h]
 \centering\small
@@ -155,9 +156,9 @@ say what each of them cannot show (\cref{sec:transformer}).
 it, and explain why a decodable concept need not be a used one (\cref{sec:directions}).
 \item \textbf{Explain superposition.} State why a network can store more features than it has dimensions, prove
 the geometric fact behind it, and predict when a toy model will do so (\cref{sec:superposition}).
-\item \textbf{Use a sparse autoencoder.} Define it, judge a dictionary by several numbers at once, and test whether
+\item \textbf{Use a sparse autoencoder.} Define it, judge its quality by several numbers together, and test whether
 a latent deserves its label (\cref{sec:sae}).
-\item \textbf{Intervene.} Design an activation patching experiment, and tell direct effects from total effects and
+\item \textbf{Intervene.} Design an activation patching experiment, and distinguish direct effects from total effects and
 sufficiency from necessity (\cref{sec:interventions}).
 \item \textbf{Explain a circuit.} Describe the induction circuit and the circuit of the running example, with the
 evidence for each part (\cref{sec:circuits}).

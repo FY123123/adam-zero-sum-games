@@ -2,29 +2,30 @@
 \label{sec:superposition}
 
 \begin{sessioncard}
-\textbf{Session 4.} \emph{Goal:} understand why single neurons are usually not interpretable, and the hypothesis
-that explains it: a network stores more features than it has dimensions.
-\emph{Experiments:} what single neurons of GPT-2 small respond to (\cref{exp:neurons}), how orthogonal random
-directions are (\cref{exp:random}), and a toy model, trained from scratch, that switches to superposition when
-its features become sparse (\cref{exp:pentagon,exp:toytwo}).
-\emph{Prerequisites:} session 3. The proofs use one inequality from probability.
+\textbf{Session 4.} \emph{Goal:} understand why single neurons are usually hard to interpret, and learn the
+hypothesis that explains this: a network stores more features than it has dimensions.
+\emph{Experiments:} what single neurons of GPT-2 small respond to (\cref{exp:neurons}), how close to orthogonal
+random directions are (\cref{exp:random}), and a small model, trained from scratch, that starts to use
+superposition when its features become sparse (\cref{exp:pentagon,exp:toytwo}).
+\emph{Prerequisites:} session 3. The proofs use one inequality from probability theory.
 \end{sessioncard}
 
 \subsection{Neurons respond to many things}
 
-If features are directions, the most convenient directions would be the coordinate axes of some layer. In the
-residual stream the coordinates have no special role. The neurons of an MLP do, because the nonlinearity acts on
-each of them separately. So we might hope that each neuron stands for one feature.
+If features are directions, the most convenient directions for us would be the coordinate axes of some layer.
+In the stream, the coordinates play no special role. The neurons of an MLP, however, do play a special role,
+because the nonlinearity acts on each neuron separately. So we might hope that each neuron represents one feature.
+The next experiment tests this hope.
 
 \begin{experiment}[Three neurons of GPT-2 small]\label{exp:neurons} \script{exp\_neurons.py}
-We record the $3072$ neurons of the MLP of layer 6 on $38{,}100$ tokens of text and look, for single neurons, at
-the ten tokens on which they are most active. \Cref{tab:neurons} shows three neurons. Neuron 35 is a pleasure
-to read: it fires on the plural ending of abbreviations and technical terms. Neuron 0 fires on fragments of
-capitalised identifiers in program code, on the names of weekdays, and on the second half of compounds like
-\tok{four-year}. Neuron 26 fires on an assortment of words with no visible connection. With the option
-\texttt{--explore} the script prints the same list for the first forty neurons of the layer, so that the
-seminar can judge how typical each of the three kinds is. In our reading, neurons like the first are the
-exception.
+We record the activations of the $3072$ neurons of the MLP of layer 6 on $38{,}100$ tokens of text. We say that
+a neuron \emph{fires} on a token if it is strongly active on this token. For each neuron, we look at the ten tokens
+on which it fires most strongly. \Cref{tab:neurons} shows three neurons. Neuron 35 is easy to interpret: it fires
+on the plural endings of abbreviations and technical terms. Neuron 0 fires on parts of capitalised names in program
+code, on the names of weekdays, and on the second half of compound words such as \tok{four-year}. Neuron 26 fires on
+a collection of words that have no visible connection. With the option \texttt{--explore}, the script prints the
+same list for the first forty neurons of the layer, so that the seminar can judge how common each of the three
+kinds is. In our judgement, neurons like neuron 35 are the exception.
 \end{experiment}
 
 \begin{table}[t]
@@ -46,15 +47,16 @@ Neuron & Tokens with the strongest activation (in brackets), with the text befor
 \end{table}
 
 A neuron that responds to several unrelated things is called \emph{polysemantic}. Polysemantic neurons were the
-main obstacle of early interpretability research. The superposition hypothesis \citep{elhage2022toy} explains
-them: the network represents many more features than it has neurons, so the features cannot each have a neuron
-of their own.
+main obstacle for early research in interpretability. The \emph{superposition hypothesis} \citep{elhage2022toy}
+explains them: the network represents many more features than it has neurons, so not every feature can have a
+neuron of its own.
 
 \subsection{More directions than dimensions}
 
 How can a space of dimension $d$ hold more than $d$ features? If the feature directions of \cref{def:lrh} had to
-be orthogonal, it could not. But they only have to be \emph{almost} orthogonal, and of such directions there are
-very many.
+be orthogonal, this would be impossible, because $\R^d$ contains at most $d$ orthogonal unit vectors. But the
+directions only need to be \emph{almost} orthogonal, and the following proposition shows that there are very many
+almost orthogonal directions.
 
 \begin{proposition}[Many almost orthogonal directions]\label{prop:jl}
 Let $0<\varepsilon<1$ and let $N\ge 2$ be an integer with $N\le\exp(\varepsilon^2d/4)$. Then there are unit
@@ -90,14 +92,16 @@ The probability that some pair violates the bound is strictly smaller than one. 
 which no pair violates it, and this outcome is the required family of vectors.
 \end{proof}
 
-For $d=768$ and $\varepsilon=0.3$ the proposition allows more than $3\times10^7$ directions, compared with $768$
-exactly orthogonal ones. The constants are far from optimal. The point is the exponential dependence on $d$.
+For $d=768$ and $\varepsilon=0.3$, the proposition gives more than $3\times10^7$ directions, compared with only
+$768$ exactly orthogonal directions. The constants in the proposition are far from optimal. What matters is that
+the number of directions grows exponentially with $d$.
 
 \begin{experiment}[Random directions are almost orthogonal]\label{exp:random} \script{exp\_superposition.py}
-The mechanism of the proof can be seen directly. We draw $2000$ random unit vectors in $d=768$ dimensions and
-compute the inner products of all pairs, about two million numbers (\cref{fig:random}). Their standard
-deviation is $0.036$, which is $1/\sqrt{768}$. The largest absolute value among all pairs is $0.17$, and only
-$0.5\%$ of the pairs exceed $0.1$. Random directions in high dimension are almost orthogonal without any effort.
+We can observe the idea of the proof directly. We draw $2000$ random unit vectors in $d=768$ dimensions and
+compute the inner products of all pairs. This gives about two million numbers (\cref{fig:random}). Their standard
+deviation is $0.036$, which equals $1/\sqrt{768}$. The largest absolute value among all pairs is $0.17$, and only
+$0.5\%$ of the pairs have an absolute value above $0.1$. So random directions in a high-dimensional space are almost
+orthogonal, without any optimisation.
 \end{experiment}
 
 \begin{figure}[t]
@@ -112,8 +116,9 @@ The dashed lines mark $\pm1/\sqrt{768}$.}
 \end{minipage}
 \end{figure}
 
-Almost orthogonal is not orthogonal, and the price is \emph{interference}. If we read feature $j$ from $x$ by
-projecting on $v_j$, the other active features leak into the result.
+However, almost orthogonal directions are not exactly orthogonal, and this has a cost, called
+\emph{interference}. If we read feature $j$ from $x$ by projecting $x$ onto $v_j$, the other active features add
+small errors to the result. The following lemma bounds these errors.
 
 \begin{lemma}[Interference is controlled by sparsity]\label{lem:interference}
 Let $v_1,\dots,v_N$ be unit vectors with $|v_i^\top v_j|\le\varepsilon$ for $i\ne j$. Let $x=\sum_{i=1}^{N}f_iv_i$,
@@ -130,34 +135,37 @@ We expand $v_j^\top x$ and bound the terms with $i\ne j$.
 \end{align*}
 \end{proof}
 
-The lemma shows what superposition needs: \emph{sparsity}. Packing many features into few dimensions is
-harmless as long as only a few of them are active at the same time. Most features of language are of this kind.
-Almost no text is about the Golden Gate Bridge. A nonlinearity can then remove the remaining interference. If
-feature $j$ is absent, the lemma gives $v_j^\top x\le k\varepsilon$, so $\relu(v_j^\top x-k\varepsilon)=0$: a
-threshold reads an absent feature as exactly absent.
+The lemma shows what superposition needs: \emph{sparsity}. Storing many features in few dimensions causes little
+harm, as long as only a few features are active at the same time. Most features of language are of this kind. For
+example, the feature ``this text is about the Golden Gate Bridge'' is absent from almost all texts. A nonlinearity
+can then remove the remaining interference. If feature $j$ is absent, the lemma gives $v_j^\top x\le k\varepsilon$,
+and therefore $\relu(v_j^\top x-k\varepsilon)=0$. So a $\relu$ with a threshold reports an absent feature as
+exactly absent.
 
 \subsection{A toy model, trained from scratch}
 \label{sec:toy}
 
-Does gradient descent find such arrangements? \citet{elhage2022toy} study this in the smallest network that can
-show it. There are $N$ features with activations $f=(f_1,\dots,f_N)$. The features are independent. Each $f_j$ is
-zero with probability $1-\delta$ and uniformly distributed on $[0,1]$ with probability $\delta$, so a small
-$\delta$ means sparse features. The model compresses $f$ into $d<N$ dimensions and tries to recover it:
+We now know that superposition is possible. Does gradient descent actually find such arrangements of directions?
+\citet{elhage2022toy} study this question in a very small network. There are $N$ features with activations
+$f=(f_1,\dots,f_N)$. The features are independent. Each $f_j$ is zero with probability $1-\delta$, and it is
+uniformly distributed on $[0,1]$ with probability $\delta$. So a small $\delta$ means that the features are sparse.
+The model compresses $f$ into $d<N$ dimensions and then tries to recover $f$:
 \begin{equation}\label{eq:toy}
 x \;=\; Wf\in\R^d,\qquad \hat f \;=\; \relu\big(W^\top x+b_{\mathrm{toy}}\big)\in\R^N,\qquad
 \text{loss} \;=\; \E\sum_{j=1}^{N}I_j\,\big(f_j-\hat f_j\big)^2 ,
 \end{equation}
-with a weight matrix $W\in\R^{d\times N}$, a bias $b_{\mathrm{toy}}\in\R^N$ and fixed positive weights $I_j$ that say
-how important each feature is. Column $j$ of $W$ is the direction that the model assigns to feature $j$. A
-feature whose column is zero is not represented at all.
+with a weight matrix $W\in\R^{d\times N}$, a bias vector $b_{\mathrm{toy}}\in\R^N$ and fixed positive weights
+$I_j$ that state how important each feature is. Column $j$ of $W$ is the direction that the model uses for feature
+$j$. If column $j$ is zero, feature $j$ is not represented at all.
 
 \begin{experiment}[Five features in two dimensions]\label{exp:pentagon} \script{exp\_superposition.py}
 We train the model \eqref{eq:toy} with $N=5$, $d=2$ and importances $I_j=0.7^{\,j-1}$, for three values of
-$\delta$, and draw the five columns of $W$ as arrows in the plane (\cref{fig:toygeometry}). When all features are
-always active, the model represents the two most important features in orthogonal directions and gives the other
-three no direction at all. When features are active $20\%$ of the time, it represents four, as two pairs of
-opposite directions. When they are active $5\%$ of the time, it represents all five, arranged as a pentagon. The
-same network, trained in the same way, uses superposition exactly when its features are sparse.
+$\delta$, and we draw the five columns of $W$ as arrows in the plane (\cref{fig:toygeometry}). When all features are
+always active, the model represents the two most important features in orthogonal directions, and it gives the
+other three features no direction at all. When the features are active $20\%$ of the time, the model represents
+four features, as two pairs of opposite directions. When they are active $5\%$ of the time, it represents all five
+features, arranged as a pentagon. So the same network, trained in the same way, uses superposition when its
+features are sparse and does not use it when they are dense.
 \end{experiment}
 
 \begin{figure}[t]
@@ -168,8 +176,9 @@ of sparsity (\cref{exp:pentagon}). The numbers order the features by importance.
 \label{fig:toygeometry}
 \end{figure}
 
-The smallest case can be solved by hand, and the calculation shows where the transition comes from. Let $N=2$,
-$d=1$ and $I_1=I_2=1$. The model has one number $x$ to store two features. We compare two ways of using it.
+The smallest case can be solved by hand, and the calculation explains why the model changes its behaviour. Let
+$N=2$, $d=1$ and $I_1=I_2=1$. The model has a single number $x$ in which to store two features. We compare two ways
+of doing this.
 \begin{itemize}
 \item \textbf{Dedicated solution.} $W=(1,\ 0)$ and $b_{\mathrm{toy}}=(0,\ \delta/2)$. The model stores feature $1$
 and ignores feature $2$, for which it always outputs the constant $\delta/2$.
@@ -212,28 +221,30 @@ $\delta^2/3<\delta/3-\delta^2/4$ exactly if $\delta/3+\delta/4<1/3$, which means
 \end{proof}
 
 \begin{intuition}
-The antipodal solution is wrong only when both features are present at once, and in that case it is badly
-wrong. The dedicated solution is always exactly right about one feature and always ignorant about the other.
-If features are rare, the collisions are rarer still ($\delta^2$ against $\delta$), and it pays to store both.
-Superposition is a bet on sparsity.
+The antipodal solution makes an error only when both features are present at the same time, but then the error
+is large. The dedicated solution is always exactly right about feature 1, and it never knows anything about feature
+2. If each feature is rare, both features are present at the same time even more rarely (with probability
+$\delta^2$, compared with $\delta$). Then it is better to store both features. In short, superposition is
+worthwhile when features are sparse.
 \end{intuition}
 
 \begin{experiment}[Theory against training]\label{exp:toytwo} \script{exp\_superposition.py}
-Neither of the two solutions needs to be the best possible one, so we train the model with $N=2$, $d=1$ for ten
-values of $\delta$ and compare (\cref{fig:toycapacity}, left). Training can get stuck in a poor solution, so
-every point of the figure is the best of several runs that start from different random weights. For
-$\delta\le0.4$ the trained weights are $W\approx(1,\ -1)$ and the trained loss agrees with $\delta^2/3$ to within
-$5\%$: gradient descent finds the antipodal solution. For $\delta\ge0.9$ the two weights have the same sign and
-unequal size, and the loss agrees with the dedicated formula. In between the model finds compromises that are
-slightly better than both formulas. For $0.5\le\delta\le0.7$ the weights are still an antipodal pair, shorter
-than before and combined with a positive bias, for example $W\approx(0.76,\ -0.76)$ at $\delta=0.7$. At
-$\delta=0.8$ they are $W\approx(0.93,\ -0.44)$. The smaller of the two formulas changes at $4/7\approx0.57$, as
-\cref{prop:toy} says. The trained weights follow with a delay and leave the antipodal arrangement only
-between $\delta=0.7$ and $\delta=0.9$.
+The two solutions above need not be the best possible ones. We therefore train the model with $N=2$ and $d=1$
+for ten values of $\delta$, and we compare the trained loss with the two formulas (\cref{fig:toycapacity}, left).
+Training can get stuck in a poor solution, so every point of the figure is the best of several training runs that
+start from different random weights. For $\delta\le0.4$, the trained weights are $W\approx(1,\ -1)$, and the trained
+loss agrees with $\delta^2/3$ to within $5\%$. So gradient descent finds the antipodal solution. For $\delta\ge0.9$,
+the two weights have the same sign and different sizes, and the loss agrees with the formula of the dedicated
+solution. For $\delta$ between $0.5$ and $0.8$, the model finds compromises whose loss is slightly smaller than both
+formulas. For $0.5\le\delta\le0.7$, the weights still form an antipodal pair. The pair is shorter than before, and it
+comes with a positive bias. For example, $W\approx(0.76,\ -0.76)$ at $\delta=0.7$. At $\delta=0.8$, the weights are
+$W\approx(0.93,\ -0.44)$. According to \cref{prop:toy}, the better of the two solutions changes at
+$\delta=4/7\approx0.57$. The trained weights change later: they leave the antipodal arrangement only between
+$\delta=0.7$ and $\delta=0.9$.
 
-The right panel shows the same phenomenon at a larger size. With $N=20$ features in $d=5$ dimensions and
-importances $I_j=0.9^{\,j-1}$, the number of features that receive a direction grows from $5$, when all features are always active, to all $20$, when each
-is active $1\%$ of the time.
+The right panel shows the same effect in a larger model. With $N=20$ features in $d=5$ dimensions and
+importances $I_j=0.9^{\,j-1}$, the number of features that receive a direction grows from $5$, when all features are
+always active, to all $20$, when each feature is active $1\%$ of the time.
 \end{experiment}
 
 \begin{figure}[t]
@@ -247,30 +258,33 @@ dimensions assigns a direction of norm above $0.5$.}
 
 \subsection{Consequences}
 
-If superposition is how networks store features, three conclusions follow, and they set the agenda for the next
+If networks store features in superposition, three conclusions follow. They lead directly to the method of the
+next
 session.
 \begin{itemize}
-\item \textbf{Polysemantic neurons are expected.} With many more features than neurons, the feature directions
-cannot all be aligned with the neurons. Each neuron then has a component along many feature directions and
-responds to all of the corresponding features, as in \cref{exp:neurons}.
-\item \textbf{The right unit of analysis has to be found.} The features are directions that no part of the
-architecture labels for us.
-\item \textbf{Finding them is a sparse recovery problem.} We observe many activation vectors. We look for a set
-of directions, more numerous than the dimension, such that each vector is a combination of a few of them.
+\item \textbf{Polysemantic neurons are expected.} If there are many more features than neurons, the feature
+directions cannot all be aligned with the neurons. Then each neuron has a nonzero component along many feature
+directions, and it responds to all of the corresponding features, as in \cref{exp:neurons}.
+\item \textbf{We have to find the right units of analysis ourselves.} The features are directions, and no part
+of the architecture tells us which directions they are.
+\item \textbf{Finding the features is a sparse recovery problem.} We observe many activation vectors, and we look
+for a set of directions, more numerous than the dimension, such that each activation vector is a combination of
+only a few of these directions.
 \end{itemize}
 
 \begin{caution}
-Superposition in toy models is a fact. Superposition in large language models is a hypothesis, supported by
-indirect evidence such as polysemantic neurons, the success of the dictionaries of session 5, and studies with
-sparse probes \citep{gurnee2023finding}. Nobody has listed the features of a real model and counted them.
+Superposition in small models like the one above is established. Superposition in large language models is
+still a hypothesis. It is supported by indirect evidence: polysemantic neurons, the success of the sparse
+autoencoders of session 5, and studies with probes that may use only a few neurons \citep{gurnee2023finding}.
+Nobody has yet listed and counted the features of a real language model.
 \end{caution}
 
 \begin{takeaways}
-Single neurons usually respond to several unrelated things. High-dimensional spaces contain exponentially many
-almost orthogonal directions, so a network can store far more features than it has dimensions, at the price of
-interference that stays small while few features are active at once. A toy model that is trained by gradient
-descent makes exactly this trade: it represents as many features as it has dimensions when they are dense, and
-many more when they are sparse.
+Single neurons usually respond to several unrelated things. A high-dimensional space contains exponentially
+many almost orthogonal directions, so a network can store far more features than it has dimensions. The cost is
+interference, which stays small as long as only a few features are active at the same time. A small model trained
+by gradient descent behaves exactly like this: it represents as many features as it has dimensions when the
+features are dense, and many more features when they are sparse.
 \end{takeaways}
 
 \subsection*{Questions for the seminar}
@@ -309,6 +323,6 @@ probes that may use only a few neurons.
 of superposition and relates it to the way in which the loss of a model falls with its width.
 \item \citet{arora2018linear}, \emph{TACL}. An early precursor: word vectors as sparse combinations of a large set
 of directions for meanings.
-\item The primary source of this session, \citet{elhage2022toy}, is not peer reviewed. It is long, and its first
-three sections are the best continuation of this session.
+\item The main source of this session, \citet{elhage2022toy}, is not peer reviewed. It is long, and its first
+three sections are the best next reading after this session.
 \end{readinglist}

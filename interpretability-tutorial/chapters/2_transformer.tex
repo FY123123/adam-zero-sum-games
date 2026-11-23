@@ -3,37 +3,38 @@
 
 \begin{sessioncard}
 \textbf{Session 2.} \emph{Goal:} write down what a transformer computes, and see that its output is a sum of
-contributions that can be inspected one by one.
-\emph{Experiments:} where attention heads look (\cref{exp:attention}), at which layer the answer appears
-(\cref{exp:lens}), and which component writes it (\cref{exp:dla}).
+contributions that we can inspect one at a time.
+\emph{Experiments:} from which positions attention heads read (\cref{exp:attention}), after which layer the answer
+appears (\cref{exp:lens}), and which components write the answer (\cref{exp:dla}).
 \emph{Prerequisites:} session 1.
 \end{sessioncard}
 
-All current language models are \emph{transformers} \citep{vaswani2017attention}. This session describes the
-variant used by GPT-2. The presentation follows the ``residual stream'' view of \citet{elhage2021mathematical},
-on which most of the field relies.
+Almost all current language models are \emph{transformers} \citep{vaswani2017attention}. This session describes
+the transformer used by GPT-2. We follow the description of \citet{elhage2021mathematical}, which is built around
+the ``residual stream''. Most work in mechanistic interpretability uses this description.
 
 \subsection{One vector per position}
 
-Let the input be the tokens $t_1,\dots,t_n$, each a number between $1$ and the size $V$ of the vocabulary. The
-model keeps, for every position $i$, a vector in $\R^d$ that is updated layer by layer. This vector is called
-the \emph{residual stream} at position $i$. We write $x_i^{(\ell)}\in\R^d$ for its value at the input of layer
-$\ell$, where the layers are numbered $\ell=0,\dots,L-1$, and $x_i^{(L)}$ for its final value. GPT-2 small has
-$L=12$ layers and $d=768$.
+Let the input consist of the tokens $t_1,\dots,t_n$, where each token is a number between $1$ and the size $V$
+of the vocabulary. For every position $i$, the model stores a vector in $\R^d$ and updates it in every layer. This
+vector is called the \emph{residual stream} at position $i$, or the \emph{stream} for short. We write
+$x_i^{(\ell)}\in\R^d$ for its value at the input of layer $\ell$, where the layers are numbered $\ell=0,\dots,L-1$,
+and $x_i^{(L)}$ for its final value. GPT-2 small has $L=12$ layers and $d=768$.
 
-The stream starts as the sum of a vector for the token and a vector for the position,
+At the start, the stream is the sum of a vector for the token and a vector for the position,
 \begin{equation}\label{eq:embed}
 x_i^{(0)} \;=\; W_E[t_i] + W_{\mathrm{pos}}[i],
 \end{equation}
 where $W_E[t]\in\R^d$ is a learned vector for token $t$, called its \emph{embedding}, and
-$W_{\mathrm{pos}}[i]\in\R^d$ is a learned vector for position $i$. At the end, the logits are read from the final
-stream by one linear map. With a learned vector $W_U[t]\in\R^d$ for every token $t$, called its
-\emph{unembedding},
+$W_{\mathrm{pos}}[i]\in\R^d$ is a learned vector for position $i$. At the end, the model computes the logits from
+the final stream with one linear map, which we call the \emph{read-out}. For every token $t$ there is a learned
+vector $W_U[t]\in\R^d$, called the \emph{unembedding} of $t$. The logit of token $t$ as the next token after
+position $i$ is
 \begin{equation}\label{eq:unembed}
-\logit_i(t) \;=\; W_U[t]^\top\,\LN\big(x_i^{(L)}\big)
+\logit_i(t) \;=\; W_U[t]^\top\,\LN\big(x_i^{(L)}\big).
 \end{equation}
-is the logit of token $t$ as the successor of position $i$. The map $\LN$ is a normalisation that we define
-next. So the logit of a token is large if the final stream points in the direction of its unembedding.
+Here $\LN$ is a normalisation, which we define next. Up to this normalisation, the logit of a token is large when
+the final stream points in the direction of the unembedding of this token.
 
 \paragraph{Layer normalisation.} Every component of the model reads the stream through the map
 \begin{equation}\label{eq:ln}
@@ -41,14 +42,15 @@ next. So the logit of a token is large if the final stream points in the directi
 \mean(x)=\frac1d\,\one^\top x,\qquad
 \scale(x)=\frac{1}{\sqrt d}\,\big\|x-\mean(x)\,\one\big\|,
 \end{equation}
-where $\one\in\R^d$ is the vector of ones. $\LN$ subtracts the average entry and rescales the result to a fixed
-length. It keeps the numbers in a range in which training works well. For our purposes it is a nuisance that we
-have to carry along: it is almost linear, and not quite.
+where $\one\in\R^d$ is the vector of ones. The map $\LN$ subtracts the average entry from every entry, and then
+it rescales the vector to the length $\sqrt d$. This keeps the numbers in a range in which training works well. For
+our analysis, $\LN$ is an inconvenience, because it is not linear: the factor $\scale(x)$ depends on $x$.
+\Cref{prop:dla} below shows how we deal with this.
 
 \subsection{What a layer adds}
 
-Each layer contains two kinds of components. Both read the stream and \emph{add} their result to it
-(\cref{fig:residual}).
+Each layer contains two kinds of components: attention heads and an MLP. Both kinds read the stream and
+\emph{add} their result to it (\cref{fig:residual}).
 
 \begin{figure}[t]
 \centering
@@ -83,84 +85,90 @@ $\LN$ and adds its output back. Only the attention heads see the streams of othe
 \label{fig:residual}
 \end{figure}
 
-\paragraph{Attention heads.} A head is the only kind of component that moves information between positions.
-Layer $\ell$ contains $H$ heads, numbered $h=0,\dots,H-1$. A head has two learned matrices
-$W_{QK},W_{OV}\in\R^{d\times d}$. For a position $i$, called the \emph{destination}, and every earlier or equal
-position $j\le i$, called a \emph{source}, the head computes a score. It turns the scores into weights by a
-softmax over the sources and adds a weighted sum to the destination:
+\paragraph{Attention heads.} Attention heads are the only components that move information from one position to
+another. Layer $\ell$ contains $H$ heads, numbered $h=0,\dots,H-1$. Each head has two learned matrices
+$W_{QK},W_{OV}\in\R^{d\times d}$. Consider a position $i$, which we call the \emph{destination}, and a position
+$j\le i$, which we call a \emph{source}. The head computes a score for every source. It turns the scores into
+weights with a softmax over the sources, and it adds a weighted sum of vectors from the sources to the
+destination:
 \begin{align}
 A^{\ell,h}_{ij} &\;=\; \frac{\exp\!\big(\LN(x_i^{(\ell)})^\top W_{QK}\,\LN(x_j^{(\ell)})\big)}
 {\sum_{j'\le i}\exp\!\big(\LN(x_i^{(\ell)})^\top W_{QK}\,\LN(x_{j'}^{(\ell)})\big)},
 \label{eq:pattern}\\
 \head_i^{\ell,h} &\;=\; \sum_{j\le i}A^{\ell,h}_{ij}\;W_{OV}\,\LN(x_j^{(\ell)}) \;\in\R^d. \label{eq:headout}
 \end{align}
-The numbers $A^{\ell,h}_{ij}\ge0$ sum to one over $j$ and are called the \emph{attention pattern} of the head.
-The two matrices have separate jobs. $W_{QK}$ decides \emph{from where} position $i$ reads: a source receives a
-large weight if its stream matches what the destination asks for. $W_{OV}$ decides \emph{what} is written to
-position $i$ once a source has been chosen. The restriction $j\le i$ ensures that a position never sees later
-tokens. In GPT-2 small each layer has $H=12$ heads. Each of the two matrices is stored as a product of a matrix with
-$64$ columns and a matrix with $64$ rows, so its rank is at most $64$. It is
-customary to name a head by layer and index, so that ``head 9.6'' is head $h=6$ of layer $\ell=9$.
+The weights $A^{\ell,h}_{ij}$ are non-negative and sum to one over $j$. They are called the \emph{attention
+pattern} of the head. The two matrices have different roles. The matrix $W_{QK}$ decides \emph{from where}
+position $i$ reads: a source receives a large weight if the score between its stream and the stream of the
+destination is large. The matrix $W_{OV}$ decides \emph{what} is written to position $i$ from each source. Because
+of the restriction $j\le i$, a position never receives information from later positions. In GPT-2 small each layer
+has $H=12$ heads. Each of the two matrices is stored as a product of a matrix with $64$ columns and a matrix with
+$64$ rows, so its rank is at most $64$. We name a head by its layer and its index. For example, ``head 9.6'' is
+head $h=6$ of layer $\ell=9$.
 
-\paragraph{MLP.} After the heads, the layer applies two layers of the form \eqref{eq:layer} to every position
-separately. With $\tilde x_i^{(\ell)}$ denoting the stream after the heads of layer $\ell$,
+\paragraph{MLP.} After the heads, each layer contains an MLP (multilayer perceptron). The MLP applies two layers
+similar to \eqref{eq:layer} to the stream at every position, separately for each position. Let
+$\tilde x_i^{(\ell)}$ denote the stream after the heads of layer $\ell$ have added their output. Then
 \begin{equation}\label{eq:mlp}
 \mlp_i^{\ell} \;=\; W_{\mathrm{out}}\,\mathrm{GELU}\big(W_{\mathrm{in}}\,\LN(\tilde x_i^{(\ell)})+b_{\mathrm{in}}\big)+b_{\mathrm{out}} \;\in\R^d,
 \end{equation}
 with weight matrices $W_{\mathrm{in}}$, $W_{\mathrm{out}}$ and bias vectors $b_{\mathrm{in}}$, $b_{\mathrm{out}}$ that
-belong to the layer. $\mathrm{GELU}$ is a smooth variant of $\relu$. The entries of the vector
-$\mathrm{GELU}(W_{\mathrm{in}}\,\LN(\tilde x_i^{(\ell)})+b_{\mathrm{in}})$ are the \emph{neurons} of the layer, $3072$
-per layer in GPT-2 small.
+belong to layer $\ell$. The function $\mathrm{GELU}$ is a smooth version of $\relu$, and it is applied to every
+entry. The entries of the vector $\mathrm{GELU}(W_{\mathrm{in}}\,\LN(\tilde x_i^{(\ell)})+b_{\mathrm{in}})$ are
+called the \emph{neurons} of the layer. GPT-2 small has $3072$ neurons in each layer.
 
-\paragraph{Update rule.} Both kinds of components add their output to the stream,
+\paragraph{Update rule.} Both kinds of components add their output to the stream:
 \begin{equation}\label{eq:update}
 \tilde x_i^{(\ell)} \;=\; x_i^{(\ell)}+\sum_{h=0}^{H-1}\head_i^{\ell,h},\qquad
 x_i^{(\ell+1)} \;=\; \tilde x_i^{(\ell)}+\mlp_i^{\ell},\qquad \ell=0,\dots,L-1 .
 \end{equation}
-The formulas omit some bias terms and a constant factor in the scores, which change nothing in what follows.
-In GPT-2 the map $\LN$ also multiplies every entry by a learned gain and adds a learned bias. Both can be
-absorbed into the linear map that follows, and our software does this when it loads the model.
+For simplicity, the formulas leave out some bias vectors and a constant factor in the scores. These details do
+not affect anything in these notes. In GPT-2, the map $\LN$ also multiplies each entry by its own learned factor
+and adds a learned vector. Both operations can be absorbed into the linear map that follows $\LN$, and the
+software that we use does this when it loads the model.
 
 \begin{intuition}
-Think of the residual stream as a shared whiteboard with $d$ dimensions of space. Each head and each MLP reads
-what is on the board, computes something, and adds its result to the board. The final answer is read off the
-board by one linear map. Only the heads can copy from the boards of other positions.
+The residual stream works like a whiteboard at each position. Each head and each MLP reads what is written on
+the whiteboard, computes something, and adds its result to the whiteboard. At the end, the answer is read from
+the whiteboard by one linear map. Only the heads can copy information from the whiteboards of other positions.
 \end{intuition}
 
 \begin{experiment}[Where heads look]\label{exp:attention} \script{exp\_basics.py}
-The attention pattern is the most accessible quantity inside a transformer. \Cref{fig:attention} shows two
-examples from GPT-2 small on the prompts of the running example. On the left is the full pattern of head 4.11
-for one prompt. Every destination puts almost all its weight on the position directly before it. Averaged over
-all positions and prompts the weight on the previous position is $1.00$. Such a head is called a
-\emph{previous-token head}. On the right are the patterns of four heads at the last position, where the name has
-to be predicted. Head 9.9 puts a weight of $0.79$ on the indirect object, $0.03$ on the first occurrence of the
-subject and $0.04$ on the second. Heads 9.6 and 10.0 also prefer the indirect object to the subject, with
-weights of $0.59$ and $0.31$ against at most $0.12$. This suggests a hypothesis: these
-heads fetch the correct name and write it into the last position. Head 10.7 looks at the indirect object as
-well, with a weight of $0.82$. We will see in \cref{exp:dla} that it does the opposite of the other three. The
-figure also shows that head 10.0 puts almost half of its weight on the start token BOS. \Cref{ex:byhand}(c)
-asks what such a weight is good for.
+Attention patterns are the easiest quantities inside a transformer to look at. \Cref{fig:attention} shows
+patterns of GPT-2 small on the prompts of the running example. The left panel shows the full pattern of head 4.11
+on one prompt. Every destination puts almost all of its weight on the position directly before it. Averaged over
+all positions and prompts, the weight on the previous position is $1.00$. A head with this pattern is called a
+\emph{previous-token head}. The right panel shows the patterns of four heads at the last position, where the model
+has to predict the name. Head 9.9 puts a weight of $0.79$ on the indirect object, $0.03$ on the first occurrence of
+the subject and $0.04$ on the second occurrence. Heads 9.6 and 10.0 also put more weight on the indirect object than
+on the subject. Their weights on the indirect object are $0.59$ and $0.31$, and their weights on each occurrence of
+the subject are at most $0.12$. These patterns suggest a hypothesis: the three heads fetch the correct name and
+write it into the last position. Head 10.7 also reads from the indirect object, with a weight of $0.82$.
+\Cref{exp:dla} will show that this head has the opposite effect of the other three heads. The figure also shows
+that head 10.0 puts almost half of its weight on the start token BOS. \Cref{ex:byhand}(c) asks why a head would do
+this.
 \end{experiment}
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.92\textwidth]{figures/fig_attention.pdf}
 \caption{Attention patterns in GPT-2 small (\cref{exp:attention}). Left: head 4.11 on one prompt. Each row is a
-destination, and the row shows from which source it reads. Right: four heads at the last position, averaged over
+destination, and it shows how much weight this destination puts on each source. Right: four heads at the last position, averaged over
 12 prompts. IO is the indirect object, S1 and S2 are the two occurrences of the subject.}
 \label{fig:attention}
 \end{figure}
 
 \begin{caution}
-An attention pattern shows \emph{from where} a head reads. It does not show \emph{what} the head writes, which is
-decided by $W_{OV}$. Also, the stream at a source position in a late layer no longer describes one token alone,
-because earlier heads have moved other information there.
+An attention pattern shows \emph{from where} a head reads. It does not show \emph{what} the head writes, because
+this is decided by $W_{OV}$. Moreover, in a late layer, the stream at a source position no longer describes only
+the token at that position, because earlier heads have moved information from other positions there.
 \end{caution}
 
 \subsection{The output is a sum}
 \label{sec:facts}
 
-The additive form of \eqref{eq:update} has a consequence on which a whole family of methods rests.
+The update rule \eqref{eq:update} only adds vectors to the stream. This simple fact has a consequence on which
+many methods of mechanistic interpretability are based.
 
 \begin{proposition}[The final stream is a sum of component outputs]\label{prop:sum}
 For every position $i$,
@@ -194,9 +202,9 @@ We insert the definition of $\LN$ and the sum of \cref{prop:sum} into the read-o
 \end{align*}
 \end{proof}
 
-The summand of a component $g$ in \eqref{eq:dla} is called its \emph{direct logit attribution} (DLA). It is the
-amount by which this component, through its own addition to the stream, moves the logit. For the running example
-we apply \eqref{eq:dla} to the two names at the last position $n$ and subtract:
+The term of a component $g$ in the sum \eqref{eq:dla} is called the \emph{direct logit attribution} (DLA) of
+$g$. It measures how much the vector that $g$ adds to the stream changes the logit directly. For the running
+example, we apply \eqref{eq:dla} to the two names at the last position $n$ and take the difference:
 \begin{equation}\label{eq:dla-ld}
 \logit_n(\mathrm{IO})-\logit_n(\mathrm{S}) \;=\; \sum_{g\in\mathcal G_n}
 \frac{\big(W_U[\mathrm{IO}]-W_U[\mathrm{S}]\big)^\top\big(g-\mean(g)\,\one\big)}{\scale\big(x_n^{(L)}\big)} .
@@ -204,29 +212,32 @@ we apply \eqref{eq:dla} to the two names at the last position $n$ and subtract:
 Two further facts follow directly from the definitions and will be used later.
 \begin{itemize}
 \item \textbf{Information moves between positions only through attention.} By \eqref{eq:mlp}, the output of an
-MLP at position $i$ depends on the stream at position $i$ alone, and the same holds for $\LN$ and for the
-read-out. If the last position ``knows'' something about an earlier token, some head has carried it there.
+MLP at position $i$ depends only on the stream at position $i$. The same holds for $\LN$ and for the read-out. So if
+the stream at the last position contains information about an earlier token, some head must have moved this
+information there.
 \item \textbf{The coordinates of the stream have no special meaning.} Every component reads the stream through
-a linear map after $\LN$ and writes to it through a linear map. A rotation of $\R^d$ that leaves the vector
-$\one$ fixed commutes with $\LN$. We can therefore apply such a rotation to the stream and compensate in all
-these linear maps without changing the function that the model computes. Nothing singles out coordinate number $17$ of
-the stream. The neurons of an MLP are different, because $\mathrm{GELU}$ acts on each of them separately.
+a linear map after $\LN$, and it writes to the stream through a linear map. A rotation of $\R^d$ that leaves the
+vector $\one$ fixed commutes with $\LN$. We can therefore rotate the stream by such a rotation and change all these
+linear maps accordingly, and the model still computes the same function. So no coordinate of the stream, for
+example coordinate number $17$, plays a special role. The neurons of an MLP are different, because $\mathrm{GELU}$
+acts on each neuron separately.
 \end{itemize}
 
-\subsection{Two experiments that use the sum}
+\subsection{Two experiments based on the sum}
 
 \begin{experiment}[The logit lens: when does the answer appear?]\label{exp:lens} \script{exp\_ioi.py}
-By \eqref{eq:unembed} the model reads its prediction from the final stream. Since the streams of all layers live
-in the same space, we can apply the same read-out to an intermediate one \citep{nostalgebraist2020logit} and
-compute $W_U[t]^\top\LN(x_n^{(\ell)})$ for $\ell=0,\dots,L$. This is what the model would predict if it had to
-stop after $\ell$ layers. \Cref{fig:lens} shows the result for the running example. Up to $\ell=7$ the logit
-difference under the lens stays within half a logit of zero. It becomes positive at $\ell=8$ and jumps at
-$\ell=10$, which is after layer 9 has been applied. On the first prompt, the most likely token under the lens is
-\tok{drink} at $\ell=5$, \tok{the} at $\ell=8$, \tok{them} at $\ell=9$ and \tok{Mary} from $\ell=10$ on. The
-decision between the two names is written into the last position mainly by layer 9.
+By \eqref{eq:unembed}, the model computes its prediction from the final stream. The streams after every layer
+are vectors in the same space $\R^d$. We can therefore apply the same read-out to the stream after $\ell$ layers
+and compute $W_U[t]^\top\LN(x_n^{(\ell)})$ for $\ell=0,\dots,L$. This method is called the \emph{logit lens}
+\citep{nostalgebraist2020logit}. Roughly speaking, it shows what the model would predict if it had to stop after
+$\ell$ layers. \Cref{fig:lens} shows the logit lens on the running example. Up to $\ell=7$, the logit difference
+under the lens stays between $-0.5$ and $0.5$. It becomes positive at $\ell=8$ and increases sharply at $\ell=10$,
+that is, after layer 9 has been applied. On the first prompt, the most likely token under the lens is \tok{drink}
+at $\ell=5$, \tok{the} at $\ell=8$, \tok{them} at $\ell=9$ and \tok{Mary} from $\ell=10$ onwards. So the decision
+between the two names is written into the last position mainly by layer 9.
 
-The figure has a second message. After 10 layers the lens gives the correct name a probability of $0.998$, and
-the complete model gives it only $0.48$. Layers 10 and 11 make the model \emph{less} confident.
+The figure shows a second effect. After 10 layers, the lens gives the correct name a probability of $0.998$, but
+the complete model gives it only $0.48$. So layers 10 and 11 make the model \emph{less} confident.
 \end{experiment}
 
 \begin{figure}[t]
@@ -239,14 +250,15 @@ horizontal axis is the number $\ell$ of layers that have been applied, so $\ell=
 \end{figure}
 
 \begin{experiment}[Direct logit attribution: who writes the answer?]\label{exp:dla} \script{exp\_ioi.py}
-We computed every summand of \eqref{eq:dla-ld}. The summands add up to $3.7031$, and the logit difference
-measured at the output is $3.7031$, as \cref{prop:dla} demands. The 144 heads together contribute $3.45$, the 12
-MLPs $0.25$, and the embeddings less than $0.01$. \Cref{fig:dla} shows the heads. Almost all of them contribute
-nothing. Four heads write clearly in favour of the correct name: 9.9 ($+3.57$), 9.6 ($+1.10$), 10.6 ($+0.61$)
-and 10.0 ($+0.59$). Three of them are the heads that look at the indirect object in \cref{exp:attention}. Two
-heads write \emph{against} the correct name: 10.7 ($-2.52$) and 11.10 ($-1.05$). They sit in layers 10 and 11,
-which explains the loss of confidence in \cref{fig:lens}. \citet{wang2023interpretability} call 9.9, 9.6 and
-10.0 \emph{name mover heads}, and 10.7 and 11.10 \emph{negative name mover heads}.
+We computed every term of the sum \eqref{eq:dla-ld}. The terms add up to $3.7031$, which is exactly the logit
+difference measured at the output, as \cref{prop:dla} says. The 144 heads together contribute $3.45$, the 12 MLPs
+contribute $0.25$, and the embeddings contribute less than $0.01$. \Cref{fig:dla} shows the contribution of every
+head. Almost all heads contribute nearly nothing. Four heads clearly push towards the correct name: 9.9 ($+3.57$),
+9.6 ($+1.10$), 10.6 ($+0.61$) and 10.0 ($+0.59$). Three of them are the heads that read from the indirect object in
+\cref{exp:attention}. Two heads push \emph{against} the correct name: 10.7 ($-2.52$) and 11.10 ($-1.05$). These two
+heads are in layers 10 and 11, and they explain why the model becomes less confident in these layers
+(\cref{fig:lens}). \citet{wang2023interpretability} call 9.9, 9.6 and 10.0 \emph{name mover heads}, and they call
+10.7 and 11.10 \emph{negative name mover heads}.
 \end{experiment}
 
 \begin{figure}[t]
@@ -259,17 +271,18 @@ it.}
 \end{figure}
 
 \begin{caution}
-Equation \eqref{eq:dla-ld} is an exact accounting identity, and a DLA term is still not the effect of removing
-the component. A component also acts \emph{indirectly}, by changing what later components read, and DLA sees only
-the direct path to the output. A head in layer 5 on which head 9.9 depends can have a DLA of zero. Session 6
-shows that this is exactly what happens in the running example.
+Equation \eqref{eq:dla-ld} is an exact identity. Even so, the DLA of a component is not the same as the effect
+of removing the component. A component also acts \emph{indirectly}: it changes what later components read. DLA
+only measures the direct path from the component to the output. For example, head 9.9 might depend on a head in
+layer 5 whose DLA is zero. Session 6 shows that this indeed happens in the running example.
 \end{caution}
 
 \begin{takeaways}
 A transformer keeps one vector per position, the residual stream. Attention heads move information between
-positions, MLPs process each position by itself, and both add their output to the stream. The final stream is
-therefore a sum of component outputs, and each logit is a sum of one term per component. In the running example
-this accounting points at layer 9 and at a handful of heads, some of which work against the answer.
+positions, MLPs process each position separately, and both add their output to the stream. The final stream is
+therefore a sum of the outputs of all components, and each logit is a sum with one term per component. In the
+running example, this decomposition shows that a few heads in layers 9 and 10 write most of the answer, and that
+two heads in layers 10 and 11 work against it.
 \end{takeaways}
 
 \subsection*{Questions for the seminar}
@@ -278,9 +291,8 @@ this accounting points at layer 9 and at a handful of heads, some of which work 
 Consider one head with $d=2$ in a model without $\LN$. Let $W_{QK}=\begin{pmatrix}0&0\\2&0\end{pmatrix}$ and
 $W_{OV}=\begin{pmatrix}0&0\\1&0\end{pmatrix}$, and let the stream be $x_1^{(\ell)}=(1,0)^\top$ at position $1$ and
 $x_2^{(\ell)}=(0,1)^\top$ at position $2$. (a) Compute the attention pattern and the output of the head at the
-destination $i=2$. (b) Do the same at the destination $i=1$. (c) The weights of a destination always sum to one,
-so a head cannot decide to read from nowhere. How can a model still arrange that a head writes almost nothing
-at some destinations?
+destination $i=2$. (b) Do the same at the destination $i=1$. (c) The attention weights of a destination always sum to one, so a head cannot choose to read from no position
+at all. How can a model still make a head write almost nothing at some destinations?
 \end{exercise}
 
 \begin{exercise}[A direction that nobody reads]\label{ex:ones}
